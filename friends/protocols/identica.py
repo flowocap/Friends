@@ -76,10 +76,3 @@ class Identica(Twitter):
         useless. Just use search() instead.
         """
         raise NotImplementedError
-
-    @feature
-    def receive(self):
-        """Gather and publish all incoming messages."""
-        self.home()
-        self.mentions()
-        self.private()

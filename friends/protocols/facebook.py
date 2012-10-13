@@ -35,7 +35,7 @@ URL_BASE = 'https://{subdomain}.facebook.com/'
 PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
-LIMIT = 100
+LIMIT = 50
 
 
 log = logging.getLogger('friends.service')

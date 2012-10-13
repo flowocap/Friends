@@ -125,7 +125,7 @@ class Twitter(Base):
     @feature
     def home(self):
         """Gather the user's home timeline."""
-        url = self._timeline.format('home')
+        url = self._timeline.format('home') + '?count=50'
         for tweet in self._get_url(url):
             self._publish_tweet(tweet)
 
@@ -181,14 +181,7 @@ class Twitter(Base):
     @feature
     def receive(self):
         """Gather and publish all incoming messages."""
-        # TODO I know mentions and lists are actually incorporated within the
-        # home timeline, but calling them explicitly will ensure that more of
-        # those types of messages appear in the timeline (e.g., so they don't
-        # get drown out by everything else).  I'm not sure how necessary it
-        # is, though.
         self.home()
-        self.mentions()
-        self.lists()
         self.private()
 
     @feature
