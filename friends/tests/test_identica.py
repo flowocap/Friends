@@ -117,7 +117,7 @@ class TestIdentica(unittest.TestCase):
 
         self.protocol.private()
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='private')
         self.assertEqual(
             get_url.mock_calls,
             [mock.call('http://identi.ca/api/direct_messages.json'),
@@ -129,7 +129,7 @@ class TestIdentica(unittest.TestCase):
 
         self.protocol.send_private('pumpichank', 'Are you mocking me?')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='private')
         get_url.assert_called_with(
             'http://identi.ca/api/direct_messages/new.json',
             dict(text='Are you mocking me?', screen_name='pumpichank'))
@@ -221,6 +221,6 @@ class TestIdentica(unittest.TestCase):
 
         self.protocol.search('hello')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='search/hello')
         get_url.assert_called_with(
             'http://identi.ca/api/search.json?q=hello')
