@@ -236,7 +236,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol.private()
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='private')
         self.assertEqual(
             get_url.mock_calls,
             [mock.call('https://api.twitter.com/1.1/direct_messages.json'),
@@ -249,7 +249,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol.send_private('pumpichank', 'Are you mocking me?')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='private')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/direct_messages/new.json',
             dict(text='Are you mocking me?', screen_name='pumpichank'))
@@ -356,13 +356,13 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol.tag('yegbike')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='search/#yegbike')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=%23yegbike')
 
         self.protocol.tag('#yegbike')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='search/#yegbike')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=%23yegbike')
 
@@ -373,7 +373,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol.search('hello')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='search/hello')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=hello')
 

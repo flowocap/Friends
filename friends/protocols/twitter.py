@@ -98,7 +98,7 @@ class Twitter(Base):
         return get_json(url, params=data, headers=headers, method=method,
                         rate_limiter=self._rate_limiter)
 
-    def _publish_tweet(self, tweet):
+    def _publish_tweet(self, tweet, stream='messages'):
         """Publish a single tweet into the Dee.SharedModel."""
         tweet_id = tweet.get('id_str')
         if tweet_id is None:
@@ -111,7 +111,7 @@ class Twitter(Base):
             message_id=tweet_id,
             message=tweet.get('text', ''),
             timestamp=iso8601utc(parsetime(tweet.get('created_at', ''))),
-            stream='messages',
+            stream=stream,
             sender=user.get('name', ''),
             sender_nick=screen_name,
             from_me=(screen_name == self._account.user_name),
@@ -172,11 +172,11 @@ class Twitter(Base):
         """Gather the direct messages sent to/from us."""
         url = self._api_base.format(endpoint='direct_messages')
         for tweet in self._get_url(url):
-            self._publish_tweet(tweet)
+            self._publish_tweet(tweet, stream='private')
 
         url = self._api_base.format(endpoint='direct_messages/sent')
         for tweet in self._get_url(url):
-            self._publish_tweet(tweet)
+            self._publish_tweet(tweet, stream='private')
 
     @feature
     def receive(self):
@@ -205,7 +205,7 @@ class Twitter(Base):
         except HTTPError as error:
             log.error('{}: Does that user follow you?'.format(error))
         else:
-            self._publish_tweet(tweet)
+            self._publish_tweet(tweet, stream='private')
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/update
     @feature
@@ -291,7 +291,7 @@ class Twitter(Base):
 
         response = self._get_url('{}?q={}'.format(url, quote(query, safe='')))
         for tweet in response.get(self._search_result_key, []):
-            self._publish_tweet(tweet)
+            self._publish_tweet(tweet, stream='search/{}'.format(query))
 
 
 class RateLimiter(BaseRateLimiter):
