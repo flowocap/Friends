@@ -66,14 +66,15 @@ class AccountManager:
         # If we don't know about the given account id, just return and do not
         # call the refresh callback.
         try:
-            self._accounts.pop(account_id)
+            account = self._accounts.pop(account_id)
         except KeyError:
             log.debug('Attempting to delete unknown account: {}', account_id)
             return
 
         for row in Model:
-            if account_id in row[COLUMN_INDICES['message_ids']]:
-                Model.remove(row)
+            for triple in row[COLUMN_INDICES['message_ids']]:
+                if account_id in triple:
+                    account.protocol._unpublish(triple[-1])
 
         self._callback()
 

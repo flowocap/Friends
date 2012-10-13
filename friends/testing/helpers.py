@@ -22,6 +22,7 @@ __all__ = [
 
 import threading
 
+from friends.utils.base import Base
 
 class FakeAuth:
     pass
@@ -37,3 +38,4 @@ class FakeAccount:
         self.auth = FakeAuth()
         self.login_lock = threading.Lock()
         self.id = 'faker/than fake'
+        self.protocol = Base(self)

@@ -24,17 +24,27 @@ __all__ = [
 import json
 import unittest
 
+from gi.repository import Dee
+
 from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
 from friends.testing.helpers import FakeAccount
 from friends.testing.mocks import SettingsIterMock
 from friends.utils.account import Account, AccountManager
+from friends.utils.base import Base
+from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
 
 try:
     # Python 3.3
     from unittest import mock
 except ImportError:
     import mock
+
+
+# Create a test model that will not interfere with the user's environment.
+# We'll use this object as a mock of the real model.
+TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
+TestModel.set_schema_full(COLUMN_TYPES)
 
 
 class TestAccount(unittest.TestCase):
@@ -222,3 +232,29 @@ class TestAccountManager(unittest.TestCase):
         manager._on_account_deleted(accounts_manager, 'faker/than fake')
         self.assertNotIn('faker/than fake', manager._accounts)
         self.assertTrue(refreshed)
+
+    @mock.patch('friends.utils.account.Model', TestModel)
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_account_manager_delete_account_preserve_messages(self):
+        # Deleting an Account should not delete messages from the row
+        # that exist on other protocols too.
+        manager = AccountManager(lambda:None)
+        manager.add_new_account(self.account_service)
+        example_row = [[['twitter', '6/twitter', '1234'],
+             ['base', 'faker/than fake', '5678']],
+            'messages', 'Fred Flintstone', 'fred', True,
+            '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '', '', '', '',
+            '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '', '',
+            '', '', '', '', '', '', [], '', '', '']
+        result_row = [[['twitter', '6/twitter', '1234']],
+            'messages', 'Fred Flintstone', 'fred', True,
+            '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '', '', '', '',
+            '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '', '',
+            '', '', '', '', '', '', [], '', '', '']
+        row_iter = TestModel.append(*example_row)
+        from friends.utils.base import _seen_ids
+        _seen_ids[('base', 'faker/than fake', '5678')] = row_iter
+        self.assertEqual(list(TestModel.get_row(0)), example_row)
+        manager._on_account_deleted(accounts_manager, 'faker/than fake')
+        self.assertEqual(list(TestModel.get_row(0)), result_row)
