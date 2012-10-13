@@ -1,0 +1,226 @@
+# friends-service -- send & receive messages from any social network
+# Copyright (C) 2012  Canonical Ltd
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Test the Identica plugin."""
+
+
+__all__ = [
+    'TestIdentica',
+    ]
+
+
+import unittest
+
+from gi.repository import Dee
+
+from friends.protocols.identica import Identica
+from friends.testing.helpers import FakeAccount
+from friends.testing.mocks import LogMock
+from friends.utils.model import COLUMN_TYPES
+
+try:
+    # Python 3.3
+    from unittest import mock
+except ImportError:
+    import mock
+
+
+# Create a test model that will not interfere with the user's environment.
+# We'll use this object as a mock of the real model.
+TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
+TestModel.set_schema_full(COLUMN_TYPES)
+
+
+class TestIdentica(unittest.TestCase):
+    """Test the Identica API."""
+
+    def setUp(self):
+        self.account = FakeAccount()
+        self.protocol = Identica(self.account)
+        self.log_mock = LogMock('friends.utils.base',
+                                'friends.protocols.twitter')
+
+    def tearDown(self):
+        # Ensure that any log entries we haven't tested just get consumed so
+        # as to isolate out test logger from other tests.
+        self.log_mock.stop()
+
+    @mock.patch('friends.utils.authentication.Authentication.login',
+                return_value=None)
+    @mock.patch('friends.utils.download.get_json',
+                return_value=None)
+    def test_unsuccessful_authentication(self, *mocks):
+        self.assertFalse(self.protocol._login())
+        self.assertIsNone(self.account.user_name)
+        self.assertIsNone(self.account.user_id)
+
+    @mock.patch('friends.utils.authentication.Authentication.login',
+                return_value=dict(AccessToken='some clever fake data',
+                                  TokenSecret='sssssshhh!'))
+    def test_successful_authentication(self, *mocks):
+        get_url = self.protocol._get_url = mock.Mock(
+            return_value=dict(id='1234', screen_name='therealrobru'))
+        self.assertTrue(self.protocol._login())
+        self.assertEqual(self.account.user_name, 'therealrobru')
+        self.assertEqual(self.account.user_id, '1234')
+        self.assertEqual(self.account.access_token, 'some clever fake data')
+        self.assertEqual(self.account.secret_token, 'sssssshhh!')
+        get_url.assert_called_once_with('http://identi.ca/api/users/show.json')
+
+    def test_mentions(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.mentions()
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'http://identi.ca/api/statuses/mentions.json')
+
+    def test_user(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.user()
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'http://identi.ca/api/statuses/user_timeline.json?screen_name=')
+
+    def test_list(self):
+        self.protocol._get_url = mock.Mock(return_value=['tweet'])
+        self.protocol._publish_tweet = mock.Mock()
+        self.assertRaises(NotImplementedError,
+                          self.protocol.list, 'some_list_id')
+
+    def test_lists(self):
+        self.protocol._get_url = mock.Mock(
+            return_value=[dict(id_str='twitlist')])
+        self.protocol.list = mock.Mock()
+        self.assertRaises(NotImplementedError, self.protocol.lists)
+
+    def test_private(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.private()
+
+        publish.assert_called_with('tweet')
+        self.assertEqual(
+            get_url.mock_calls,
+            [mock.call('http://identi.ca/api/direct_messages.json'),
+             mock.call('http://identi.ca/api/direct_messages/sent.json')])
+
+    def test_send_private(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.send_private('pumpichank', 'Are you mocking me?')
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'http://identi.ca/api/direct_messages/new.json',
+            dict(text='Are you mocking me?', screen_name='pumpichank'))
+
+    def test_send(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.send('Hello, twitterverse!')
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'http://identi.ca/api/statuses/update.json',
+            dict(status='Hello, twitterverse!'))
+
+    def test_send_thread(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.send_thread(
+            '1234',
+            'Why yes, I would love to respond to your tweet @pumpichank!')
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'http://identi.ca/api/statuses/update.json',
+            dict(status=
+                 'Why yes, I would love to respond to your tweet @pumpichank!',
+                 in_reply_to_status_id='1234'))
+
+    def test_delete(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        publish = self.protocol._unpublish = mock.Mock()
+
+        self.protocol.delete('1234')
+
+        publish.assert_called_with('1234')
+        get_url.assert_called_with(
+            'http://identi.ca/api/statuses/destroy/1234.json',
+            dict(trim_user='true'))
+
+    def test_retweet(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.retweet('1234')
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'http://identi.ca/api/statuses/retweet/1234.json',
+            dict(trim_user='true'))
+
+    def test_unfollow(self):
+        get_url = self.protocol._get_url = mock.Mock()
+
+        self.protocol.unfollow('pumpichank')
+
+        get_url.assert_called_with(
+            'http://identi.ca/api/friendships/destroy.json',
+            dict(screen_name='pumpichank'))
+
+    def test_follow(self):
+        get_url = self.protocol._get_url = mock.Mock()
+
+        self.protocol.follow('pumpichank')
+
+        get_url.assert_called_with(
+            'http://identi.ca/api/friendships/create.json',
+            dict(screen_name='pumpichank', follow='true'))
+
+    def test_like(self):
+        self.protocol._get_url = mock.Mock()
+        self.assertRaises(NotImplementedError, self.protocol.like, '1234')
+
+    def test_unlike(self):
+        self.protocol._get_url = mock.Mock()
+        self.assertRaises(NotImplementedError, self.protocol.unlike, '1234')
+
+    def test_tag(self):
+        self.protocol._get_url = mock.Mock(
+            return_value=dict(statuses=['tweet']))
+        self.protocol._publish_tweet = mock.Mock()
+        self.assertRaises(NotImplementedError, self.protocol.tag, 'hashtag')
+
+    def test_search(self):
+        get_url = self.protocol._get_url = mock.Mock(
+            return_value=dict(results=['tweet']))
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.search('hello')
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'http://identi.ca/api/search.json?q=hello')

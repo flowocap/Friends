@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=com.canonical.Friends.Test
+Exec={BINDIR}/friends-service --test
