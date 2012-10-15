@@ -29,7 +29,7 @@ import threading
 
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
-
+from gi.repository import EDataServer, EBook
 
 IGNORED = string.punctuation + string.whitespace
 SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)

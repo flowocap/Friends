@@ -27,6 +27,7 @@ from datetime import datetime, timedelta
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
 from friends.utils.time import parsetime, iso8601utc
+from gi.repository import EBook
 
 
 # 'id' can be the id of *any* Facebook object
@@ -269,16 +270,17 @@ class Facebook(Base):
         params = dict(access_token=access_token)
         return get_json(url, params)
 
+    # This method can take the minimal contact information or full contact info
+    # For now we only cache ID and the name. 
     def create_contact(self, contact_json):
         vca = EBook.VCardAttribute.new("remote-social-id", "facebook-id")      
         vca.add_value(contact_json["id"])
         vcard = EBook.VCard.new()
         vcard.add_attribute(vca)
-        c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(0)))
+        c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
         n = EBook.ContactName.from_string(contact_json["name"])
-        # Needs testing.
         c.set(EBook.ContactField(5), n)
-        self._push_to_eds(FACEBOOK_ADDRESS_BOOK, c)
+        return c 
 
     def contacts(self):
         contacts = self.fetch_contacts()
@@ -286,5 +288,8 @@ class Facebook(Base):
         for contact in contacts:
             if source != None and Base.previously_stored_contact(source, contact) == True:
                 continue
-            self.create_contact(self.fetch_contact(self))
+            detailed_contact = self.fetch_contact(contact)
+            eds_contact = self.create_contact(detailed_contact) 
+            self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact)
+
 

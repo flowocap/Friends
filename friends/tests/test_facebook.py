@@ -311,14 +311,28 @@ Facebook error (190 OAuthException): Bad access token
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
 
-    @mock.patch('gwibber.utils.download.urlopen',
-                FakeData('gwibber.tests.data', 'facebook-contacts.dat'))
-    @mock.patch('gwibber.utils.base.Model', TestModel)
-    @mock.patch('gwibber.protocols.facebook.Facebook._login',
+    
+    @mock.patch('friends.utils.download.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'facebook-contacts.dat'))
+    @mock.patch('friends.protocols.facebook.Facebook._login',
                 return_value=True)
-    def test_contacts(self, *mocks):
+    def test_fetch_contacts(self, *mocks):
         # Receive the users friends.
-        self.maxDiff = None
         self.account.access_token = 'abc'
-        self.protocol('contacts')     
+        results = self.protocol.fetch_contacts() 
+        self.assertEqual(len(results), 8)
+        self.assertEqual(results[7]["name"], "John Smith")
+        self.assertEqual(results[7]["id"], "444444")
+
+    @mock.patch('friends.utils.download.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'facebook-contact.dat'))
+    @mock.patch('friends.protocols.facebook.Facebook._login',
+                return_value=True)
+    def test_create_contact(self, *mocks):
+        # Receive the users friends.
+        self.account.access_token = 'abc'
+        bare_contact = {"name": "Lucy Baron", "id": "555555555"}
+        eds_contact = self.protocol.create_contact(bare_contact) 
+        facebook_id_attr = eds_contact.get_attribute("facebook-id")
+        self.assertEqual(facebook_id_attr.get_value(), "555555555")
 
