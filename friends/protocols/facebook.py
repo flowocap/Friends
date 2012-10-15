@@ -282,10 +282,9 @@ class Facebook(Base):
 
     def contacts(self):
         contacts = self.fetch_contacts()
-        EDataServer.Source source = None
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
         for contact in contacts:
-            if source != None and if Base.previously_stored_contact(source, contact) == True:
+            if source != None and Base.previously_stored_contact(source, contact) == True:
                 continue
             self.create_contact(self.fetch_contact(self))
 
