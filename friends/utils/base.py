@@ -353,7 +353,6 @@ class Base:
         q = EBook.book_query_any_field_contains(details["name"])
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         if cs[0] == False:
-           print "Cannot find results or search was incorrect - guess work..." 
            return False # is this right ...
         return len(cs[1] > 0)                        
 

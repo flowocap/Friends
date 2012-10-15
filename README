@@ -14,6 +14,8 @@ Installing Friends
     * python (3.2)
     * python-distutils-extra
     * python-dbus (0.80.2)
+    * python-virtualenv
+    * python-mock
 
   Installation
   ------------
