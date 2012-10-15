@@ -36,7 +36,7 @@ PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
 LIMIT = 100
-
+FACEBOOK_ADDRESS_BOOK = "gwibber-facebook-contacts"
 
 log = logging.getLogger('friends.service')
 
@@ -221,3 +221,71 @@ class Facebook(Base):
             log.error('Failed to delete {} on Facebook'.format(obj_id))
         else:
             self._unpublish(obj_id)
+
+    def fetch_contacts(self):
+        """ Retrieve a list of Facebook friends
+            A maximum of 100 friends are requested.
+        """
+        access_token = self._get_access_token()
+        contacts = []
+        url = ME_URL + '/friends'
+        # TODO:
+        # Not so sure if we need to limit this to a 100
+        # The examples on the site limit to 5000
+        params = dict(access_token=access_token,
+                      limit=LIMIT)
+        # Now access Facebook and follow pagination until we have at least
+        # LIMIT number of entries, or we've reached the end of pages.
+        while True:
+            response = get_json(url, params)
+            if self._is_error(response):
+                # We'll just use what we have so far, if anything.
+                break
+            data = response.get('data')
+            if data is None:
+                # I guess we're done.
+                break
+            contacts.extend(data)
+            if len(contacts) >= LIMIT:
+                break
+            # We haven't gotten the requested number of entries.  Follow the
+            # next page if there is one to try to get more.
+            pages = response.get('paging')
+            if pages is None:
+                break
+            # The 'next' key has the full link to follow; no additional
+            # parameters are needed.  Specifically, this link will already
+            # include the access_token, and any since/limit values.
+            url = pages.get('next')
+            params = None
+            if url is None:
+                # I guess there are no more next pages.
+                break
+        return contacts
+
+    def fetch_contact(self, contact_details):
+        access_token = self._get_access_token()
+        url = BASE_URL + '/' + details['id']
+        params = dict(access_token=access_token)
+        return get_json(url, params)
+
+    def create_contact(self, contact_json):
+        vca = EBook.VCardAttribute.new("remote-social-id", "facebook-id")      
+        vca.add_value(contact_json["id"])
+        vcard = EBook.VCard.new()
+        vcard.add_attribute(vca)
+        c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(0)))
+        n = EBook.ContactName.from_string(contact_json["name"])
+        # Needs testing.
+        c.set(EBook.ContactField(5), n)
+        self._push_to_eds(FACEBOOK_ADDRESS_BOOK, c)
+
+    def contacts(self):
+        contacts = self.fetch_contacts()
+        EDataServer.Source source = None
+        source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        for contact in contacts:
+            if source != None and if Base.previously_stored_contact(source, contact) == True:
+                continue
+            self.create_contact(self.fetch_contact(self))
+

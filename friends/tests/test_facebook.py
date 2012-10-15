@@ -310,3 +310,15 @@ Facebook error (190 OAuthException): Bad access token
             method='DELETE',
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
+
+    @mock.patch('gwibber.utils.download.urlopen',
+                FakeData('gwibber.tests.data', 'facebook-contacts.dat'))
+    @mock.patch('gwibber.utils.base.Model', TestModel)
+    @mock.patch('gwibber.protocols.facebook.Facebook._login',
+                return_value=True)
+    def test_contacts(self, *mocks):
+        # Receive the users friends.
+        self.maxDiff = None
+        self.account.access_token = 'abc'
+        self.protocol('contacts')     
+

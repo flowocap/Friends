@@ -311,6 +311,52 @@ class Base:
             self._whoami(result)
             log.debug('{} UID: {}'.format(protocol, self._account.user_id))
 
+    def _push_to_eds(self, online_service, contact):
+        source_match = Base.get_eds_source(online_service)
+        if source_match == None:
+            new_source_uid = Base.create_eds_source(online_service)
+            if new_source_uid == None:
+                print("Could not create a new source for %s", online_service)
+                return
+            else:
+                #Potential race condition - need to sleep for a couple of cycles
+                #to ensure the registry will return a valid source object after commiting
+                #Evolution fix on the way but for now we need to have this in place.
+                #https://bugzilla.gnome.org/show_bug.cgi?id=685986                
+                time.sleep(1)
+                source_match = self.source_registry.ref_source(new_source_uid)
+        client = EBook.BookClient.new(source_match)
+        client.open_sync(False, None)
+        client.add_contact_sync(contact, Gio.Cancellable());        
+
+    def _create_eds_source(self, online_service):
+        source = EDataServer.Source.new(None, None)
+        source.set_display_name(online_service)
+        source.set_parent("local-stub")        
+        extension = source.get_extension(EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
+        extension.set_backend_name("local")
+        if (self.source_registry.commit_source_sync(source, Gio.Cancellable())):
+            return source.get_uid()
+        return None
+
+    def _get_eds_source(self, online_service):
+        for previous_source in self.source_registry.list_sources(None):
+            if previous_source.get_display_name() == online_service:
+                return self.source_registry.ref_source(previous_source.get_uid())
+        return None
+
+    @classmethod
+    #TODO: Not really sure how get_contacts works.
+    def previously_stored_contact(cls, source, details):
+        client = EBook.BookClient.new(source)
+        client.open_sync(False, None)
+        q = EBook.book_query_any_field_contains(details["name"])
+        cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
+        if cs[0] == False:
+           print "Cannot find results or search was incorrect - guess work..." 
+           return False # is this right ...
+        return len(cs[1] > 0)                        
+
     @classmethod
     def get_features(cls):
         """Report what public operations we expose over DBus."""
