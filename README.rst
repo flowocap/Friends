@@ -22,20 +22,32 @@ Package requirements.
 Installation
 ============
 
-Friends uses Python's distutils framework for installation.  In order to
-install Friends, you will need to perform the following command as root::
+If you want to run the ``friends-service`` executable locally for testing
+purposes, you can do it in one of two ways.  To run the service as would
+typically happen once the system package was installed, create a Python
+virtual environment, and run the service from there.  Fortunately, the
+``Makefile`` makes this easy::
 
-    # make install
+    $ make venv
+    $ /tmp/friends/bin/friends-service
 
+When you make changes in the source, just run ``make venv`` again to refresh
+the virtual environment.
 
-Run Friends
-===========
+It may be easier during development to run the service directly from the
+source directory.  This should generally be good enough for development
+purposes, but again, doesn't exactly mimic how the service will be installed
+by the system package::
 
-Once Friends is installed, you can launch it with the command
-``friends-service``.  Once it is running, it will access Ubuntu Online
-Accounts for all your microblogging-enabled accounts, and then retrieve all
-the public messages present on those accounts.  Those messages can then be
-accessed over DBus, using a Dee.SharedModel.
+    $ ./friends-service.sh
+
+This is a little bit more fragile, since you must be in the top-level source
+directory for this to work.
+
+Once the service is running, it will access Ubuntu Online Accounts for all
+your microblogging-enabled accounts, and then retrieve all the public messages
+present on those accounts.  Those messages can then be accessed over DBus,
+using a Dee.SharedModel.
 
 
 Testing

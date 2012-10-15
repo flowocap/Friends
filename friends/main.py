@@ -48,10 +48,8 @@ def main():
         from friends.utils.manager import protocol_manager
         for name in sorted(protocol_manager.protocols):
             cls = protocol_manager.protocols[name]
-            # Stub protocols have no version so don't print them.
-            version = getattr(cls.info, 'version', None)
-            if version is not None:
-                print(cls.__name__, 'version', version)
+            package, dot, class_name = cls.__name__.rpartition('.')
+            print(class_name)
         return
     # Initialize the logging subsystem.
     # XXX FIXME - this should be renamed to 'friends'.
@@ -85,3 +83,8 @@ def main():
         loop.run()
     except KeyboardInterrupt:
         log.info('Stopped friends-service main loop')
+
+
+if __name__ == '__main__':
+    # Use this with `python3 -m friends.main`
+    main()
