@@ -127,6 +127,9 @@ class _OperationThread(threading.Thread):
 
 
 class Base:
+    # This number serves a guideline (not a hard limit) for the protocol
+    # subclasses to download in each refresh.
+    _DOWNLOAD_LIMIT = 50
     # When the system is under test, set this value to True to enable
     # synchronizing the operations threads with the main thread.  In this way,
     # you can ensure that the results of calling an operation on a protocol
