@@ -135,6 +135,7 @@ class Base:
     _SYNCHRONIZE = False
 
     def __init__(self, account):
+        self.source_registry = EDataServer.SourceRegistry.new_sync(None)
         self._account = account
 
     def __call__(self, operation, *args, **kwargs):
@@ -347,10 +348,10 @@ class Base:
 
     @classmethod
     #TODO: Not really sure how get_contacts works.
-    def previously_stored_contact(cls, source, details):
+    def previously_stored_contact(cls, source, field, details):
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)
-        q = EBook.book_query_any_field_contains(details["name"])
+        q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), details['id'])        
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         if cs[0] == False:
            return False # is this right ...

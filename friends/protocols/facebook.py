@@ -282,16 +282,16 @@ class Facebook(Base):
         vcard.add_attribute(vcafid)
         vcard.add_attribute(vcafn)
         c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
-        return c 
+        return c
 
     def contacts(self):
         contacts = self.fetch_contacts()
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
         for contact in contacts:
-            if source != None and Base.previously_stored_contact(source, contact) == True:
+            if source != None and Base.previously_stored_contact(source, "facebook-id", contact) == True:
                 continue
             detailed_contact = self.fetch_contact(contact)
-            eds_contact = self.create_contact(detailed_contact) 
+            eds_contact = self.create_contact(detailed_contact)
             self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact)
 
 
