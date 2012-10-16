@@ -335,4 +335,7 @@ Facebook error (190 OAuthException): Bad access token
         eds_contact = self.protocol.create_contact(bare_contact) 
         facebook_id_attr = eds_contact.get_attribute("facebook-id")
         self.assertEqual(facebook_id_attr.get_value(), "555555555")
+        facebook_name_attr = eds_contact.get_attribute("facebook-name")
+        self.assertEqual(facebook_name_attr.get_value(), "Lucy Baron")
+
 

@@ -271,15 +271,17 @@ class Facebook(Base):
         return get_json(url, params)
 
     # This method can take the minimal contact information or full contact info
-    # For now we only cache ID and the name. 
+    # For now we only cache ID and the name. Using custom field for name because I can't
+    # figure out how econtact name works.
     def create_contact(self, contact_json):
-        vca = EBook.VCardAttribute.new("remote-social-id", "facebook-id")      
-        vca.add_value(contact_json["id"])
+        vcafid = EBook.VCardAttribute.new("social-networking-attributes", "facebook-id")      
+        vcafid.add_value(contact_json["id"])
+        vcafn = EBook.VCardAttribute.new("social-networking-attributes", "facebook-name")      
+        vcafn.add_value(contact_json["name"])
         vcard = EBook.VCard.new()
-        vcard.add_attribute(vca)
+        vcard.add_attribute(vcafid)
+        vcard.add_attribute(vcafn)
         c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
-        n = EBook.ContactName.from_string(contact_json["name"])
-        c.set(EBook.ContactField(5), n)
         return c 
 
     def contacts(self):
