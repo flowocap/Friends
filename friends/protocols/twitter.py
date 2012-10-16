@@ -125,7 +125,8 @@ class Twitter(Base):
     @feature
     def home(self):
         """Gather the user's home timeline."""
-        url = self._timeline.format('home') + '?count=50'
+        url = self._timeline.format(
+            'home') + '?count={}'.format(self._DOWNLOAD_LIMIT)
         for tweet in self._get_url(url):
             self._publish_tweet(tweet)
 
@@ -182,6 +183,7 @@ class Twitter(Base):
     def receive(self):
         """Gather and publish all incoming messages."""
         self.home()
+        self.mentions()
         self.private()
 
     @feature

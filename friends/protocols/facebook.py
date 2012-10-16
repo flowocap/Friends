@@ -35,7 +35,6 @@ URL_BASE = 'https://{subdomain}.facebook.com/'
 PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
-LIMIT = 50
 
 
 log = logging.getLogger('friends.service')
@@ -117,9 +116,9 @@ class Facebook(Base):
         url = ME_URL + '/home'
         params = dict(access_token=access_token,
                       since=when.isoformat(),
-                      limit=LIMIT)
+                      limit=self._DOWNLOAD_LIMIT)
         # Now access Facebook and follow pagination until we have at least
-        # LIMIT number of entries, or we've reached the end of pages.
+        # _DOWNLOAD_LIMIT number of entries, or we've reached the end of pages.
         while True:
             response = get_json(url, params)
             if self._is_error(response):
@@ -130,7 +129,7 @@ class Facebook(Base):
                 # I guess we're done.
                 break
             entries.extend(data)
-            if len(entries) >= LIMIT:
+            if len(entries) >= self._DOWNLOAD_LIMIT:
                 break
             # We haven't gotten the requested number of entries.  Follow the
             # next page if there is one to try to get more.
