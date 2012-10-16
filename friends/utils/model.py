@@ -29,10 +29,15 @@ __all__ = [
     'COLUMN_TYPES',
     'COLUMN_INDICES',
     'DEFAULTS',
+    'MODEL_DBUS_NAME',
+    'persist_model',
     ]
 
 
 from gi.repository import Dee
+
+import logging
+log = logging.getLogger('friends.service')
 
 
 # Most of this schema is very straightforward, but the 'message_ids' column
@@ -108,5 +113,20 @@ DEFAULTS = {
     }
 
 
-Model = Dee.SharedModel.new('com.canonical.Friends.Streams')
-Model.set_schema_full(COLUMN_TYPES)
+MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'
+_resource_manager = Dee.ResourceManager.get_default()
+Model = _resource_manager.load(MODEL_DBUS_NAME)
+
+
+# If this is first run, or the schema has changed since last run,
+# we'll need to make a new, empty Model.
+if Model is None or Model.get_schema() != list(COLUMN_TYPES):
+    log.debug('Starting a new, empty Dee.SharedModel.')
+    Model = Dee.SharedModel.new(MODEL_DBUS_NAME)
+    Model.set_schema_full(COLUMN_TYPES)
+
+
+def persist_model():
+    """Write our Dee.SharedModel instance to disk."""
+    log.debug('Saving Dee.SharedModel with {} rows.'.format(len(Model)))
+    _resource_manager.store(Model, MODEL_DBUS_NAME)

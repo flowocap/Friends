@@ -24,9 +24,10 @@ import sys
 sys.path.insert(0, '.')
 
 from gi.repository import GObject
+
 from friends.utils.account import AccountManager
 from friends.utils.base import Base
-from friends.utils.model import Model
+from friends.utils.model import Model, persist_model
 
 
 # Ensure synchronous operation of Base.__call__() for easier testing.
@@ -44,6 +45,7 @@ def refresh(account):
         print([col for col in row])
         print()
     print('ROWS: ', len(Model))
+    persist_model()
 
 
 if __name__ == '__main__':

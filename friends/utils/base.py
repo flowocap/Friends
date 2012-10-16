@@ -43,6 +43,7 @@ IDS_IDX = COLUMN_INDICES['message_ids']
 # This is a mapping from Dee.SharedModel row keys to the DeeModelIters
 # representing the rows matching those keys.  It is used for quickly finding
 # duplicates when we want to insert new rows into the model.
+# TODO can these be replaced by Dee.TreeIndex? or Dee.TextAnalyzer? ask mhr3
 _seen_messages = {}
 _seen_ids = {}
 
@@ -100,6 +101,26 @@ def _make_key(row):
     key = SCHEME_RE.sub('', row[SENDER_IDX] + row[MESSAGE_IDX])
     # Now remove all punctuation and whitespace.
     return EMPTY_STRING.join(char for char in key if char not in IGNORED)
+
+
+# TODO ask mhr3 if there might be some more efficient way of achieving
+# an index that will help us keep duplicates out of the Model.
+def _initialize_caches():
+    """Populate _seen_ids and _seen_messages with Model data.
+
+    Our Dee.SharedModel persists across instances, so we need to
+    populate these caches at launch.
+
+    Scroll down to Base._publish to see how these dicts are used.
+    """
+    for i in range(Model.get_n_rows()):
+        row_iter = Model.get_iter_at_row(i)
+        row = Model.get_row(row_iter)
+        _seen_messages[_make_key(row)] = row_iter
+        for triple in row[IDS_IDX]:
+            _seen_ids[tuple(triple)] = row_iter
+
+_initialize_caches()
 
 
 class _OperationThread(threading.Thread):

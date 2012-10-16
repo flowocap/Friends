@@ -33,6 +33,7 @@ from friends.utils.account import AccountManager
 from friends.utils.avatar import Avatar
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
+from friends.utils.model import persist_model
 
 log = logging.getLogger('friends.service')
 
@@ -79,6 +80,11 @@ class Dispatcher(dbus.service.Object):
         for thread in threading.enumerate():
             if thread != current:
                 thread.join()
+
+        # Write the Dee.SharedModel to disk. We do this every refresh
+        # for robustness, so if the computer loses power, we won't
+        # lose all the messages.
+        persist_model()
 
         if not self.online:
             return
