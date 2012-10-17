@@ -16,7 +16,8 @@ override_dh_auto_build:
 	python3 setup.py build
 
 override_dh_auto_install:
-	python3 setup.py install --root=$(CURDIR)/debian/friends --install-layout=deb
+	python3 setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
+	dh_install --list-missing
 
 %:
 	dh $@ --with python3

@@ -8,10 +8,44 @@ Build-Depends: debhelper (>= 9),
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/friends
 
+Package: friends-facebook
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends}
+Description: Social integration with the desktop - Facebook
+ Provides social networking integration with the desktop
+
+Package: friends-twitter
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends}
+Description: Social integration with the desktop - Twitter
+ Provides social networking integration with the desktop
+
+Package: friends-identica
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends}
+Description: Social integration with the desktop - Identi.ca
+ Provides social networking integration with the desktop
+
+Package: friends-foursquare
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends}
+Description: Social integration with the desktop - Foursquare
+ Provides social networking integration with the desktop
+
+Package: friends-flickr
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends}
+Description: Social integration with the desktop - Flickr
+ Provides social networking integration with the desktop
+
 Package: friends
-Architecture: any
-Depends: ${shlibs:Depends},
-         ${misc:Depends}
+Architecture: all
+Depends: ${misc:Depends},
          ${python3:Depends}
 Description: Social integration with the desktop
  Provides social networking integration with the desktop

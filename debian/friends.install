@@ -1,0 +1,7 @@
+usr/bin
+usr/lib/python3/dist-packages/*.egg-info/*
+usr/lib/python3/dist-packages/friends/*.py
+usr/lib/python3/dist-packages/friends/service/*
+usr/lib/python3/dist-packages/friends/shorteners/*
+usr/lib/python3/dist-packages/friends/utils/*
+usr/lib/python3/dist-packages/friends/protocols/__init__.py
