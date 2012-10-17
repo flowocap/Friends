@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=com.canonical.Friends.Service
-Exec=/usr/bin/friends-service
