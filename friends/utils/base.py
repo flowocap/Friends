@@ -328,7 +328,9 @@ class Base:
                 source_match = self.source_registry.ref_source(new_source_uid)
         client = EBook.BookClient.new(source_match)
         client.open_sync(False, None)
-        client.add_contact_sync(contact, Gio.Cancellable());        
+        res = client.add_contact_sync(contact, Gio.Cancellable());
+        if(res is False):
+            print("Failed to create contact ...")
 
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
@@ -347,11 +349,10 @@ class Base:
         return None
 
     @classmethod
-    #TODO: Not really sure how get_contacts works.
-    def previously_stored_contact(cls, source, field, details):
+    def previously_stored_contact(cls, source, field, contact_id):
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)
-        q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), details['id'])        
+        q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), contact_id)        
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         if cs[0] == False:
            return False # is this right ...

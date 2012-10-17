@@ -288,7 +288,7 @@ class Facebook(Base):
         contacts = self.fetch_contacts()
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
         for contact in contacts:
-            if source != None and Base.previously_stored_contact(source, "facebook-id", contact) == True:
+            if source != None and Base.previously_stored_contact(source, "facebook-id", contact['id']) == True:
                 continue
             detailed_contact = self.fetch_contact(contact)
             eds_contact = self.create_contact(detailed_contact)
