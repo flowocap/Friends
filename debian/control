@@ -8,44 +8,61 @@ Build-Depends: debhelper (>= 9),
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/friends
 
+Package: friends
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         gir1.2-dee-1.0,
+         gir1.2-soup-2.4,
+         gir1.2-glib-2.0,
+         gir1.2-gdkpixbuf-2.0,
+         python3-dbus,
+         gir1.2-networkmanager-1.0,
+         gir1.2-signon-1.0,
+         gir1.2-soup-2.4
+Recommends: gir1.2-messagingmenu-1.0,
+           gir1.2-dbusmenu-glib-0.4,
+           gir1.2-unity-5.0
+Description: Social integration with the desktop
+ Provides social networking integration with the desktop
+
 Package: friends-facebook
 Architecture: all
 Depends: ${misc:Depends},
-         ${python3:Depends}
+         ${python3:Depends},
+         friends
 Description: Social integration with the desktop - Facebook
  Provides social networking integration with the desktop
 
 Package: friends-twitter
 Architecture: all
 Depends: ${misc:Depends},
-         ${python3:Depends}
+         ${python3:Depends},
+         friends
 Description: Social integration with the desktop - Twitter
  Provides social networking integration with the desktop
 
 Package: friends-identica
 Architecture: all
 Depends: ${misc:Depends},
-         ${python3:Depends}
+         ${python3:Depends},
+         friends
 Description: Social integration with the desktop - Identi.ca
  Provides social networking integration with the desktop
 
 Package: friends-foursquare
 Architecture: all
 Depends: ${misc:Depends},
-         ${python3:Depends}
+         ${python3:Depends},
+         friends
 Description: Social integration with the desktop - Foursquare
  Provides social networking integration with the desktop
 
 Package: friends-flickr
 Architecture: all
 Depends: ${misc:Depends},
-         ${python3:Depends}
+         ${python3:Depends},
+         friends
 Description: Social integration with the desktop - Flickr
  Provides social networking integration with the desktop
 
-Package: friends
-Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends}
-Description: Social integration with the desktop
- Provides social networking integration with the desktop
