@@ -18,6 +18,7 @@
 
 import sys
 from setuptools import setup, find_packages
+from glob import glob
 
 if sys.version_info[:2] < (3, 2):
     raise RuntimeError('Python 3.2 or newer required')
@@ -28,6 +29,10 @@ setup(
     version='0.1',
     packages=find_packages(),
     include_package_data=True,
+    data_files = [
+        (
+            sys.prefix + '/share/dbus-1/services', glob('data/*.service')
+        )],
     entry_points = {
         'console_scripts': ['friends-service = friends.main:main'],
         },
