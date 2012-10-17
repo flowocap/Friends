@@ -79,8 +79,12 @@ class AccountManager:
         self._callback()
 
     def add_new_account(self, account_service):
-        new_account = Account(account_service)
-        self._accounts[new_account.id] = new_account
+        try:
+            new_account = Account(account_service)
+            self._accounts[new_account.id] = new_account
+        except UnsupportedProtocolError as error:
+            log.info(error)
+
 
     def get_all(self):
         return self._accounts.values()

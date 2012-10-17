@@ -195,6 +195,15 @@ class TestAccountManager(unittest.TestCase):
         manager.add_new_account(self.account_service)
         self.assertIn('faker/than fake', manager._accounts)
 
+    def test_account_manager_add_new_account_unsupported(self):
+        mock = self.account_service.get_account()
+        mock.get_provider_name.return_value = 'no service'
+        def refresh():
+            pass
+        manager = AccountManager(refresh)
+        manager.add_new_account(mock.account_service)
+        self.assertNotIn('no service', manager._accounts)
+
     def test_account_manager_enabled_event(self):
         # Mimic a reaction to the enabled-event callback.
         refreshed = False
