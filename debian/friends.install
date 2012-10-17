@@ -1,4 +1,5 @@
 usr/bin
+usr/share
 usr/lib/python3/dist-packages/*.egg-info/*
 usr/lib/python3/dist-packages/friends/*.py
 usr/lib/python3/dist-packages/friends/service/*
