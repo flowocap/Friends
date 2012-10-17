@@ -112,11 +112,10 @@ class Controller:
         self.is_runnable = True
         for service in SERVICES:
             service_file = service + '.service'
-            template = resource_string('friends.testing',
+            template = resource_string('friends.service.templates',
                                        service_file + '.in')
             template = template.decode('utf-8')
-            service_contents = template.format(BINDIR=bindir,
-                                               TMPDIR=self.tempdir)
+            service_contents = template.format(BINDIR=bindir, ARGS='--test')
             service_path = os.path.join(self.tempdir, service_file)
             with open(service_path, 'w', encoding='utf-8') as fp:
                 fp.write(service_contents)
