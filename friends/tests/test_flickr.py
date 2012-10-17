@@ -145,6 +145,7 @@ friends.errors.AuthorizationError:\
         # AccessToken, but this fails.
         self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Logging in to Flickr
 No AccessToken in Flickr session:\
  {'TokenSecret': 'abc', 'username': 'Bob Dobbs', 'user_nsid': 'bob'}
 Flickr: No NSID available
@@ -165,6 +166,7 @@ friends.errors.AuthorizationError:\
         # AccessToken, but this fails.
         self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Logging in to Flickr
 No Flickr authentication results received.
 Flickr: No NSID available
 Friends operation exception:
