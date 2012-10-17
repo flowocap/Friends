@@ -21,8 +21,10 @@ Depends: ${misc:Depends},
          gir1.2-signon-1.0,
          gir1.2-soup-2.4
 Recommends: gir1.2-messagingmenu-1.0,
-           gir1.2-dbusmenu-glib-0.4,
-           gir1.2-unity-5.0
+            gir1.2-dbusmenu-glib-0.4,
+            gir1.2-unity-5.0,
+            friends-facebook,
+            friends-twitter
 Description: Social integration with the desktop
  Provides social networking integration with the desktop
 
