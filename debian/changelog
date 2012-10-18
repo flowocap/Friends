@@ -1,3 +1,9 @@
+friends (0.0+r13) quantal; urgency=low
+
+  * rev 13 from trunk
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 18 Oct 2012 16:05:27 -0400
+
 friends (0.0+r8) quantal; urgency=low
 
   * Initial package
