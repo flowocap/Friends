@@ -23,7 +23,7 @@ cleanly importable with no requirements on non-stdlib available packages
 
 __all__ = [
     'for_tests',
-    'into_system',
+    'install_service_files',
     ]
 
 
@@ -32,6 +32,9 @@ import sys
 
 from distutils.cmd import Command
 from pkg_resources import resource_listdir, resource_string
+
+
+COMMASPACE = ', '
 
 
 def _do_basic_install(destdir, service_files, args):
@@ -47,20 +50,32 @@ def _do_basic_install(destdir, service_files, args):
             fp.write(contents)
 
 
-class into_system(Command):
+class install_service_files(Command):
     description = 'Install the DBus service files'
-    user_options = []
+
+    command_consumes_arguments = True
+    user_options = [
+        ('root', 'd', 'Root directory containing share/dbus-1/services/'),
+        ]
 
     def initialize_options(self):
-        pass
+        # distutils is insane.  We must set self.root even though the
+        # arguments will get passed into .run() via self.args.
+        self.args = None
+        self.root = None
+
     def finalize_options(self):
         pass
 
     def run(self):
+        if len(self.args) != 1:
+            raise RuntimeError(
+                'Bad arguments: {}'.format(COMMASPACE.join(self.args)))
+        root_dir = self.args[0]
         # Make sure the destination directory exists.  Generally it will when
         # installed in a real system, but won't when installed in a virtualenv
         # (what about a package build?).
-        destdir = os.path.join(sys.prefix, 'share', 'dbus-1', 'services')
+        destdir = os.path.join(root_dir, 'share', 'dbus-1', 'services')
         os.makedirs(destdir, exist_ok=True)
         service_files = [
             filename

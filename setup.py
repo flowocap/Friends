@@ -36,7 +36,8 @@ setup(
     entry_points = {
         'console_scripts': ['friends-service = friends.main:main'],
         'distutils.commands': [
-            'install_service_files = friends.utils.install:into_system',
+            'install_service_files = '
+                'friends.utils.install:install_service_files',
             ],
         },
     test_requires = [
