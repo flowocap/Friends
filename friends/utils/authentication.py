@@ -25,6 +25,7 @@ import logging
 from threading import Lock
 
 from gi.repository import GObject, Signon
+GObject.threads_init(None)
 
 
 class Authentication:
