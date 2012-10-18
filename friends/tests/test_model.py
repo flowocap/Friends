@@ -26,8 +26,15 @@ __all__ = [
 
 import unittest
 
-from friends.utils.model import Model, first_run, stale_schema
+from friends.utils.model import Model, first_run, stale_schema, persist_model
 from gi.repository import Dee
+
+
+try:
+    # Python 3.3
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class TestModel(unittest.TestCase):
@@ -44,3 +51,9 @@ class TestModel(unittest.TestCase):
         if first_run or stale_schema:
             # Then the Model should be brand-new and empty
             self.assertEqual(Model.get_n_rows(), 0)
+
+    @mock.patch('friends.utils.model._resource_manager')
+    def test_persistence(self, resource_manager):
+        persist_model()
+        resource_manager.store.assert_called_once_with(
+            Model, 'com.canonical.Friends.Streams')
