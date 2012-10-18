@@ -48,6 +48,8 @@ import subprocess
 from distutils.spawn import find_executable
 from pkg_resources import resource_string
 
+from friends.utils.install import for_tests
+
 
 SERVICES = [
     'com.canonical.Friends.Connection',
@@ -67,8 +69,14 @@ class Controller:
         self.config_path = None
         self.old_envar = None
         self.is_runnable = False
+        self.dbus_daemon_exe = None
 
     def _setup(self):
+        # If we can't find the dbus-daemon executable, there's no way we can
+        # run the dbus tests.
+        self.dbus_daemon_exe = find_executable('dbus-daemon')
+        if self.dbus_daemon_exe is None:
+            return
         # Set up the dbus-daemon session configuration file.
         template = resource_string('friends.testing', 'dbus-session.conf.in')
         # resource_string() returns a bytes, but we need a string.
@@ -109,16 +117,8 @@ class Controller:
         # doesn't exist on Ubuntu as of 12.10.
         if not os.path.exists(os.path.join(bindir, 'activate')):
             return
+        for_tests(self.tempdir)
         self.is_runnable = True
-        for service in SERVICES:
-            service_file = service + '.service'
-            template = resource_string('friends.service.templates',
-                                       service_file + '.in')
-            template = template.decode('utf-8')
-            service_contents = template.format(BINDIR=bindir, ARGS='--test')
-            service_path = os.path.join(self.tempdir, service_file)
-            with open(service_path, 'w', encoding='utf-8') as fp:
-                fp.write(service_contents)
 
     def start(self):
         """Start the Friends service in a subprocess.
@@ -128,14 +128,11 @@ class Controller:
         to talk to our test instance of the service (rather than any similar
         service running normally on the development desktop).
         """
-        daemon_exe = find_executable('dbus-daemon')
-        if daemon_exe is None:
-            raise RuntimeError('Cannot find the `dbus-daemon` executable.')
         self._setup()
         if not self.is_runnable:
             return
         dbus_args = [
-            daemon_exe,
+            self.dbus_daemon_exe,
             '--fork',
             '--config-file=' + self.config_path,
             # Return the address and pid on stdout.

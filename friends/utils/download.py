@@ -92,7 +92,6 @@ class Downloader:
         self.headers = ({} if headers is None else headers)
         self._rate_limiter = (RateLimiter() if rate_limiter is None
                               else rate_limiter)
-        # XXX Proxy handling.
 
     def _build_request(self):
         """Return a libsoup message, with all the right headers.
