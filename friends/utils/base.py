@@ -356,6 +356,7 @@ class Base:
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         if cs[0] == False:
            return False # is this right ...
+        print("search results length = ", len(cs[1]))
         return len(cs[1]) > 0                        
 
     @classmethod

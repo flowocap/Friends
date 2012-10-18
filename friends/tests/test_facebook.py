@@ -23,7 +23,7 @@ __all__ = [
 import unittest
 
 from gi.repository import Dee
-from gi.repository import EBook, EDataServer, Gio
+from gi.repository import EBook, EDataServer, Gio, GLib
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
@@ -46,6 +46,11 @@ TestModel.set_schema_full(COLUMN_TYPES)
 FACEBOOK_TEST_ADDRESS_BOOK = "fb-contacts-test_address-book"
 
 @mock.patch('friends.utils.download._soup', mock.Mock())
+
+def quit_main_loop(loop):
+    loop.quit()
+    return False
+
 class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
@@ -57,6 +62,22 @@ class TestFacebook(unittest.TestCase):
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.facebook')
         # Create a new address book for the tests
+        ml = GLib.MainLoop()
+        GLib.idle_add(self.create_test_address_book, ml)
+        ml.run()        
+
+    def tearDown(self):
+        # Stop log mocking, and return sub-thread operation to asynchronous.
+        self.log_mock.stop()
+        Base._SYNCHRONIZE = False
+        # Reset the database.
+        TestModel.clear()
+
+        ml = GLib.MainLoop()
+        GLib.idle_add(self.delete_test_address_book, ml)
+        ml.run()        
+
+    def create_test_address_book(self, loop):
         self.registry = EDataServer.SourceRegistry.new_sync(None)  
         source = EDataServer.Source.new(None, None)
         source.set_display_name(FACEBOOK_TEST_ADDRESS_BOOK)
@@ -69,14 +90,9 @@ class TestFacebook(unittest.TestCase):
         else:
             self.source_uid = None
             print("Can't create new source for our test address book")
+        GLib.timeout_add_seconds(1, quit_main_loop, loop)
 
-
-    def tearDown(self):
-        # Stop log mocking, and return sub-thread operation to asynchronous.
-        self.log_mock.stop()
-        Base._SYNCHRONIZE = False
-        # Reset the database.
-        TestModel.clear()
+    def delete_test_address_book(self, loop):
         # Delete the test source
         if(self.source_uid is not None):
             source = self.registry.ref_source(self.source_uid)
@@ -85,8 +101,7 @@ class TestFacebook(unittest.TestCase):
             else:
                 res = source.remove_sync(Gio.Cancellable())
                 print("Deleted previous found source - deletion result = %s", str(res))
-
-
+        loop.quit()
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
@@ -361,11 +376,15 @@ Facebook error (190 OAuthException): Bad access token
 
     def test_push_to_eds(self, *mocks):
         # Receive the users friends.
+        ml = GLib.MainLoop()
+        GLib.idle_add(self._test_push_to_eds, ml)
+        ml.run()
+
+    def _test_push_to_eds(self,  ml):
         bare_contact = {"name": "Lucy Baron", "id": "555555555"}
         eds_contact = self.protocol.create_contact(bare_contact) 
         self.protocol._push_to_eds(FACEBOOK_TEST_ADDRESS_BOOK, eds_contact)
         source = self.registry.ref_source(self.source_uid)
-        self.assertEqual(self.protocol.previously_stored_contact(source, "facebook-id", bare_contact['id']), True)
-
-
-
+        print("is source none ", str(source == None))
+        self.assertEqual(Base.previously_stored_contact(source, "facebook-id", bare_contact['id']), True)
+        ml.quit()
