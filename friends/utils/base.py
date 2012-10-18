@@ -29,7 +29,7 @@ import threading
 
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
-from gi.repository import EDataServer, EBook
+from gi.repository import EDataServer, EBook, Gio
 
 IGNORED = string.punctuation + string.whitespace
 SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)
@@ -313,7 +313,7 @@ class Base:
             log.debug('{} UID: {}'.format(protocol, self._account.user_id))
 
     def _push_to_eds(self, online_service, contact):
-        source_match = Base.get_eds_source(online_service)
+        source_match = self._get_eds_source(online_service)
         if source_match == None:
             new_source_uid = Base.create_eds_source(online_service)
             if new_source_uid == None:
@@ -356,7 +356,7 @@ class Base:
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         if cs[0] == False:
            return False # is this right ...
-        return len(cs[1] > 0)                        
+        return len(cs[1]) > 0                        
 
     @classmethod
     def get_features(cls):

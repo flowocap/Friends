@@ -37,7 +37,7 @@ PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
 LIMIT = 100
-FACEBOOK_ADDRESS_BOOK = "gwibber-facebook-contacts"
+FACEBOOK_ADDRESS_BOOK = "friends-facebook-contacts"
 
 log = logging.getLogger('friends.service')
 

@@ -11,6 +11,8 @@ Installing Friends
     * gir1.2-signon-1.0
     * gir1.2-soup-2.4
     * gir1.2-soup-gnome-2.4
+    * gir1.2-ebook-1.2    
+    * gir1.2-edataserver-1.2    
     * python (3.2)
     * python-distutils-extra
     * python-dbus (0.80.2)
