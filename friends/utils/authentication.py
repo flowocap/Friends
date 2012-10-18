@@ -59,5 +59,6 @@ class Authentication:
             self.log.error('Got authentication error: {}'.format(error.message))
         else:
             self._reply = reply
+        self.log.debug('Login completed')
         if self._lock.locked():
             self._lock.release()
