@@ -43,7 +43,6 @@ IDS_IDX = COLUMN_INDICES['message_ids']
 # This is a mapping from Dee.SharedModel row keys to the DeeModelIters
 # representing the rows matching those keys.  It is used for quickly finding
 # duplicates when we want to insert new rows into the model.
-# TODO can these be replaced by Dee.TreeIndex? or Dee.TextAnalyzer? ask mhr3
 _seen_messages = {}
 _seen_ids = {}
 
