@@ -53,6 +53,7 @@ class Dispatcher(dbus.service.Object):
         signaler.add_signal('ConnectionOnline', self._on_connection_online)
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)
         self._on_connection_online()
+        self.Refresh()
 
     def _on_connection_online(self):
         if not self._timer_id:

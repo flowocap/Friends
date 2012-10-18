@@ -22,8 +22,9 @@ __all__ = [
 
 import logging
 
+from threading import Lock
+
 from gi.repository import GObject, Signon
-GObject.threads_init(None)
 
 
 class Authentication:
@@ -34,24 +35,28 @@ class Authentication:
                     else log)
         self._reply = None
         self._authenticating = False
+        self._lock = Lock()
+        self._lock.acquire()
 
     def login(self):
         auth = self.account.auth
         self.auth_session = Signon.AuthSession.new(auth.id, auth.method)
         self._authenticating = True
-        self._loop = GObject.MainLoop()
         self.auth_session.process(
             auth.parameters, auth.mechanism,
             self._login_cb, None)
         if self._authenticating:
-            self._loop.run()
+            # We're building a synchronous API on top of an inherently
+            # async library, so we need to block this thread until the
+            # callback gets called to give us the response to return.
+            self._lock.acquire()
         return self._reply
 
     def _login_cb(self, session, reply, error, user_data):
         self._authenticating = False
         if error:
-            self.log.error('Got authentication error: {}', error.message)
+            self.log.error('Got authentication error: {}'.format(error.message))
         else:
             self._reply = reply
-        self.log.debug('Login completed')
-        self._loop.quit()
+        if self._lock.locked():
+            self._lock.release()
