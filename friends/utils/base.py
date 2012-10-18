@@ -103,15 +103,11 @@ def _make_key(row):
     return EMPTY_STRING.join(char for char in key if char not in IGNORED)
 
 
-# TODO ask mhr3 if there might be some more efficient way of achieving
-# an index that will help us keep duplicates out of the Model.
 def _initialize_caches():
     """Populate _seen_ids and _seen_messages with Model data.
 
     Our Dee.SharedModel persists across instances, so we need to
     populate these caches at launch.
-
-    Scroll down to Base._publish to see how these dicts are used.
     """
     for i in range(Model.get_n_rows()):
         row_iter = Model.get_iter_at_row(i)

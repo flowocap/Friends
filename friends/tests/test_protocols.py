@@ -146,14 +146,38 @@ class TestProtocols(unittest.TestCase):
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_shared_model_successfully_mocked(self):
-        self.assertEqual(Model.get_n_rows(), 0)
+        count = Model.get_n_rows()
         self.assertEqual(TestModel.get_n_rows(), 0)
         base = Base(FakeAccount())
         base._publish('alpha', message='a')
         base._publish('beta', message='b')
         base._publish('omega', message='c')
-        self.assertEqual(Model.get_n_rows(), 0)
+        self.assertEqual(Model.get_n_rows(), count)
         self.assertEqual(TestModel.get_n_rows(), 3)
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base._seen_messages', {})
+    def test_seen_dicts_successfully_instantiated(self):
+        from friends.utils.base import _seen_ids, _seen_messages
+        from friends.utils.base import _initialize_caches
+        self.assertEqual(TestModel.get_n_rows(), 0)
+        base = Base(FakeAccount())
+        base._publish('alpha', sender='a', message='a')
+        base._publish('beta', sender='a', message='a')
+        base._publish('omega', sender='a', message='b')
+        self.assertEqual(TestModel.get_n_rows(), 2)
+        _seen_ids.clear()
+        _seen_messages.clear()
+        _initialize_caches()
+        self.assertEqual(sorted(list(_seen_messages.keys())), ['aa', 'ab'])
+        self.assertEqual(sorted(list(_seen_ids.keys())),
+                         [('base', 'faker/than fake', 'alpha'),
+                          ('base', 'faker/than fake', 'beta'),
+                          ('base', 'faker/than fake', 'omega')])
+        # These two point at the same row because sender+message are identical
+        self.assertEqual(_seen_ids[('base', 'faker/than fake', 'alpha')],
+                         _seen_ids[('base', 'faker/than fake', 'beta')])
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_invalid_argument(self):

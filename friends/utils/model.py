@@ -118,9 +118,16 @@ _resource_manager = Dee.ResourceManager.get_default()
 Model = _resource_manager.load(MODEL_DBUS_NAME)
 
 
+first_run = Model is None
+if not first_run:
+    stale_schema = Model.get_schema() != list(COLUMN_TYPES)
+else:
+    stale_schema = True
+
+
 # If this is first run, or the schema has changed since last run,
 # we'll need to make a new, empty Model.
-if Model is None or Model.get_schema() != list(COLUMN_TYPES):
+if first_run or stale_schema:
     log.debug('Starting a new, empty Dee.SharedModel.')
     Model = Dee.SharedModel.new(MODEL_DBUS_NAME)
     Model.set_schema_full(COLUMN_TYPES)
@@ -130,3 +137,8 @@ def persist_model():
     """Write our Dee.SharedModel instance to disk."""
     log.debug('Saving Dee.SharedModel with {} rows.'.format(len(Model)))
     _resource_manager.store(Model, MODEL_DBUS_NAME)
+
+# Calling this from here ensures that schema changes are persisted
+# ASAP, but we also call it periodically in the dispatcher in order to
+# ensure data is saved often in case of power loss.
+persist_model()
