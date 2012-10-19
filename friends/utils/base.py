@@ -105,9 +105,10 @@ def _make_key(row):
 class _OperationThread(threading.Thread):
     """Catch, log, and swallow all exceptions in the sub-thread."""
 
-    def __init__(self, barrier, *args, **kws):
+    def __init__(self, barrier, *args, identifier=None, **kws):
         # The barrier will only be provided when the system is under test.
         self._barrier = barrier
+        self._id = identifier
         super().__init__(*args, **kws)
 
     # Always run these as daemon threads, so they don't block the main thread,
@@ -115,6 +116,7 @@ class _OperationThread(threading.Thread):
     daemon = True
 
     def run(self):
+        log.debug('{} is starting in a new thread.'.format(self._id))
         try:
             super().run()
         except Exception:
@@ -124,6 +126,7 @@ class _OperationThread(threading.Thread):
         # the results, can then proceed.
         if self._barrier is not None:
             self._barrier.wait()
+        log.debug('{} has completed, thread exiting.'.format(self._id))
 
 
 class Base:
@@ -160,6 +163,8 @@ class Base:
         # thread to assert the results of the sub-thread.
         barrier = (threading.Barrier(parties=2) if Base._SYNCHRONIZE else None)
         _OperationThread(barrier,
+                         identifier='{}.{}'.format(self.__class__.__name__,
+                                                   operation),
                          target=method, args=args, kwargs=kwargs).start()
         # When under synchronous testing, wait until the sub-thread completes
         # before returning.
