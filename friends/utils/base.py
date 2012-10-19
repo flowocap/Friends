@@ -304,7 +304,7 @@ class Base:
         log.debug('{} to {}'.format(
                 'Re-authenticating' if old_token else 'Logging in', protocol))
 
-        result = Authentication(self._account, log).login()
+        result = Authentication(self._account).login()
         if result is None:
             log.error(
                 'No {} authentication results received.'.format(protocol))

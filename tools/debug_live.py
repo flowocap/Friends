@@ -25,14 +25,14 @@ import logging
 
 sys.path.insert(0, '.')
 
-# Print all logs for debugging purposes
-logging.basicConfig(stream=sys.stderr, level=1)
-
 from gi.repository import GObject
 from friends.utils.account import AccountManager
 from friends.utils.base import Base
 from friends.utils.model import Model
+from friends.utils.logging import CSL_FORMAT
 
+# Print all logs for debugging purposes
+logging.basicConfig(stream=sys.stderr, level=1, format=CSL_FORMAT, style='{')
 
 log = logging.getLogger(sys.argv[0])
 
@@ -43,7 +43,7 @@ def refresh(account, args):
 
 def row_added(model, itr):
     row = model.get_row(itr)
-    log.info(row)
+    print(row)
     log.info('ROWS: {}'.format(len(model)))
     print()
 

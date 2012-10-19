@@ -88,9 +88,5 @@ def main():
 
 
 if __name__ == '__main__':
-    import sys
-    # Print all logs for debugging purposes
-    logging.basicConfig(stream=sys.stderr, level=1)
-
     # Use this with `python3 -m friends.main`
     main()

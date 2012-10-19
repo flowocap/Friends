@@ -27,10 +27,12 @@ from gi.repository import GObject, Signon
 GObject.threads_init(None)
 
 
+log = logging.getLogger(__name__)
+
+
 class Authentication:
-    def __init__(self, account, log=None):
+    def __init__(self, account):
         self.account = account
-        self.log = log or logging.getLogger(__name__)
         self._reply = None
 
     def login(self):
@@ -51,5 +53,5 @@ class Authentication:
     def _login_cb(self, session, reply, error, user_data):
         self._reply = reply
         if error:
-            self.log.error('Got authentication error: {}'.format(error.message))
-        self.log.debug('Login completed')
+            log.error('Got authentication error: {}'.format(error.message))
+        log.debug('Login completed')

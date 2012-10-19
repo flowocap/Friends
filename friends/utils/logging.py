@@ -26,8 +26,21 @@ from gi.repository import GLib
 LOG_FILENAME = os.path.join(
     os.path.realpath(os.path.abspath(GLib.get_user_cache_dir())),
     'friends', 'friends.log')
-LOG_FORMAT = '{asctime} - {name:12} {threadName:14}: {levelname:8} - {message}'
-CSL_FORMAT = '{name:12} {threadName:12}: {levelname:8} {message}'
+LOG_FORMAT = '{levelname:5}  {threadName:10}  {asctime}  {name:18}  {message}'
+CSL_FORMAT = LOG_FORMAT.replace('  {asctime}', '')
+
+
+def find_modules(prefix, result=[]):
+    """Recursively searches for modules for which to enable logging."""
+    for name in os.listdir(prefix):
+        path = os.path.join(prefix, name)
+        base, ext = os.path.splitext(name)
+        if ext == '.py':
+            result.append(
+                '{}.{}'.format(prefix, base).replace(os.sep, '.'))
+        elif os.path.isdir(path):
+            find_modules(path, result)
+    return result
 
 
 def initialize(console=False, debug=False, filename=None):
@@ -48,11 +61,11 @@ def initialize(console=False, debug=False, filename=None):
     except OSError as error:
         if error.errno != errno.EEXIST:
             raise
-    log = logging.getLogger(__name__)
-    if debug:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
+
+    # Set a global default of no logging. This is a workaround for a bug
+    # where we were getting duplicated log records.
+    logging.basicConfig(filename='/dev/null', level=100)
+
     # Install a rotating log file handler.  XXX There should be a
     # configuration file rather than hard-coded values.
     text_handler = logging.handlers.RotatingFileHandler(
@@ -60,9 +73,18 @@ def initialize(console=False, debug=False, filename=None):
     # Use str.format() style format strings.
     text_formatter = logging.Formatter(LOG_FORMAT, style='{')
     text_handler.setFormatter(text_formatter)
-    log.addHandler(text_handler)
-    if console:
-        console_handler = logging.StreamHandler()
-        console_formatter = logging.Formatter(CSL_FORMAT, style='{')
-        console_handler.setFormatter(console_formatter)
-        log.addHandler(console_handler)
+
+    console_handler = logging.StreamHandler()
+    console_formatter = logging.Formatter(CSL_FORMAT, style='{')
+    console_handler.setFormatter(console_formatter)
+
+    for log_name in find_modules('friends'):
+        log = logging.getLogger(log_name)
+        if debug:
+            log.setLevel(logging.DEBUG)
+        else:
+            log.setLevel(logging.INFO)
+        if console:
+            log.addHandler(console_handler)
+        else:
+            log.addHandler(text_handler)

@@ -62,6 +62,11 @@ class Logger:
     def error(self, message, *args):
         self.error_messages.append(message.format(*args))
 
+    reset = __init__
+
+
+logger = Logger()
+
 
 class TestAuthentication(unittest.TestCase):
     """Test authentication."""
@@ -72,28 +77,29 @@ class TestAuthentication(unittest.TestCase):
         self.account.auth.method = 'some method'
         self.account.auth.parameters = 'change me'
         self.account.auth.mechanism = ['whatever']
-        self.logger = Logger()
+        logger.reset()
 
+    @mock.patch('friends.utils.authentication.log', logger)
     @mock.patch('friends.utils.authentication.Signon', FakeSignon)
     def test_successful_login(self):
         # Prevent an error in the callback.
         self.account.auth.parameters = False
-        authenticator = Authentication(self.account, self.logger)
+        authenticator = Authentication(self.account)
         reply = authenticator.login()
         self.assertEqual(reply, 'auth reply')
-        self.assertEqual(self.logger.debug_messages,
-                         ['Login completed'])
-        self.assertEqual(self.logger.error_messages, [])
+        self.assertEqual(logger.debug_messages, ['Login completed'])
+        self.assertEqual(logger.error_messages, [])
 
+    @mock.patch('friends.utils.authentication.log', logger)
     @mock.patch('friends.utils.authentication.Signon', FakeSignon)
     def test_failed_login(self):
         # Trigger an error in the callback.
         class Error:
             message = 'who are you?'
         self.account.auth.parameters = Error
-        authenticator = Authentication(self.account, self.logger)
+        authenticator = Authentication(self.account)
         reply = authenticator.login()
         self.assertEqual(reply, 'auth reply')
-        self.assertEqual(self.logger.debug_messages, ['Login completed'])
-        self.assertEqual(self.logger.error_messages,
+        self.assertEqual(logger.debug_messages, ['Login completed'])
+        self.assertEqual(logger.error_messages,
                          ['Got authentication error: who are you?'])
