@@ -205,8 +205,8 @@ class LogMock:
         self.empty()
         for patcher in self._patchers:
             patcher.stop()
-        # Get rid of the friends.test logger.
-        del logging.Logger.manager.loggerDict['friends.test']
+        # Get rid of the mock logger.
+        del logging.Logger.manager.loggerDict[__name__]
 
     def empty(self, trim=True):
         """Return all the log messages written to this log.
