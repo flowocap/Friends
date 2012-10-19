@@ -21,8 +21,7 @@ __all__ = [
 
 
 import logging
-
-from threading import Lock
+import time
 
 from gi.repository import GObject, Signon
 GObject.threads_init(None)
@@ -33,10 +32,6 @@ class Authentication:
         self.account = account
         self.log = log or logging.getLogger('friends.service')
         self._reply = None
-        self._lock = Lock()
-        # First call to acquire() returns immediately, but sets up the
-        # lock so that our *next* call will block this thread.
-        self._lock.acquire()
 
     def login(self):
         auth = self.account.auth
@@ -44,11 +39,13 @@ class Authentication:
         self.auth_session.process(
             auth.parameters, auth.mechanism,
             self._login_cb, None)
-        if self._reply is None:
+        timeout = 30
+        while self._reply is None and timeout > 0:
             # We're building a synchronous API on top of an inherently
             # async library, so we need to block this thread until the
             # callback gets called to give us the response to return.
-            self._lock.acquire()
+            time.sleep(1)
+            timeout -= 1
         return self._reply
 
     def _login_cb(self, session, reply, error, user_data):
@@ -56,5 +53,3 @@ class Authentication:
         if error:
             self.log.error('Got authentication error: {}'.format(error.message))
         self.log.debug('Login completed')
-        if self._lock.locked():
-            self._lock.release()
