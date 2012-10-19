@@ -17,7 +17,9 @@
 #setuptools.use_setuptools()
 
 import sys
+
 from setuptools import setup, find_packages
+
 
 if sys.version_info[:2] < (3, 2):
     raise RuntimeError('Python 3.2 or newer required')
@@ -28,8 +30,15 @@ setup(
     version='0.1',
     packages=find_packages(),
     include_package_data=True,
+    package_data = {
+        'friends.service.templates': ['*.service.in'],
+        },
     entry_points = {
         'console_scripts': ['friends-service = friends.main:main'],
+        'distutils.commands': [
+            'install_service_files = '
+                'friends.utils.install:install_service_files',
+            ],
         },
     test_requires = [
         'mock',
