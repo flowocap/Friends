@@ -44,7 +44,7 @@ class Authentication:
             # We're building a synchronous API on top of an inherently
             # async library, so we need to block this thread until the
             # callback gets called to give us the response to return.
-            time.sleep(1)
+            time.sleep(0.5)
             timeout -= 1
         return self._reply
 

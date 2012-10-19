@@ -20,6 +20,7 @@ It is not intended for use with an installed friends package.
 """
 
 import sys
+import time
 import logging
 
 sys.path.insert(0, '.')
@@ -33,21 +34,18 @@ from friends.utils.base import Base
 from friends.utils.model import Model
 
 
-# Ensure synchronous operation of Base.__call__() for easier testing.
-Base._SYNCHRONIZE = True
+log = logging.getLogger(sys.argv[0])
 
 
-def refresh(account):
-    print()
-    print('#' * 80)
-    print('Performing "{}" operation!'.format(args[0]))
-    print('#' * 80)
-
+def refresh(account, args):
     account.protocol(*args)
-    for row in Model:
-        print([col for col in row])
-        print()
-    print('ROWS: ', len(Model))
+
+
+def row_added(model, itr):
+    row = model.get_row(itr)
+    log.info(row)
+    log.info('ROWS: {}'.format(len(model)))
+    print()
 
 
 if __name__ == '__main__':
@@ -60,14 +58,15 @@ if __name__ == '__main__':
     found = False
     a = AccountManager(None)
 
+    Model.connect('row-added', row_added)
+
     for account_id, account in a._accounts.items():
         if account_id.endswith(protocol):
             found = True
-            refresh(account)
+            refresh(account, args)
             GObject.timeout_add_seconds(300, refresh, account)
 
     if not found:
-        print('No {} account found in your Ubuntu Online Accounts!'.format(
-            protocol))
+        log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
     else:
         GObject.MainLoop().run()
