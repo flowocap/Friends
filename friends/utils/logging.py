@@ -86,5 +86,4 @@ def initialize(console=False, debug=False, filename=None):
             log.setLevel(logging.INFO)
         if console:
             log.addHandler(console_handler)
-        else:
-            log.addHandler(text_handler)
+        log.addHandler(text_handler)

@@ -35,17 +35,17 @@ class TestLogging(unittest.TestCase):
     def setUp(self):
         # Preserve the original logger, but restore the global logging system
         # to pre-initialized state.
-        self._logger = logging.getLogger('friends.service')
-        del logging.Logger.manager.loggerDict['friends.service']
+        self._logger = logging.getLogger(__name__)
+        del logging.Logger.manager.loggerDict[__name__]
 
     def tearDown(self):
         # Restore the original logger.
-        logging.Logger.manager.loggerDict['friends.service'] = self._logger
+        logging.Logger.manager.loggerDict[__name__] = self._logger
 
     def test_logger_has_filehandler(self):
         initialize()
-        # The top level 'friends.service' logger should be available.
-        log = logging.getLogger('friends.service')
+        # The top level __name__ logger should be available.
+        log = logging.getLogger(__name__)
         # Try to find the file opened by the default file handler.
         filenames = []
         for handler in log.handlers:
@@ -67,7 +67,7 @@ class TestLogging(unittest.TestCase):
         logfile = os.path.join(tempdir, 'friends-test.log')
         initialize(filename=logfile)
         # Get another handle on the log file.
-        log = logging.getLogger('friends.service')
+        log = logging.getLogger(__name__)
         # Try to find the file opened by the default file handler.
         filenames = self._get_log_filename(log)
         self.assertEqual(len(filenames), 1)
@@ -85,7 +85,7 @@ class TestLogging(unittest.TestCase):
         # ignore that, but check everything else.
         self.assertRegex(
             lines[0],
-            r'friends.service\s+MainThread\s+:\s+INFO\s+-\s+'
+            r'INFO\s+MainThread.*friends.tests.test_logging\s+'
             r'friends at your service')
 
     def test_console_logger(self):
@@ -94,7 +94,7 @@ class TestLogging(unittest.TestCase):
         self.addCleanup(shutil.rmtree, tempdir)
         logfile = os.path.join(tempdir, 'friends-test.log')
         initialize(console=True, filename=logfile)
-        log = logging.getLogger('friends.service')
+        log = logging.getLogger(__name__)
         # Can we do better than testing that there are now two handlers for
         # the logger?
         self.assertEqual(2, sum(1 for handler in log.handlers))
@@ -106,7 +106,7 @@ class TestLogging(unittest.TestCase):
         logfile = os.path.join(tempdir, 'friends-test.log')
         initialize(filename=logfile)
         # Get another handle on the log file.
-        log = logging.getLogger('friends.service')
+        log = logging.getLogger(__name__)
         # Try to find the file opened by the default file handler.
         filenames = self._get_log_filename(log)
         self.assertEqual(len(filenames), 1)
@@ -123,7 +123,7 @@ class TestLogging(unittest.TestCase):
         logfile = os.path.join(tempdir, 'friends-test.log')
         initialize(filename=logfile, debug=True)
         # Get another handle on the log file.
-        log = logging.getLogger('friends.service')
+        log = logging.getLogger(__name__)
         # Try to find the file opened by the default file handler.
         filenames = self._get_log_filename(log)
         self.assertEqual(len(filenames), 1)
@@ -139,5 +139,5 @@ class TestLogging(unittest.TestCase):
         # ignore that, but check everything else.
         self.assertRegex(
             lines[0],
-            r'friends.service\s+MainThread\s+:\s+DEBUG\s+-\s+'
+            r'DEBUG\s+MainThread.*friends.tests.test_logging\s+'
             r'friends is ready')
