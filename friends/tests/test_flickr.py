@@ -71,12 +71,14 @@ class TestFlickr(unittest.TestCase):
         with mock.patch.object(self.protocol, '_get_nsid', return_value=None):
             self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
 Flickr: No NSID available
 Friends operation exception:
  Traceback (most recent call last):
  ...
 friends.errors.AuthorizationError:\
  No Flickr user id available (account: faker/than fake)
+Flickr.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',
@@ -90,7 +92,10 @@ friends.errors.AuthorizationError:\
         # AuthorizationError.
         self.protocol('receive')
         # No error messages.
-        self.assertEqual(self.log_mock.empty(), '')
+        self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
+Flickr.receive has completed, thread exiting.
+""")
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
@@ -108,11 +113,13 @@ friends.errors.AuthorizationError:\
                                side_effect=side_effect):
             self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
 Friends operation exception:
  Traceback (most recent call last):
  ...
 friends.errors.AuthorizationError:\
  No Flickr user id available (account: faker/than fake)
+Flickr.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',
@@ -129,7 +136,10 @@ friends.errors.AuthorizationError:\
                                side_effect=side_effect):
             self.protocol('receive')
         # No error message.
-        self.assertEqual(self.log_mock.empty(), '')
+        self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
+Flickr.receive has completed, thread exiting.
+""")
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
@@ -145,6 +155,7 @@ friends.errors.AuthorizationError:\
         # AccessToken, but this fails.
         self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
 Logging in to Flickr
 No AccessToken in Flickr session:\
  {'TokenSecret': 'abc', 'username': 'Bob Dobbs', 'user_nsid': 'bob'}
@@ -154,6 +165,7 @@ Friends operation exception:
  ...
 friends.errors.AuthorizationError:\
  No Flickr user id available (account: faker/than fake)
+Flickr.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',
@@ -166,6 +178,7 @@ friends.errors.AuthorizationError:\
         # AccessToken, but this fails.
         self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
 Logging in to Flickr
 No Flickr authentication results received.
 Flickr: No NSID available
@@ -174,6 +187,7 @@ Friends operation exception:
  ...
 friends.errors.AuthorizationError:\
  No Flickr user id available (account: faker/than fake)
+Flickr.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',

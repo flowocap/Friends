@@ -93,7 +93,7 @@ class TestAuthentication(unittest.TestCase):
         self.account.auth.parameters = Error
         authenticator = Authentication(self.account, self.logger)
         reply = authenticator.login()
-        self.assertIsNone(reply)
+        self.assertEqual(reply, 'auth reply')
         self.assertEqual(self.logger.debug_messages, ['Login completed'])
         self.assertEqual(self.logger.error_messages,
                          ['Got authentication error: who are you?'])

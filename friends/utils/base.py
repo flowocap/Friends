@@ -121,12 +121,12 @@ class _OperationThread(threading.Thread):
             super().run()
         except Exception:
             log.exception('Friends operation exception:\n')
+        log.debug('{} has completed, thread exiting.'.format(self._id))
         # If the system is under test, indicate that we've reached the
         # barrier, so that the main thread, i.e. the test thread waiting for
         # the results, can then proceed.
         if self._barrier is not None:
             self._barrier.wait()
-        log.debug('{} has completed, thread exiting.'.format(self._id))
 
 
 class Base:
