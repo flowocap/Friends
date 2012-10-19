@@ -234,3 +234,17 @@ class LogMock:
                 args.append(record.exc_text)
             print(*args, file=output)
         return output.getvalue()
+
+class EDSBookClientMock:
+    """A Mocker object to simulate use of BookClient
+    """
+    def __init__(self):
+        pass
+        
+    def open_sync(val1, val2):
+        pass
+
+    def add_contact_sync(contact, cancellable):
+        return True
+
+

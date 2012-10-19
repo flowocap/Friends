@@ -230,11 +230,9 @@ class Facebook(Base):
         access_token = self._get_access_token()
         contacts = []
         url = ME_URL + '/friends'
-        # TODO:
-        # Not so sure if we need to limit this to a 100
-        # The examples on the site limit to 5000
         params = dict(access_token=access_token,
                       limit=LIMIT)
+        print("HERE")
         # Now access Facebook and follow pagination until we have at least
         # LIMIT number of entries, or we've reached the end of pages.
         while True:
@@ -292,6 +290,7 @@ class Facebook(Base):
                 continue
             detailed_contact = self.fetch_contact(contact)
             eds_contact = self.create_contact(detailed_contact)
-            self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact)
+            if(self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact) == False):
+                print("Warning: Unable to save facebook contact ", contact["name"])
 
 

@@ -27,10 +27,9 @@ from gi.repository import EBook, EDataServer, Gio, GLib
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, EDSBookClientMock
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_TYPES
-
 
 try:
     # Python 3.3
@@ -38,12 +37,10 @@ try:
 except ImportError:
     import mock
 
-
 # Create a test model that will not interfere with the user's environment.
 # We'll use this object as a mock of the real model.
 TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
-FACEBOOK_TEST_ADDRESS_BOOK = "fb-contacts-test_address-book"
 
 @mock.patch('friends.utils.download._soup', mock.Mock())
 
@@ -61,10 +58,6 @@ class TestFacebook(unittest.TestCase):
         Base._SYNCHRONIZE = True
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.facebook')
-        # Create a new address book for the tests
-        ml = GLib.MainLoop()
-        GLib.idle_add(self.create_test_address_book, ml)
-        ml.run()        
 
     def tearDown(self):
         # Stop log mocking, and return sub-thread operation to asynchronous.
@@ -72,36 +65,6 @@ class TestFacebook(unittest.TestCase):
         Base._SYNCHRONIZE = False
         # Reset the database.
         TestModel.clear()
-
-        ml = GLib.MainLoop()
-        GLib.idle_add(self.delete_test_address_book, ml)
-        ml.run()        
-
-    def create_test_address_book(self, loop):
-        self.registry = EDataServer.SourceRegistry.new_sync(None)  
-        source = EDataServer.Source.new(None, None)
-        source.set_display_name(FACEBOOK_TEST_ADDRESS_BOOK)
-        source.set_parent("local-stub")       
-        extension = source.get_extension(EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
-        extension.set_backend_name("local")
-        self.source_uid = None
-        if(self.registry.commit_source_sync(source, Gio.Cancellable())):
-            self.source_uid = source.get_uid()
-        else:
-            self.source_uid = None
-            print("Can't create new source for our test address book")
-        GLib.timeout_add_seconds(1, quit_main_loop, loop)
-
-    def delete_test_address_book(self, loop):
-        # Delete the test source
-        if(self.source_uid is not None):
-            source = self.registry.ref_source(self.source_uid)
-            if(source is None):
-                print("Teardown could not find the source with that id")
-            else:
-                res = source.remove_sync(Gio.Cancellable())
-                print("Deleted previous found source - deletion result = %s", str(res))
-        loop.quit()
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
@@ -351,18 +314,16 @@ Facebook error (190 OAuthException): Bad access token
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
 
-    
-    @mock.patch('friends.utils.download.Soup.Message',
-                FakeSoupMessage('friends.tests.data', 'facebook-contacts.dat'))
-    @mock.patch('friends.protocols.facebook.Facebook._login',
-                return_value=True)
+    @mock.patch('friends.utils.authentication.Authentication.login',
+                return_value=dict(AccessToken='abc'))
+    @mock.patch('friends.protocols.facebook.get_json',
+                return_value=dict(data=[dict(name="John Smith", id="444444")]))
     def test_fetch_contacts(self, *mocks):
         # Receive the users friends.
-        self.account.access_token = 'abc'
         results = self.protocol.fetch_contacts() 
-        self.assertEqual(len(results), 8)
-        self.assertEqual(results[7]["name"], "John Smith")
-        self.assertEqual(results[7]["id"], "444444")
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "John Smith")
+        self.assertEqual(results[0]["id"], "444444")
 
     def test_create_contact(self, *mocks):
         # Receive the users friends.
@@ -374,17 +335,13 @@ Facebook error (190 OAuthException): Bad access token
         facebook_name_attr = eds_contact.get_attribute("facebook-name")
         self.assertEqual(facebook_name_attr.get_value(), "Lucy Baron")
 
-    def test_push_to_eds(self, *mocks):
-        # Receive the users friends.
-        ml = GLib.MainLoop()
-        GLib.idle_add(self._test_push_to_eds, ml)
-        ml.run()
 
-    def _test_push_to_eds(self,  ml):
+    @mock.patch('friends.protocols.base.Base._get_eds_source',
+                return_value=True)
+    @mock.patch('EBook.BookClient.new', return_value=EDSBookClientMock())
+    def test_push_to_eds(self, *mocks):
         bare_contact = {"name": "Lucy Baron", "id": "555555555"}
         eds_contact = self.protocol.create_contact(bare_contact) 
         self.protocol._push_to_eds(FACEBOOK_TEST_ADDRESS_BOOK, eds_contact)
-        source = self.registry.ref_source(self.source_uid)
-        print("is source none ", str(source == None))
-        self.assertEqual(Base.previously_stored_contact(source, "facebook-id", bare_contact['id']), True)
-        ml.quit()
+
+

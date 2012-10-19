@@ -328,9 +328,7 @@ class Base:
                 source_match = self.source_registry.ref_source(new_source_uid)
         client = EBook.BookClient.new(source_match)
         client.open_sync(False, None)
-        res = client.add_contact_sync(contact, Gio.Cancellable());
-        if(res is False):
-            print("Failed to create contact ...")
+        return client.add_contact_sync(contact, Gio.Cancellable());
 
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
