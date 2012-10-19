@@ -30,7 +30,7 @@ GObject.threads_init(None)
 class Authentication:
     def __init__(self, account, log=None):
         self.account = account
-        self.log = log or logging.getLogger('friends.service')
+        self.log = log or logging.getLogger(__name__)
         self._reply = None
 
     def login(self):

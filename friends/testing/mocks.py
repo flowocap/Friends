@@ -168,7 +168,7 @@ class LogMock:
     """
     def __init__(self, *modules):
         self._queue = Queue()
-        self._log = logging.getLogger('friends.test')
+        self._log = logging.getLogger(__name__)
         handler = QueueHandler(self._queue)
         formatter = logging.Formatter(LOG_FORMAT, style='{')
         handler.setFormatter(formatter)

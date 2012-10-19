@@ -28,7 +28,7 @@ from friends.utils.download import get_json
 from friends.utils.time import iso8601utc, parsetime
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # This is contact information for the Flickr REST service.

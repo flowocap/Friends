@@ -34,7 +34,7 @@ from friends.utils.download import RateLimiter as BaseRateLimiter, get_json
 from friends.utils.time import parsetime, iso8601utc
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # https://dev.twitter.com/docs/api/1.1

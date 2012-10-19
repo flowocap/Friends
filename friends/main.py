@@ -58,7 +58,7 @@ def main():
     gsettings = Gio.Settings.new('org.gwibber.preferences')
     initialize(console=args.console,
                debug=args.debug or gsettings.get_boolean('debug'))
-    log = logging.getLogger('friends.service')
+    log = logging.getLogger(__name__)
     log.info('Friends backend service starting')
 
     # Set up the DBus main loop.

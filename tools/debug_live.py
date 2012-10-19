@@ -20,8 +20,12 @@ It is not intended for use with an installed friends package.
 """
 
 import sys
+import logging
 
 sys.path.insert(0, '.')
+
+# Print all logs for debugging purposes
+logging.basicConfig(stream=sys.stderr, level=1)
 
 from gi.repository import GObject
 from friends.utils.account import AccountManager

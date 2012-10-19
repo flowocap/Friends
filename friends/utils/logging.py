@@ -48,7 +48,7 @@ def initialize(console=False, debug=False, filename=None):
     except OSError as error:
         if error.errno != errno.EEXIST:
             raise
-    log = logging.getLogger('friends.service')
+    log = logging.getLogger(__name__)
     if debug:
         log.setLevel(logging.DEBUG)
     else:

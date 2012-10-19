@@ -34,7 +34,7 @@ from friends.utils.avatar import Avatar
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class Dispatcher(dbus.service.Object):

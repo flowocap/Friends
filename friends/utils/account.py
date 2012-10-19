@@ -31,7 +31,7 @@ from friends.utils.manager import protocol_manager
 from friends.utils.model import COLUMN_INDICES, Model
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class AccountManager:

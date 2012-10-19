@@ -28,7 +28,7 @@ from friends.utils.download import get_json
 from friends.utils.time import iso8601utc
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # The '&v=YYYYMMDD' defines the date that the API was last confirmed to be

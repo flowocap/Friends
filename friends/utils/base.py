@@ -52,7 +52,7 @@ _seen_ids = {}
 _publish_lock = threading.Lock()
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 def feature(method):

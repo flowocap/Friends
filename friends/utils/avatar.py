@@ -31,7 +31,7 @@ from hashlib import sha1
 from friends.utils.download import Downloader
 
 
-log = logging.getLogger('friends.avatars')
+log = logging.getLogger(__name__)
 CACHE_DIR = os.path.realpath(os.path.join(
     GLib.get_user_cache_dir(), 'friends', 'avatars'))
 CACHE_AGE = timedelta(weeks=4)

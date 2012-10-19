@@ -31,7 +31,7 @@ from gi.repository import Soup, SoupGNOME
 from urllib.error import HTTPError
 from urllib.parse import urlencode
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # Global libsoup session instance.
