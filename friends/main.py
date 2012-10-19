@@ -26,7 +26,9 @@ __all__ = [
 import logging
 
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import Gio, GLib
+from gi.repository import Gio, GLib, GObject
+
+GObject.threads_init(None)
 
 from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher
