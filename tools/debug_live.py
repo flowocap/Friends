@@ -61,9 +61,10 @@ if __name__ == '__main__':
         if account_id.endswith(protocol):
             found = True
             account.protocol(*args)
-            GObject.timeout_add_seconds(300, account.protocol, *args)
 
     if not found:
         log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
     else:
-        GObject.MainLoop().run()
+        loop = GObject.MainLoop()
+        GObject.timeout_add_seconds(10, loop.quit)
+        loop.run()
