@@ -34,7 +34,7 @@ from friends.utils.avatar import Avatar
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class Dispatcher(dbus.service.Object):
@@ -53,6 +53,7 @@ class Dispatcher(dbus.service.Object):
         signaler.add_signal('ConnectionOnline', self._on_connection_online)
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)
         self._on_connection_online()
+        self.Refresh()
 
     def _on_connection_online(self):
         if not self._timer_id:

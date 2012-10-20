@@ -1,3 +1,3 @@
 #! /bin/sh
 
-PYTHONPATH=. python3 -m friends.main -do
+PYTHONPATH=. python3 -m friends.main --debug --console

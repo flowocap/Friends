@@ -20,30 +20,29 @@ It is not intended for use with an installed friends package.
 """
 
 import sys
+import time
+import logging
 
 sys.path.insert(0, '.')
 
 from gi.repository import GObject
+from friends.utils.logging import initialize
 from friends.utils.account import AccountManager
 from friends.utils.base import Base
 from friends.utils.model import Model
 
+# Print all logs for debugging purposes
+initialize(debug=True, console=True)
 
-# Ensure synchronous operation of Base.__call__() for easier testing.
-Base._SYNCHRONIZE = True
+
+log = logging.getLogger('friends.debug_live')
 
 
-def refresh(account):
+def row_added(model, itr):
+    row = model.get_row(itr)
+    print(row)
+    log.info('ROWS: {}'.format(len(model)))
     print()
-    print('#' * 80)
-    print('Performing "{}" operation!'.format(args[0]))
-    print('#' * 80)
-
-    account.protocol(*args)
-    for row in Model:
-        print([col for col in row])
-        print()
-    print('ROWS: ', len(Model))
 
 
 if __name__ == '__main__':
@@ -56,14 +55,16 @@ if __name__ == '__main__':
     found = False
     a = AccountManager(None)
 
+    Model.connect('row-added', row_added)
+
     for account_id, account in a._accounts.items():
         if account_id.endswith(protocol):
             found = True
-            refresh(account)
-            GObject.timeout_add_seconds(300, refresh, account)
+            account.protocol(*args)
 
     if not found:
-        print('No {} account found in your Ubuntu Online Accounts!'.format(
-            protocol))
+        log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
     else:
-        GObject.MainLoop().run()
+        loop = GObject.MainLoop()
+        GObject.timeout_add_seconds(10, loop.quit)
+        loop.run()
