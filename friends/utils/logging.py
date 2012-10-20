@@ -19,8 +19,18 @@ import os
 import errno
 import logging
 import logging.handlers
+import oauthlib.oauth1
 
 from gi.repository import GLib
+
+
+# Set a global default of no logging. This is a workaround for a bug
+# where we were getting duplicated log records.
+logging.basicConfig(filename='/dev/null', level=100)
+
+
+# Disable logging in oauthlib because it is very verbose.
+oauthlib.oauth1.rfc5849.logging.debug = lambda *ignore: None
 
 
 LOG_FILENAME = os.path.join(
@@ -28,19 +38,6 @@ LOG_FILENAME = os.path.join(
     'friends', 'friends.log')
 LOG_FORMAT = '{levelname:5}  {threadName:10}  {asctime}  {name:18}  {message}'
 CSL_FORMAT = LOG_FORMAT.replace('  {asctime}', '')
-
-
-def find_modules(prefix, result=[]):
-    """Recursively searches for modules for which to enable logging."""
-    for name in os.listdir(prefix):
-        path = os.path.join(prefix, name)
-        base, ext = os.path.splitext(name)
-        if ext == '.py':
-            result.append(
-                '{}.{}'.format(prefix, base).replace(os.sep, '.'))
-        elif os.path.isdir(path):
-            find_modules(path, result)
-    return result
 
 
 def initialize(console=False, debug=False, filename=None):
@@ -62,10 +59,6 @@ def initialize(console=False, debug=False, filename=None):
         if error.errno != errno.EEXIST:
             raise
 
-    # Set a global default of no logging. This is a workaround for a bug
-    # where we were getting duplicated log records.
-    logging.basicConfig(filename='/dev/null', level=100)
-
     # Install a rotating log file handler.  XXX There should be a
     # configuration file rather than hard-coded values.
     text_handler = logging.handlers.RotatingFileHandler(
@@ -78,12 +71,11 @@ def initialize(console=False, debug=False, filename=None):
     console_formatter = logging.Formatter(CSL_FORMAT, style='{')
     console_handler.setFormatter(console_formatter)
 
-    for log_name in find_modules('friends'):
-        log = logging.getLogger(log_name)
-        if debug:
-            log.setLevel(logging.DEBUG)
-        else:
-            log.setLevel(logging.INFO)
-        if console:
-            log.addHandler(console_handler)
-        log.addHandler(text_handler)
+    log = logging.getLogger()
+    if debug:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    if console:
+        log.addHandler(console_handler)
+    log.addHandler(text_handler)

@@ -26,15 +26,16 @@ import logging
 sys.path.insert(0, '.')
 
 from gi.repository import GObject
+from friends.utils.logging import initialize
 from friends.utils.account import AccountManager
 from friends.utils.base import Base
 from friends.utils.model import Model
-from friends.utils.logging import CSL_FORMAT
 
 # Print all logs for debugging purposes
-logging.basicConfig(stream=sys.stderr, level=1, format=CSL_FORMAT, style='{')
+initialize(debug=True, console=True)
 
-log = logging.getLogger(sys.argv[0])
+
+log = logging.getLogger()
 
 
 def refresh(account, args):
