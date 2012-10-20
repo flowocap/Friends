@@ -50,7 +50,7 @@ class _States08997:
     DISCONNECTED = 4
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 _State = None
 
 

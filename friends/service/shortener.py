@@ -27,7 +27,7 @@ import dbus.service
 
 from friends.shorteners import lookup
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class URLShorten(dbus.service.Object):

@@ -21,7 +21,6 @@ __all__ = [
 
 
 from friends.protocols.twitter import Twitter
-from friends.utils.base import feature
 
 
 class Identica(Twitter):
@@ -76,10 +75,3 @@ class Identica(Twitter):
         useless. Just use search() instead.
         """
         raise NotImplementedError
-
-    @feature
-    def receive(self):
-        """Gather and publish all incoming messages."""
-        self.home()
-        self.mentions()
-        self.private()

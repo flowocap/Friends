@@ -189,6 +189,16 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         for got, want in zip(TestModel.get_row(0), expected_row):
             self.assertEqual(got, want)
 
+    def test_home_url(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
+        publish = self.protocol._publish_tweet = mock.Mock()
+
+        self.protocol.home()
+
+        publish.assert_called_with('tweet')
+        get_url.assert_called_with(
+            'https://api.twitter.com/1.1/statuses/home_timeline.json?count=50')
+
     def test_mentions(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
         publish = self.protocol._publish_tweet = mock.Mock()
