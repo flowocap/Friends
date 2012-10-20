@@ -27,12 +27,13 @@ sys.path.insert(0, '.')
 
 from gi.repository import GObject
 from friends.utils.logging import initialize
-from friends.utils.account import AccountManager
-from friends.utils.base import Base
-from friends.utils.model import Model, persist_model
 
 # Print all logs for debugging purposes
 initialize(debug=True, console=True)
+
+from friends.utils.account import AccountManager
+from friends.utils.base import Base
+from friends.utils.model import Model, persist_model
 
 
 log = logging.getLogger('friends.debug_live')

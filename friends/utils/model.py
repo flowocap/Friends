@@ -37,7 +37,7 @@ __all__ = [
 from gi.repository import Dee
 
 import logging
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # Most of this schema is very straightforward, but the 'message_ids' column
@@ -141,4 +141,22 @@ if first_run or stale_schema:
     # Calling this from here ensures that schema changes are persisted
     # ASAP, but we also call it periodically in the dispatcher in
     # order to ensure data is saved often in case of power loss.
+    persist_model()
+
+# mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
+# size, because anything larger will have problems being transmitted
+# over DBus. I have conservatively calculated our average row length
+# to be 500 bytes, which means that we shouldn't let our model exceed
+# approximately 16,000 rows. However, that seems like a lot to me, so
+# I'm going to set it to 8,000 for now and we can tweak this later if
+# necessary. Do you really need more than 8,000 tweets in memory at
+# once? What are you doing with all these tweets?
+pruned = 0
+while Model.get_n_rows() > 8000:
+    Model.remove(Model.get_first_iter())
+    pruned += 1
+
+if pruned:
+    log.debug('Deleted {} rows from Dee.SharedModel.'.format(pruned))
+    # Delete those messages from disk, too, not just memory.
     persist_model()

@@ -114,6 +114,9 @@ def _initialize_caches():
         _seen_messages[_make_key(row)] = row_iter
         for triple in row[IDS_IDX]:
             _seen_ids[tuple(triple)] = row_iter
+    log.debug(
+        '_seen_ids: {}, _seen_messages: {}'.format(
+            len(_seen_ids), len(_seen_messages)))
 
 _initialize_caches()
 
