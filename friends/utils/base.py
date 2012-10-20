@@ -19,6 +19,7 @@
 __all__ = [
     'Base',
     'feature',
+    'initialize_caches',
     ]
 
 
@@ -102,7 +103,7 @@ def _make_key(row):
     return EMPTY_STRING.join(char for char in key if char not in IGNORED)
 
 
-def _initialize_caches():
+def initialize_caches():
     """Populate _seen_ids and _seen_messages with Model data.
 
     Our Dee.SharedModel persists across instances, so we need to
@@ -117,8 +118,6 @@ def _initialize_caches():
     log.debug(
         '_seen_ids: {}, _seen_messages: {}'.format(
             len(_seen_ids), len(_seen_messages)))
-
-_initialize_caches()
 
 
 class _OperationThread(threading.Thread):

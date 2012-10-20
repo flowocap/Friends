@@ -31,6 +31,7 @@ __all__ = [
     'DEFAULTS',
     'MODEL_DBUS_NAME',
     'persist_model',
+    'prune_model',
     ]
 
 
@@ -143,14 +144,6 @@ if first_run or stale_schema:
     # order to ensure data is saved often in case of power loss.
     persist_model()
 
-# mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
-# size, because anything larger will have problems being transmitted
-# over DBus. I have conservatively calculated our average row length
-# to be 500 bytes, which means that we shouldn't let our model exceed
-# approximately 16,000 rows. However, that seems like a lot to me, so
-# I'm going to set it to 8,000 for now and we can tweak this later if
-# necessary. Do you really need more than 8,000 tweets in memory at
-# once? What are you doing with all these tweets?
 def prune_model(maximum):
     """If there are more than maximum rows, remove the oldest ones."""
     pruned = 0
@@ -162,5 +155,3 @@ def prune_model(maximum):
         log.debug('Deleted {} rows from Dee.SharedModel.'.format(pruned))
         # Delete those messages from disk, too, not just memory.
         persist_model()
-
-prune_model(8000)
