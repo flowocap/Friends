@@ -35,11 +35,7 @@ from friends.utils.model import Model
 initialize(debug=True, console=True)
 
 
-log = logging.getLogger()
-
-
-def refresh(account, args):
-    account.protocol(*args)
+log = logging.getLogger('friends.debug_live')
 
 
 def row_added(model, itr):
@@ -64,8 +60,8 @@ if __name__ == '__main__':
     for account_id, account in a._accounts.items():
         if account_id.endswith(protocol):
             found = True
-            refresh(account, args)
-            GObject.timeout_add_seconds(300, refresh, account)
+            account.protocol(*args)
+            GObject.timeout_add_seconds(300, account.protocol, *args)
 
     if not found:
         log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
