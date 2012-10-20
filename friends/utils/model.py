@@ -151,12 +151,16 @@ if first_run or stale_schema:
 # I'm going to set it to 8,000 for now and we can tweak this later if
 # necessary. Do you really need more than 8,000 tweets in memory at
 # once? What are you doing with all these tweets?
-pruned = 0
-while Model.get_n_rows() > 8000:
-    Model.remove(Model.get_first_iter())
-    pruned += 1
+def prune_model(maximum):
+    """If there are more than maximum rows, remove the oldest ones."""
+    pruned = 0
+    while Model.get_n_rows() > maximum:
+        Model.remove(Model.get_first_iter())
+        pruned += 1
 
-if pruned:
-    log.debug('Deleted {} rows from Dee.SharedModel.'.format(pruned))
-    # Delete those messages from disk, too, not just memory.
-    persist_model()
+    if pruned:
+        log.debug('Deleted {} rows from Dee.SharedModel.'.format(pruned))
+        # Delete those messages from disk, too, not just memory.
+        persist_model()
+
+prune_model(8000)
