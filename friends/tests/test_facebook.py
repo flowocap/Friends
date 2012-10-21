@@ -102,9 +102,11 @@ class TestFacebook(unittest.TestCase):
             self.protocol('receive')
             contents = log_mock.empty(trim=False)
         self.assertEqual(contents, """\
+Facebook.receive is starting in a new thread.
 Logging in to Facebook
 Facebook UID: None
 Facebook error (190 OAuthException): Bad access token
+Facebook.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',

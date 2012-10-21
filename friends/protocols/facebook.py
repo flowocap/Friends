@@ -37,7 +37,7 @@ API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class Facebook(Base):

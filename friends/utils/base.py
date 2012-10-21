@@ -52,7 +52,7 @@ _seen_ids = {}
 _publish_lock = threading.Lock()
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 def feature(method):
@@ -105,9 +105,10 @@ def _make_key(row):
 class _OperationThread(threading.Thread):
     """Catch, log, and swallow all exceptions in the sub-thread."""
 
-    def __init__(self, barrier, *args, **kws):
+    def __init__(self, barrier, *args, identifier=None, **kws):
         # The barrier will only be provided when the system is under test.
         self._barrier = barrier
+        self._id = identifier
         super().__init__(*args, **kws)
 
     # Always run these as daemon threads, so they don't block the main thread,
@@ -115,10 +116,12 @@ class _OperationThread(threading.Thread):
     daemon = True
 
     def run(self):
+        log.debug('{} is starting in a new thread.'.format(self._id))
         try:
             super().run()
         except Exception:
             log.exception('Friends operation exception:\n')
+        log.debug('{} has completed, thread exiting.'.format(self._id))
         # If the system is under test, indicate that we've reached the
         # barrier, so that the main thread, i.e. the test thread waiting for
         # the results, can then proceed.
@@ -160,6 +163,8 @@ class Base:
         # thread to assert the results of the sub-thread.
         barrier = (threading.Barrier(parties=2) if Base._SYNCHRONIZE else None)
         _OperationThread(barrier,
+                         identifier='{}.{}'.format(self.__class__.__name__,
+                                                   operation),
                          target=method, args=args, kwargs=kwargs).start()
         # When under synchronous testing, wait until the sub-thread completes
         # before returning.
@@ -299,7 +304,7 @@ class Base:
         log.debug('{} to {}'.format(
                 'Re-authenticating' if old_token else 'Logging in', protocol))
 
-        result = Authentication(self._account, log).login()
+        result = Authentication(self._account).login()
         if result is None:
             log.error(
                 'No {} authentication results received.'.format(protocol))

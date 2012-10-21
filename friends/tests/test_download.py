@@ -33,7 +33,7 @@ from urllib.request import urlopen
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 from wsgiref.util import setup_testing_defaults
 
-from friends.testing.mocks import FakeSoupMessage
+from friends.testing.mocks import FakeSoupMessage, LogMock
 from friends.utils.download import Downloader, get_json
 
 try:
@@ -122,6 +122,12 @@ def _app(environ, start_response):
 
 class TestDownloader(unittest.TestCase):
     """Test the downloading utilities."""
+
+    def setUp(self):
+        self.log_mock = LogMock('friends.utils.download')
+
+    def tearDown(self):
+        self.log_mock.stop()
 
     @classmethod
     def setUpClass(cls):
@@ -231,17 +237,17 @@ class TestDownloader(unittest.TestCase):
 
     def test_unauthorized(self):
         # Test a URL that requires authorization.
-        with self.assertRaises(HTTPError) as cm:
-            Downloader('http://localhost:9180/auth').get_string()
-        self.assertEqual(cm.exception.code, 401)
+        Downloader('http://localhost:9180/auth').get_string()
+        self.assertEqual(self.log_mock.empty(),
+                         'http://localhost:9180/auth: 401 Unauthorized\n')
 
     def test_bad_authorization(self):
         # Test a URL that requires authorization, but doesn't have the correct
         # username or password.
-        with self.assertRaises(HTTPError) as cm:
-            Downloader('http://localhost:9180/auth',
-                       username='bob', password='wrong').get_string()
-        self.assertEqual(cm.exception.code, 401)
+        Downloader('http://localhost:9180/auth',
+                   username='bob', password='wrong').get_string()
+        self.assertEqual(self.log_mock.empty(),
+                         'http://localhost:9180/auth: 401 Unauthorized\n')
 
     def test_authorized(self):
         # Test a URL that requires authorization, and has the proper
