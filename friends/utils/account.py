@@ -31,7 +31,7 @@ from friends.utils.manager import protocol_manager
 from friends.utils.model import COLUMN_INDICES, Model
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class AccountManager:
@@ -53,7 +53,7 @@ class AccountManager:
 
     def _on_enabled_event(self, manager, account_id):
         """React to new microblogging accounts being added."""
-        log.debug('Adding account {}', account_id)
+        log.debug('Adding account {}'.format(account_id))
         account = manager.get_account(account_id)
         for service in account.list_services():
             account_service = Accounts.AccountService.new(account, service)
@@ -66,20 +66,25 @@ class AccountManager:
         # If we don't know about the given account id, just return and do not
         # call the refresh callback.
         try:
-            self._accounts.pop(account_id)
+            account = self._accounts.pop(account_id)
         except KeyError:
             log.debug('Attempting to delete unknown account: {}', account_id)
             return
 
         for row in Model:
-            if account_id in row[COLUMN_INDICES['message_ids']]:
-                Model.remove(row)
+            for triple in row[COLUMN_INDICES['message_ids']]:
+                if account_id in triple:
+                    account.protocol._unpublish(triple[-1])
 
         self._callback()
 
     def add_new_account(self, account_service):
-        new_account = Account(account_service)
-        self._accounts[new_account.id] = new_account
+        try:
+            new_account = Account(account_service)
+        except UnsupportedProtocolError as error:
+            log.info(error)
+        else:
+            self._accounts[new_account.id] = new_account
 
     def get_all(self):
         return self._accounts.values()

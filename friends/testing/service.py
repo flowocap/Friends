@@ -28,7 +28,7 @@ import dbus.service
 from friends.utils.signaler import signaler
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class TestService(dbus.service.Object):

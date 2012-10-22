@@ -19,15 +19,25 @@ import os
 import errno
 import logging
 import logging.handlers
+import oauthlib.oauth1
 
 from gi.repository import GLib
+
+
+# Set a global default of no logging. This is a workaround for a bug
+# where we were getting duplicated log records.
+logging.basicConfig(filename='/dev/null', level=100)
+
+
+# Disable logging in oauthlib because it is very verbose.
+oauthlib.oauth1.rfc5849.logging.debug = lambda *ignore: None
 
 
 LOG_FILENAME = os.path.join(
     os.path.realpath(os.path.abspath(GLib.get_user_cache_dir())),
     'friends', 'friends.log')
-LOG_FORMAT = '{asctime} - {name:12} {threadName:14}: {levelname:8} - {message}'
-CSL_FORMAT = '{name:12} {threadName:12}: {levelname:8} {message}'
+LOG_FORMAT = '{levelname:5}  {threadName:10}  {asctime}  {name:18}  {message}'
+CSL_FORMAT = LOG_FORMAT.replace('  {asctime}', '')
 
 
 def initialize(console=False, debug=False, filename=None):
@@ -48,11 +58,7 @@ def initialize(console=False, debug=False, filename=None):
     except OSError as error:
         if error.errno != errno.EEXIST:
             raise
-    log = logging.getLogger('friends.service')
-    if debug:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
+
     # Install a rotating log file handler.  XXX There should be a
     # configuration file rather than hard-coded values.
     text_handler = logging.handlers.RotatingFileHandler(
@@ -60,9 +66,16 @@ def initialize(console=False, debug=False, filename=None):
     # Use str.format() style format strings.
     text_formatter = logging.Formatter(LOG_FORMAT, style='{')
     text_handler.setFormatter(text_formatter)
-    log.addHandler(text_handler)
+
+    console_handler = logging.StreamHandler()
+    console_formatter = logging.Formatter(CSL_FORMAT, style='{')
+    console_handler.setFormatter(console_formatter)
+
+    log = logging.getLogger()
+    if debug:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
     if console:
-        console_handler = logging.StreamHandler()
-        console_formatter = logging.Formatter(CSL_FORMAT, style='{')
-        console_handler.setFormatter(console_formatter)
         log.addHandler(console_handler)
+    log.addHandler(text_handler)

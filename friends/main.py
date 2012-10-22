@@ -26,7 +26,9 @@ __all__ = [
 import logging
 
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import Gio, GLib
+from gi.repository import Gio, GLib, GObject
+
+GObject.threads_init(None)
 
 from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher
@@ -48,17 +50,15 @@ def main():
         from friends.utils.manager import protocol_manager
         for name in sorted(protocol_manager.protocols):
             cls = protocol_manager.protocols[name]
-            # Stub protocols have no version so don't print them.
-            version = getattr(cls.info, 'version', None)
-            if version is not None:
-                print(cls.__name__, 'version', version)
+            package, dot, class_name = cls.__name__.rpartition('.')
+            print(class_name)
         return
     # Initialize the logging subsystem.
     # XXX FIXME - this should be renamed to 'friends'.
     gsettings = Gio.Settings.new('org.gwibber.preferences')
     initialize(console=args.console,
                debug=args.debug or gsettings.get_boolean('debug'))
-    log = logging.getLogger('friends.service')
+    log = logging.getLogger(__name__)
     log.info('Friends backend service starting')
 
     # Set up the DBus main loop.
@@ -85,3 +85,8 @@ def main():
         loop.run()
     except KeyboardInterrupt:
         log.info('Stopped friends-service main loop')
+
+
+if __name__ == '__main__':
+    # Use this with `python3 -m friends.main`
+    main()

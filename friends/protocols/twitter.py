@@ -34,17 +34,16 @@ from friends.utils.download import RateLimiter as BaseRateLimiter, get_json
 from friends.utils.time import parsetime, iso8601utc
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # https://dev.twitter.com/docs/api/1.1
 class Twitter(Base):
-    # StatusNet claims to mimick the Twitter API very closely (so closely to
-    # the point that they refer you to the Twitter API reference docs as a
-    # starting point for learning about their API).  So these prefixes are
-    # defined here as class attributes instead of the usual module globals, in
-    # the hopes that the StatusNet class will be able to subclass Twitter and
-    # change only the URLs, with minimal other changes, and magically work.
+    # Identi.ca's API mimicks Twitter's to such a high degree that it
+    # is implemented just as a subclass of this, hence we need these
+    # constants defined as instance attributes, so that the Identica
+    # class can override them. If you make any changes to this class
+    # you must confirm that your changes do not break Identi.ca!
     _api_base = 'https://api.twitter.com/1.1/{endpoint}.json'
 
     _timeline = _api_base.format(endpoint='statuses/{}_timeline')
@@ -125,7 +124,8 @@ class Twitter(Base):
     @feature
     def home(self):
         """Gather the user's home timeline."""
-        url = self._timeline.format('home')
+        url = self._timeline.format(
+            'home') + '?count={}'.format(self._DOWNLOAD_LIMIT)
         for tweet in self._get_url(url):
             self._publish_tweet(tweet)
 
@@ -181,14 +181,8 @@ class Twitter(Base):
     @feature
     def receive(self):
         """Gather and publish all incoming messages."""
-        # TODO I know mentions and lists are actually incorporated within the
-        # home timeline, but calling them explicitly will ensure that more of
-        # those types of messages appear in the timeline (e.g., so they don't
-        # get drown out by everything else).  I'm not sure how necessary it
-        # is, though.
         self.home()
         self.mentions()
-        self.lists()
         self.private()
 
     @feature

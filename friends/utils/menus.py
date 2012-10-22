@@ -34,7 +34,7 @@ except ImportError:
 
 
 DESKTOP_ID = 'friends.desktop'
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 def helper(executable):

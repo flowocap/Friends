@@ -27,6 +27,7 @@ import os
 import hashlib
 import logging
 
+from gi.repository import EBook, EDataServer, Gio, GLib
 from io import StringIO
 from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
@@ -153,7 +154,12 @@ class LogMock:
     the tests, and that the logging output in a sub-thread can be tested in
     the main thread.
 
-    This class is intended to be used in test setUp() and tearDown() methods.
+    This class can be used either in a TestCase's setUp() and tearDown()
+    methods, or as a context manager (i.e. in a `with` statement).  When used
+    as the latter, be sure to capture the contents of the log inside the
+    with-clause since exiting the context manager will consume all left over
+    log contents.
+
     Pass in the list of modules to mock, and it will mock all the 'log'
     attributes on those modules.  The last component can be a '*' wildcard in
     which case it will mock all the modules found in that package.
@@ -163,13 +169,14 @@ class LogMock:
     """
     def __init__(self, *modules):
         self._queue = Queue()
-        self._log = logging.getLogger('friends.test')
+        self._log = logging.getLogger(__name__)
         handler = QueueHandler(self._queue)
         formatter = logging.Formatter(LOG_FORMAT, style='{')
         handler.setFormatter(formatter)
         self._log.addHandler(handler)
-        # Capture effectively everything.
-        self._log.setLevel(logging.NOTSET)
+        # Capture effectively everything.  This can't be NOTSET because by
+        # definition, that propagates log messages to the root logger.
+        self._log.setLevel(1)
         self._log.propagate = False
         # Create the mock, and then go through all the named modules, mocking
         # their 'log' attribute.
@@ -199,8 +206,8 @@ class LogMock:
         self.empty()
         for patcher in self._patchers:
             patcher.stop()
-        # Get rid of the friends.test logger.
-        del logging.Logger.manager.loggerDict['friends.test']
+        # Get rid of the mock logger.
+        del logging.Logger.manager.loggerDict[__name__]
 
     def empty(self, trim=True):
         """Return all the log messages written to this log.
@@ -235,6 +242,13 @@ class LogMock:
             print(*args, file=output)
         return output.getvalue()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exception_info):
+        self.stop()
+        return False
+
 class EDSBookClientMock:
     """A Mocker object to simulate use of BookClient
     """
@@ -246,5 +260,4 @@ class EDSBookClientMock:
 
     def add_contact_sync(contact, cancellable):
         return True
-
 

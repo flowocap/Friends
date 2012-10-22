@@ -28,7 +28,7 @@ from friends.utils.download import get_json
 from friends.utils.time import iso8601utc, parsetime
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # This is contact information for the Flickr REST service.
@@ -83,7 +83,7 @@ class Flickr(Base):
             method          = 'flickr.photos.getContactsPublicPhotos',
             format          = 'json',
             nojsoncallback  = '1',
-            extras          = 'date_updated,owner_name,icon_server',
+            extras          = 'date_upload,owner_name,icon_server',
             )
         response = get_json(REST_SERVER, GET_arguments)
         for data in response.get('photos', {}).get('photo', []):
@@ -105,7 +105,7 @@ class Flickr(Base):
                     farm=icon_farm, server=icon_server, nsid=owner)
                 url = PEOPLE_URL.format(owner=owner)
             # Calculate the ISO 8601 UTC time string.
-            raw_time = data.get('dateuploaded')
+            raw_time = data.get('dateupload')
             timestamp = ''
             if raw_time is not None:
                 try:

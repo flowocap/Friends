@@ -19,7 +19,6 @@ __all__ = [
     'TestFacebook',
     ]
 
-
 import unittest
 
 from gi.repository import Dee
@@ -43,11 +42,6 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 @mock.patch('friends.utils.download._soup', mock.Mock())
-
-def quit_main_loop(loop):
-    loop.quit()
-    return False
-
 class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
@@ -56,12 +50,9 @@ class TestFacebook(unittest.TestCase):
         self.protocol = Facebook(self.account)
         # Enable sub-thread synchronization, and mock out the loggers.
         Base._SYNCHRONIZE = True
-        self.log_mock = LogMock('friends.utils.base',
-                                'friends.protocols.facebook')
 
     def tearDown(self):
         # Stop log mocking, and return sub-thread operation to asynchronous.
-        self.log_mock.stop()
         Base._SYNCHRONIZE = False
         # Reset the database.
         TestModel.clear()
@@ -103,9 +94,16 @@ class TestFacebook(unittest.TestCase):
                                type='OAuthException',
                                code=190)))
     def test_error_response(self, *mocks):
-        self.protocol('receive')
-        self.assertEqual(self.log_mock.empty(trim=False), """\
+        with LogMock('friends.utils.base',
+                     'friends.protocols.facebook') as log_mock:
+            self.protocol('receive')
+            contents = log_mock.empty(trim=False)
+        self.assertEqual(contents, """\
+Facebook.receive is starting in a new thread.
+Logging in to Facebook
+Facebook UID: None
 Facebook error (190 OAuthException): Bad access token
+Facebook.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',
@@ -334,7 +332,6 @@ Facebook error (190 OAuthException): Bad access token
         self.assertEqual(facebook_id_attr.get_value(), "555555555")
         facebook_name_attr = eds_contact.get_attribute("facebook-name")
         self.assertEqual(facebook_name_attr.get_value(), "Lucy Baron")
-
 
     @mock.patch('friends.protocols.base.Base._get_eds_source',
                 return_value=True)
