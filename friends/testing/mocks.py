@@ -255,9 +255,9 @@ class EDSBookClientMock:
     def __init__(self):
         pass
         
-    def open_sync(val1, val2):
+    def open_sync(val1, val2, val3):
         pass
 
-    def add_contact_sync(contact, cancellable):
+    def add_contact_sync(val1, contact, cancellable):
         return True
 

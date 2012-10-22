@@ -334,12 +334,12 @@ Facebook.receive has completed, thread exiting.
         facebook_name_attr = eds_contact.get_attribute("facebook-name")
         self.assertEqual(facebook_name_attr.get_value(), "Lucy Baron")
 
-    @mock.patch('friends.protocols.base.Base._get_eds_source',
+    @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=True)
-    @mock.patch('EBook.BookClient.new', return_value=EDSBookClientMock())
+    @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
     def test_push_to_eds(self, *mocks):
         bare_contact = {"name": "Lucy Baron", "id": "555555555"}
         eds_contact = self.protocol.create_contact(bare_contact) 
-        result = self.protocol._push_to_eds(FACEBOOK_TEST_ADDRESS_BOOK, eds_contact)
+        result = self.protocol._push_to_eds("test-address-book", eds_contact)
         self.assertEqual(result, True)
 
