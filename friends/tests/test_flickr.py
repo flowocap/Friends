@@ -221,7 +221,7 @@ Flickr.receive has completed, thread exiting.
         url, GET_args = all_call_args[0][0]
         self.assertEqual(url, 'http://api.flickr.com/services/rest')
         self.assertEqual(GET_args, dict(
-            extras='date_updated,owner_name,icon_server',
+            extras='date_upload,owner_name,icon_server',
             user_id='jim',
             format='json',
             nojsoncallback='1',
