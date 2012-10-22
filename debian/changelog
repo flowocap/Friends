@@ -1,3 +1,9 @@
+friends (0.0+r16+19) quantal; urgency=low
+
+  * autopkgtests
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Mon, 22 Oct 2012 17:01:29 +0200
+
 friends (0.0+r16) quantal; urgency=low
 
   * rev 16 from trunk
