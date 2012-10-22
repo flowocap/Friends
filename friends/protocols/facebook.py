@@ -259,7 +259,8 @@ class Facebook(Base):
                 # I guess there are no more next pages.
                 break
         return contacts
-
+    # Fetch the full contact info from facebook
+    # Not being used now - all we need for now is the id and name
     def fetch_contact(self, contact_details):
         access_token = self._get_access_token()
         url = BASE_URL + '/' + details['id']
@@ -286,8 +287,10 @@ class Facebook(Base):
         for contact in contacts:
             if source != None and Base.previously_stored_contact(source, "facebook-id", contact['id']) == True:
                 continue
-            detailed_contact = self.fetch_contact(contact)
-            eds_contact = self.create_contact(detailed_contact)
+            #Let's not query the full contact info for now
+            #Show some respect for facebook and the chances are we won't be blocked.
+            #detailed_contact = self.fetch_contact(contact)
+            eds_contact = self.create_contact(contact)
             if(self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact) == False):
                 print("Warning: Unable to save facebook contact ", contact["name"])
 
