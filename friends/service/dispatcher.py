@@ -131,6 +131,8 @@ class Dispatcher(dbus.service.Object):
         account = self.account_manager.get(account_id)
         if account is not None:
             account.protocol(action, message_id=message_id)
+        else:
+            log.error('Could not find account: {}'.format(account_id))
 
     @dbus.service.method('com.canonical.Friends.Service', in_signature='s')
     def SendMessage(self, message):
@@ -150,6 +152,28 @@ class Dispatcher(dbus.service.Object):
         for account in self.account_manager.get_all():
             if account.send_enabled:
                 account.protocol('send', message)
+
+    @dbus.service.method('com.canonical.Friends.Service', in_signature='sss')
+    def SendReply(self, account_id, message_id, message):
+        """Posts a reply to the indicate message_id on account_id.
+
+        It takes three arguments, all strings.
+        example:
+            import dbus
+            obj = dbus.SessionBus().get_object(
+                'com.canonical.Friends.Service',
+                '/com/canonical/friends/Service')
+            service = dbus.Interface(obj, 'com.canonical.Friends.Service')
+            service.SendReply('6/twitter', '34245645347345626', 'Your reply')
+        """
+        if not self.online:
+            return
+        log.debug('Replying to {}, {}'.format(account_id, message_id))
+        account = self.account_manager.get(account_id)
+        if account is not None:
+            account.protocol('send_thread', message_id, message)
+        else:
+            log.error('Could not find account: {}'.format(account_id))
 
     @dbus.service.method('com.canonical.Friends.Service', out_signature='s')
     def GetFeatures(self, protocol_name):
