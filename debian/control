@@ -23,6 +23,7 @@ Build-Depends: debhelper (>= 9),
 	       shared-mime-info
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/friends
+XS-Testsuite: autopkgtest
 
 Package: friends
 Architecture: all
