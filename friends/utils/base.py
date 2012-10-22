@@ -39,6 +39,7 @@ COMMA_SPACE = ', '
 SENDER_IDX = COLUMN_INDICES['sender']
 MESSAGE_IDX = COLUMN_INDICES['message']
 IDS_IDX = COLUMN_INDICES['message_ids']
+TIME_IDX = COLUMN_INDICES['timestamp']
 
 
 # This is a mapping from Dee.SharedModel row keys to the DeeModelIters
@@ -101,6 +102,18 @@ def _make_key(row):
     key = SCHEME_RE.sub('', row[SENDER_IDX] + row[MESSAGE_IDX])
     # Now remove all punctuation and whitespace.
     return EMPTY_STRING.join(char for char in key if char not in IGNORED)
+
+
+def _cmp(a, b):
+    """Ressurrect cmp() because Dee.SharedModel demands it."""
+    return (a > b) - (a < b)
+
+
+def _cmp_date(row1, row1_length, row2, row2_length, user_data):
+    """Comparison function that sorts Model rows by UTC timestamp."""
+    row1_key = row1[TIME_IDX]
+    row2_key = row2[TIME_IDX]
+    return _cmp(row1_key, row2_key)
 
 
 def initialize_caches():
@@ -225,6 +238,8 @@ class Base:
         if len(kwargs) > 0:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
+        if not args[TIME_IDX]:
+            raise TypeError('Timestamp is missing from {!r}.'.format(triple))
         with _publish_lock:
             # Don't let duplicate messages into the model, but do record the
             # unique message ids of each duplicate message.
@@ -232,7 +247,7 @@ class Base:
             row_iter = _seen_messages.get(key)
             if row_iter is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = Model.append(*args)
+                _seen_messages[key] = Model.insert_sorted(_cmp_date, *args)
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.
