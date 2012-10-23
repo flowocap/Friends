@@ -148,7 +148,7 @@ class Facebook(Base):
         # https://developers.facebook.com/docs/reference/api/post/
         for entry in entries:
             self._publish_entry(entry)
-
+        
     def _like(self, obj_id, method):
         url = API_BASE.format(id=obj_id) + '/likes'
         token = self._get_access_token()
