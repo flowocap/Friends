@@ -337,9 +337,17 @@ Facebook.receive has completed, thread exiting.
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=True)
     @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
-    def test_push_to_eds(self, *mocks):
+    def test_successfull_push_to_eds(self, *mocks):
         bare_contact = {"name": "Lucy Baron", "id": "555555555"}
         eds_contact = self.protocol.create_contact(bare_contact) 
         result = self.protocol._push_to_eds("test-address-book", eds_contact)
         self.assertEqual(result, True)
 
+    @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
+    def test_create_eds_source(self, *mocks):
+        pass
+
+    @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
+    def test_successful_previously_stored_contact(self, *mocks):
+        result = Facebook.previously_stored_contact(True, "facebook-id", "11111")
+        self.assertEqual(result, True)

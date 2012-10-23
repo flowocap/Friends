@@ -27,7 +27,6 @@ import os
 import hashlib
 import logging
 
-from gi.repository import EBook, EDataServer, Gio, GLib
 from io import StringIO
 from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
@@ -261,3 +260,8 @@ class EDSBookClientMock:
     def add_contact_sync(val1, contact, cancellable):
         return True
 
+    def get_contacts_sync(val1, val2, val3):
+        if val1:
+            return [True, [{'name':'john doe', 'id': 11111}]]
+        else:
+            return [True, []]
