@@ -19,5 +19,8 @@ override_dh_auto_install:
 	python3 setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
 	python3 setup.py install_service_files -d $(CURDIR)/debian/tmp/usr
 
+override_dh_auto_test:
+	dbus-test-runner -t make -p check
+
 %:
 	dh $@ --with python3
