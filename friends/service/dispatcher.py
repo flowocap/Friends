@@ -50,7 +50,7 @@ class Dispatcher(dbus.service.Object):
         super().__init__(bus_name, self.__dbus_object_path__)
         self.mainloop = mainloop
         self._interval = interval
-        self.account_manager = AccountManager(self.Refresh)
+        self.account_manager = AccountManager()
         self._timer_id = None
         signaler.add_signal('ConnectionOnline', self._on_connection_online)
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)

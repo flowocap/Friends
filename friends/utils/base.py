@@ -279,6 +279,7 @@ class Base:
         triple = (self.__class__.__name__.lower(),
                   self._account.id,
                   message_id)
+        log.debug('Unpublishing {}!'.format(triple))
 
         row_iter = _seen_ids.pop(triple, None)
         if row_iter is None:
@@ -295,6 +296,12 @@ class Base:
             row[IDS_IDX] = [ids for ids
                             in row[IDS_IDX]
                             if message_id not in ids]
+
+    def _unpublish_all(self):
+        """Remove all of this account's messages from the Model."""
+        for triple in _seen_ids.copy():
+            if self._account.id in triple:
+                self._unpublish(triple[-1])
 
     def _get_access_token(self):
         """Return an access token, logging in if necessary."""

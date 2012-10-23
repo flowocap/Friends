@@ -179,59 +179,63 @@ class TestAccountManager(unittest.TestCase):
     def setUp(self):
         self.account_service = mock.Mock()
 
-    def test_account_manager(self):
-        # Test that the AccountManager adds the expected accounts to its
-        # internal mapping.
-        def refresh():
-            pass
-        AccountManager(refresh)
+    @mock.patch('friends.utils.account.Accounts')
+    def test_get_id(self, accounts_mock):
+        manager = AccountManager()
+        manager_mock = mock.Mock()
+        account_mock = mock.Mock()
+        service_mock = mock.Mock()
+        manager_mock.get_account.return_value = account_mock
+        account_mock.list_services.return_value = [service_mock]
+        account_service_mock = accounts_mock.AccountService.new(account_mock,
+                                                                service_mock)
+        account_service_mock.get_service(
+            ).get_display_name().lower.return_value = 'protocol'
+
+        service, id_ = manager._get_id(manager_mock, 10)
+
+        manager_mock.get_account.assert_called_once_with(10)
+        account_mock.list_services.assert_called_once_with()
+        accounts_mock.AccountService.new.assert_called_with(account_mock,
+                                                            service_mock)
+        self.assertEqual(id_, '10/protocol')
 
     def test_account_manager_add_new_account(self):
         # Explicitly adding a new account puts the account's global_id into
         # the account manager's mapping.
-        def refresh():
-            pass
-        manager = AccountManager(refresh)
-        manager.add_new_account(self.account_service)
+        manager = AccountManager()
+        manager._add_new_account(self.account_service)
         self.assertIn('faker/than fake', manager._accounts)
 
     def test_account_manager_enabled_event(self):
-        # Mimic a reaction to the enabled-event callback.
-        refreshed = False
-        def refresh():
-            nonlocal refreshed
-            refreshed = True
-        accounts_manager.get_account().list_services.return_value = []
-        manager = AccountManager(refresh)
-        manager._on_enabled_event(accounts_manager, 'faker/than fake')
-        self.assertTrue(refreshed)
+        manager = AccountManager()
+        manager._get_id = mock.Mock()
+        manager._get_id.return_value = [mock.Mock(), '2/facebook']
+        manager._add_new_account = mock.Mock()
+        manager._add_new_account.return_value = account = mock.Mock()
+        manager._on_enabled_event(accounts_manager, 2)
+        account.protocol.assert_called_once_with('receive')
 
     def test_account_manager_delete_account_no_account(self):
         # Deleting an account removes the global_id from the mapping.  But if
         # that global id is missing, then it does not cause an exception.
-        # Also, the refresh callback is *not* called.
-        refreshed = False
-        def refresh():
-            nonlocal refreshed
-            refreshed = True
-        manager = AccountManager(refresh)
+        manager = AccountManager()
+        manager._get_id = mock.Mock()
+        manager._get_id.return_value = [self.account_service, 'faker/than fake']
         self.assertNotIn('faker/than fake', manager._accounts)
         manager._on_account_deleted(accounts_manager, 'faker/than fake')
         self.assertNotIn('faker/than fake', manager._accounts)
-        self.assertFalse(refreshed)
 
     def test_account_manager_delete_account(self):
         # Deleting an account removes the id from the mapping. But if
         # that id is missing, then it does not cause an exception.
-        refreshed = False
-        def refresh():
-            nonlocal refreshed
-            refreshed = True
-        manager = AccountManager(refresh)
-        manager.add_new_account(self.account_service)
+        manager = AccountManager()
+        manager._get_id = mock.Mock()
+        manager._get_id.return_value = [self.account_service, 'faker/than fake']
+        manager._add_new_account(self.account_service)
+        self.assertIn('faker/than fake', manager._accounts)
         manager._on_account_deleted(accounts_manager, 'faker/than fake')
         self.assertNotIn('faker/than fake', manager._accounts)
-        self.assertTrue(refreshed)
 
     @mock.patch('friends.utils.account.Model', TestModel)
     @mock.patch('friends.utils.base.Model', TestModel)
@@ -239,8 +243,10 @@ class TestAccountManager(unittest.TestCase):
     def test_account_manager_delete_account_preserve_messages(self):
         # Deleting an Account should not delete messages from the row
         # that exist on other protocols too.
-        manager = AccountManager(lambda:None)
-        manager.add_new_account(self.account_service)
+        manager = AccountManager()
+        manager._get_id = mock.Mock()
+        manager._get_id.return_value = [self.account_service, 'faker/than fake']
+        manager._add_new_account(self.account_service)
         example_row = [[['twitter', '6/twitter', '1234'],
              ['base', 'faker/than fake', '5678']],
             'messages', 'Fred Flintstone', 'fred', True,
@@ -273,9 +279,9 @@ class TestAccountManagerRealAccount(unittest.TestCase):
     def test_account_manager_add_new_account_unsupported(self):
         fake_account = self.account_service.get_account()
         fake_account.get_provider_name.return_value = 'no service'
-        manager = AccountManager(None)
+        manager = AccountManager()
         with LogMock('friends.utils.account') as log_mock:
-            manager.add_new_account(self.account_service)
+            manager._add_new_account(self.account_service)
             log_contents = log_mock.empty(trim=False)
         self.assertNotIn('no service', manager._accounts)
         self.assertEqual(log_contents, 'Unsupported protocol: no service\n')
