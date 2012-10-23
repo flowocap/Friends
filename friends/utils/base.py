@@ -28,8 +28,11 @@ import string
 import logging
 import threading
 
+from datetime import datetime
+
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
+from friends.utils.time import ISO8601_FORMAT
 
 
 IGNORED = string.punctuation + string.whitespace
@@ -68,7 +71,7 @@ def feature(method):
 
     Then find all feature methods for a protocol with:
 
-    for feature_name in ProtocolClass.features:
+    for feature_name in ProtocolClass.get_features():
         # ...
     """
     method.is_feature = True
@@ -111,8 +114,8 @@ def _cmp(a, b):
 
 def _cmp_date(row1, row1_length, row2, row2_length, user_data):
     """Comparison function that sorts Model rows by UTC timestamp."""
-    row1_key = row1[TIME_IDX]
-    row2_key = row2[TIME_IDX]
+    row1_key = row1[TIME_IDX].get_string()
+    row2_key = row2[TIME_IDX].get_string()
     return _cmp(row1_key, row2_key)
 
 
@@ -239,7 +242,10 @@ class Base:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
         if not args[TIME_IDX]:
-            raise TypeError('Timestamp is missing from {!r}.'.format(triple))
+            # We *need* a timestamp for sorting so badly that it's better
+            # to use the current time than to fail too loudly.
+            log.error('No timestamp for message: {!r}'.format(triple))
+            args[TIME_IDX] = datetime.today().strftime(ISO8601_FORMAT)
         with _publish_lock:
             # Don't let duplicate messages into the model, but do record the
             # unique message ids of each duplicate message.
