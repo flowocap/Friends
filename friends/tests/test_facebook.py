@@ -344,6 +344,16 @@ Facebook.receive has completed, thread exiting.
         result = self.protocol._push_to_eds("test-address-book", eds_contact)
         self.assertEqual(result, True)
 
+    @mock.patch('friends.utils.base.Base._get_eds_source',
+                return_value=None)
+    @mock.patch('friends.utils.base.Base._create_eds_source',
+                return_value=None)
+    def test_unsuccessfull_push_to_eds(self, *mocks):
+        bare_contact = {"name": "Lucy Baron", "id": "555555555"}
+        eds_contact = self.protocol.create_contact(bare_contact) 
+        result = self.protocol._push_to_eds("test-address-book", eds_contact)
+        self.assertEqual(result, False)
+
     @mock.patch('gi.repository.EDataServer.Source.new', return_value=EDSSource("foo", "bar"))
     def test_create_eds_source(self, *mocks):
         res = self.protocol._create_eds_source('facebook-test-address')

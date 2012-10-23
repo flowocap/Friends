@@ -19,7 +19,6 @@ __all__ = [
     'Facebook',
     ]
 
-
 import logging
 
 from datetime import datetime, timedelta
@@ -258,6 +257,7 @@ class Facebook(Base):
                 # I guess there are no more next pages.
                 break
         return contacts
+
     # Fetch the full contact info from facebook
     # Not being used now - all we need for now is the id and name
     def fetch_contact(self, contact_details):
@@ -267,8 +267,8 @@ class Facebook(Base):
         return get_json(url, params)
 
     # This method can take the minimal contact information or full contact info
-    # For now we only cache ID and the name. Using custom field for name because I can't
-    # figure out how econtact name works.
+    # For now we only cache ID and the name in the addressbook. 
+    # Using custom field for name because I can't figure out how econtact name works.
     def create_contact(self, contact_json):
         vcafid = EBook.VCardAttribute.new("social-networking-attributes", "facebook-id")      
         vcafid.add_value(contact_json["id"])
@@ -288,9 +288,8 @@ class Facebook(Base):
                 continue
             #Let's not query the full contact info for now
             #Show some respect for facebook and the chances are we won't be blocked.
-            #detailed_contact = self.fetch_contact(contact)
             eds_contact = self.create_contact(contact)
             if(self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact) == False):
-                print("Warning: Unable to save facebook contact ", contact["name"])
+                log.error("Warning: Unable to save facebook contact {}".format(contact["name"]))
 
 

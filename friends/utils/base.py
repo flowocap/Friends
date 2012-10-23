@@ -323,10 +323,10 @@ class Base:
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
         if source_match == None:
-            new_source_uid = Base.create_eds_source(online_service)
+            new_source_uid = Base._create_eds_source(online_service)
             if new_source_uid == None:
-                print("Could not create a new source for %s", online_service)
-                return
+                log.error('Could not create a new source for {}'.format(online_service))
+                return False
             else:
                 #Potential race condition - need to sleep for a couple of cycles
                 #to ensure the registry will return a valid source object after commiting
@@ -362,7 +362,6 @@ class Base:
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         if cs[0] == False:
            return False # is this right ...
-        print("search results length = ", len(cs[1]))
         return len(cs[1]) > 0                        
 
     @classmethod
