@@ -33,8 +33,10 @@ GObject.threads_init(None)
 from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher
 from friends.service.shortener import URLShorten
+from friends.utils.base import initialize_caches
 from friends.utils.logging import initialize
 from friends.utils.menus import MenuManager
+from friends.utils.model import prune_model
 from friends.utils.options import Options
 
 
@@ -60,6 +62,20 @@ def main():
                debug=args.debug or gsettings.get_boolean('debug'))
     log = logging.getLogger(__name__)
     log.info('Friends backend service starting')
+
+    # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
+    # size, because anything larger will have problems being transmitted
+    # over DBus. I have conservatively calculated our average row length
+    # to be 500 bytes, which means that we shouldn't let our model exceed
+    # approximately 16,000 rows. However, that seems like a lot to me, so
+    # I'm going to set it to 8,000 for now and we can tweak this later if
+    # necessary. Do you really need more than 8,000 tweets in memory at
+    # once? What are you doing with all these tweets?
+    prune_model(8000)
+
+    # This builds two different indexes of our persisted Dee.Model
+    # data for the purposes of faster duplicate checks.
+    initialize_caches()
 
     # Set up the DBus main loop.
     DBusGMainLoop(set_as_default=True)

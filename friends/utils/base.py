@@ -19,6 +19,7 @@
 __all__ = [
     'Base',
     'feature',
+    'initialize_caches',
     ]
 
 
@@ -27,8 +28,11 @@ import string
 import logging
 import threading
 
+from datetime import datetime
+
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
+from friends.utils.time import ISO8601_FORMAT
 
 
 IGNORED = string.punctuation + string.whitespace
@@ -38,6 +42,7 @@ COMMA_SPACE = ', '
 SENDER_IDX = COLUMN_INDICES['sender']
 MESSAGE_IDX = COLUMN_INDICES['message']
 IDS_IDX = COLUMN_INDICES['message_ids']
+TIME_IDX = COLUMN_INDICES['timestamp']
 
 
 # This is a mapping from Dee.SharedModel row keys to the DeeModelIters
@@ -66,7 +71,7 @@ def feature(method):
 
     Then find all feature methods for a protocol with:
 
-    for feature_name in ProtocolClass.features:
+    for feature_name in ProtocolClass.get_features():
         # ...
     """
     method.is_feature = True
@@ -100,6 +105,35 @@ def _make_key(row):
     key = SCHEME_RE.sub('', row[SENDER_IDX] + row[MESSAGE_IDX])
     # Now remove all punctuation and whitespace.
     return EMPTY_STRING.join(char for char in key if char not in IGNORED)
+
+
+def _cmp(a, b):
+    """Ressurrect cmp() because Dee.SharedModel demands it."""
+    return (a > b) - (a < b)
+
+
+def _cmp_date(row1, row1_length, row2, row2_length, user_data):
+    """Comparison function that sorts Model rows by UTC timestamp."""
+    row1_key = row1[TIME_IDX].get_string()
+    row2_key = row2[TIME_IDX].get_string()
+    return _cmp(row1_key, row2_key)
+
+
+def initialize_caches():
+    """Populate _seen_ids and _seen_messages with Model data.
+
+    Our Dee.SharedModel persists across instances, so we need to
+    populate these caches at launch.
+    """
+    for i in range(Model.get_n_rows()):
+        row_iter = Model.get_iter_at_row(i)
+        row = Model.get_row(row_iter)
+        _seen_messages[_make_key(row)] = row_iter
+        for triple in row[IDS_IDX]:
+            _seen_ids[tuple(triple)] = row_iter
+    log.debug(
+        '_seen_ids: {}, _seen_messages: {}'.format(
+            len(_seen_ids), len(_seen_messages)))
 
 
 class _OperationThread(threading.Thread):
@@ -207,6 +241,11 @@ class Base:
         if len(kwargs) > 0:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
+        if not args[TIME_IDX]:
+            # We *need* a timestamp for sorting so badly that it's better
+            # to use the current time than to fail too loudly.
+            log.error('No timestamp for message: {!r}'.format(triple))
+            args[TIME_IDX] = datetime.today().strftime(ISO8601_FORMAT)
         with _publish_lock:
             # Don't let duplicate messages into the model, but do record the
             # unique message ids of each duplicate message.
@@ -214,7 +253,7 @@ class Base:
             row_iter = _seen_messages.get(key)
             if row_iter is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = Model.append(*args)
+                _seen_messages[key] = Model.insert_sorted(_cmp_date, *args)
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.

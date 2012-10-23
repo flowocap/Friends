@@ -27,7 +27,7 @@ import unittest
 import threading
 
 from base64 import encodebytes
-from urllib.error import HTTPError, URLError
+from urllib.error import URLError
 from urllib.parse import parse_qs
 from urllib.request import urlopen
 from wsgiref.simple_server import WSGIRequestHandler, make_server

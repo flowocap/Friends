@@ -20,19 +20,18 @@ It is not intended for use with an installed friends package.
 """
 
 import sys
-import time
 import logging
 
 sys.path.insert(0, '.')
 
 from gi.repository import GObject
 from friends.utils.logging import initialize
-from friends.utils.account import AccountManager
-from friends.utils.base import Base
-from friends.utils.model import Model
 
 # Print all logs for debugging purposes
 initialize(debug=True, console=True)
+
+from friends.utils.account import AccountManager
+from friends.utils.model import Model
 
 
 log = logging.getLogger('friends.debug_live')
