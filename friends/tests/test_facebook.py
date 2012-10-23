@@ -353,3 +353,7 @@ Facebook.receive has completed, thread exiting.
     def test_successful_previously_stored_contact(self, *mocks):
         result = Facebook.previously_stored_contact(True, "facebook-id", "11111")
         self.assertEqual(result, True)
+
+    def test_get_eds_source(self, *mocks):
+        result = self.protocol._get_eds_source("test-facebook-contacts")
+        self.assertEqual(result.get_display_name(), "test-facebook-contacts")

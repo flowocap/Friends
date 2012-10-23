@@ -281,7 +281,10 @@ class EDSSource:
         pass
 
     def set_display_name(self,name):
-        pass
+        self.name = name
+
+    def get_display_name(self):
+        return self.name
 
     def set_parent(self,parent):
         pass
@@ -299,3 +302,18 @@ class EDSRegistry:
 
     def commit_source_sync(self, source, val1):
         return True
+
+    def list_sources(self, category):
+        res = []
+        s1 = EDSSource(None, None)
+        s1.set_display_name("test-facebook-contacts")
+        res.append(s1)
+        s2 = EDSSource(None, None)
+        s2.set_display_name("test-twitter-contacts")
+        res.append(s2)
+        return res
+    
+    def ref_source(self, src_uid):
+        s1 = EDSSource(None, None)
+        s1.set_display_name("test-facebook-contacts")
+        return s1
