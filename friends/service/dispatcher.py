@@ -54,7 +54,10 @@ class Dispatcher(dbus.service.Object):
         signaler.add_signal('ConnectionOnline', self._on_connection_online)
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)
         self._on_connection_online()
+        # Don't persist the model on launch, before we have anything to save.
+        self._do_persist_model = False
         self.Refresh()
+        self._do_persist_model = True
 
     def _on_connection_online(self):
         if not self._timer_id:
@@ -85,7 +88,8 @@ class Dispatcher(dbus.service.Object):
         # Write the Dee.SharedModel to disk. We do this every refresh
         # for robustness, so if the computer loses power, we won't
         # lose all the messages.
-        persist_model()
+        if self._do_persist_model:
+            persist_model()
 
         if not self.online:
             return
