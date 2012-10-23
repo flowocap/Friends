@@ -20,7 +20,6 @@ It is not intended for use with an installed friends package.
 """
 
 import sys
-import time
 import logging
 
 sys.path.insert(0, '.')
@@ -32,8 +31,7 @@ from friends.utils.logging import initialize
 initialize(debug=True, console=True)
 
 from friends.utils.account import AccountManager
-from friends.utils.base import Base
-from friends.utils.model import Model, persist_model
+from friends.utils.model import Model
 
 
 log = logging.getLogger('friends.debug_live')

@@ -144,6 +144,7 @@ if first_run or stale_schema:
     # order to ensure data is saved often in case of power loss.
     persist_model()
 
+
 def prune_model(maximum):
     """If there are more than maximum rows, remove the oldest ones."""
     pruned = 0
