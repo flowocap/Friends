@@ -152,6 +152,27 @@ class Dispatcher(dbus.service.Object):
                         account.protocol.__class__.__name__))
                 account.protocol('send', message)
 
+    @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
+    def SendReply(self, account_id, message_id, message):
+        """Posts a reply to the indicate message_id on account_id.
+
+        It takes three arguments, all strings.
+        example:
+            import dbus
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
+            service.SendReply('6/twitter', '34245645347345626', 'Your reply')
+        """
+        if not self.online:
+            return
+        log.debug('Replying to {}, {}'.format(account_id, message_id))
+        account = self.account_manager.get(account_id)
+        if account is not None:
+            account.protocol('send_thread', message_id, message)
+        else:
+            log.error('Could not find account: {}'.format(account_id))
+
     @dbus.service.method(DBUS_INTERFACE, out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.

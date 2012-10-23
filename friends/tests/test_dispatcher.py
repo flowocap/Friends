@@ -144,6 +144,32 @@ class TestDispatcher(unittest.TestCase):
         account3.protocol.assert_called_once_with('send', 'Howdy friends!')
         self.assertEqual(account2.protocol.call_count, 0)
 
+    def test_send_reply(self):
+        account = mock.Mock()
+        self.dispatcher.account_manager = mock.Mock()
+        self.dispatcher.account_manager.get.return_value = account
+
+        self.dispatcher.SendReply('2/facebook', 'objid', '[Hilarious Response]')
+        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
+        account.protocol.assert_called_once_with(
+            'send_thread', 'objid', '[Hilarious Response]')
+
+        self.assertEqual(self.log_mock.empty(),
+                         'Replying to 2/facebook, objid\n')
+
+    def test_send_reply_failed(self):
+        account = mock.Mock()
+        self.dispatcher.account_manager = mock.Mock()
+        self.dispatcher.account_manager.get.return_value = None
+
+        self.dispatcher.SendReply('2/facebook', 'objid', '[Hilarious Response]')
+        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
+        self.assertEqual(account.protocol.call_count, 0)
+
+        self.assertEqual(self.log_mock.empty(),
+                         'Replying to 2/facebook, objid\n' +
+                         'Could not find account: 2/facebook\n')
+
     def test_get_features(self):
         """See test_dbus.py for a thorough test of Dispatcher.GetFeatures."""
         pass
