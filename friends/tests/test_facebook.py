@@ -26,7 +26,7 @@ from gi.repository import EBook, EDataServer, Gio, GLib
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock, EDSBookClientMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, EDSBookClientMock, EDSSource, EDSRegistry
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_TYPES
 
@@ -48,6 +48,7 @@ class TestFacebook(unittest.TestCase):
     def setUp(self):
         self.account = FakeAccount()
         self.protocol = Facebook(self.account)
+        self.protocol.source_registry = EDSRegistry()
         # Enable sub-thread synchronization, and mock out the loggers.
         Base._SYNCHRONIZE = True
 
@@ -343,9 +344,10 @@ Facebook.receive has completed, thread exiting.
         result = self.protocol._push_to_eds("test-address-book", eds_contact)
         self.assertEqual(result, True)
 
-    @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
+    @mock.patch('gi.repository.EDataServer.Source.new', return_value=EDSSource("foo", "bar"))
     def test_create_eds_source(self, *mocks):
-        pass
+        res = self.protocol._create_eds_source('facebook-test-address')
+        self.assertEqual(res, "test-source-uid")
 
     @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
     def test_successful_previously_stored_contact(self, *mocks):

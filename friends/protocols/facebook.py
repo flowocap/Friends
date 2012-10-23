@@ -230,7 +230,6 @@ class Facebook(Base):
         url = ME_URL + '/friends'
         params = dict(access_token=access_token,
                       limit=LIMIT)
-        print("HERE")
         # Now access Facebook and follow pagination until we have at least
         # LIMIT number of entries, or we've reached the end of pages.
         while True:
