@@ -37,6 +37,8 @@ from friends.utils.model import persist_model
 
 log = logging.getLogger(__name__)
 
+DBUS_INTERFACE = 'com.canonical.Friends.Service'
+
 
 class Dispatcher(dbus.service.Object):
     """This is the primary handler of dbus method calls."""
@@ -44,8 +46,7 @@ class Dispatcher(dbus.service.Object):
 
     def __init__(self, mainloop, interval):
         self.bus = dbus.SessionBus()
-        bus_name = dbus.service.BusName(
-            'com.canonical.Friends.Service', bus=self.bus)
+        bus_name = dbus.service.BusName(DBUS_INTERFACE, bus=self.bus)
         super().__init__(bus_name, self.__dbus_object_path__)
         self.mainloop = mainloop
         self._interval = interval
@@ -60,7 +61,7 @@ class Dispatcher(dbus.service.Object):
         self._do_persist_model = True
 
     def _on_connection_online(self):
-        if not self._timer_id:
+        if self._timer_id is None:
             self._timer_id = GLib.timeout_add_seconds(
                 self._interval, self.Refresh)
 
@@ -73,10 +74,8 @@ class Dispatcher(dbus.service.Object):
     def online(self):
         return self._timer_id is not None
 
-    @dbus.service.method('com.canonical.Friends.Service')
+    @dbus.service.method(DBUS_INTERFACE)
     def Refresh(self):
-        # TODO this method is too untestable here; split it off somewhere
-        # else for easier testing, then invoke it from here.
         log.debug('Refresh requested')
         # Wait for all previous actions to complete before
         # starting a load of new ones.
@@ -108,31 +107,29 @@ class Dispatcher(dbus.service.Object):
         # Always return True, or else GLib mainloop will stop invoking it.
         return True
 
-    @dbus.service.method('com.canonical.Friends.Service', in_signature='s')
+    @dbus.service.method(DBUS_INTERFACE, in_signature='s')
     def UpdateIndicators(self, stream):
         """Update counts in messaging indicators.
 
         example:
             import dbus
-            obj = dbus.SessionBus().get_object(
-                'com.canonical.Friends.Service',
-                '/com/canonical/friends/Service')
-            service = dbus.Interface(obj, 'com.canonical.Friends.Service')
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/Friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
             service.UpdateIndicators('stream')
         """
         pass #TODO
 
-    @dbus.service.method('com.canonical.Friends.Service', in_signature='sss')
+    @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
     def Do(self, action, account_id=None, message_id=None):
         """Performs a certain operation specific to individual messages.
 
         This is how the client initiates retweeting, liking, unliking, etc.
         example:
             import dbus
-            obj = dbus.SessionBus().get_object(
-                'com.canonical.Friends.Service',
-                '/com/canonical/friends/Service')
-            service = dbus.Interface(obj, 'com.canonical.Friends.Service')
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/Friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
             service.Do('like', account, message_id)
         """
         if not self.online:
@@ -141,53 +138,74 @@ class Dispatcher(dbus.service.Object):
         account = self.account_manager.get(account_id)
         if account is not None:
             account.protocol(action, message_id=message_id)
+        else:
+            log.error('Could not find account: {}'.format(account_id))
 
-    @dbus.service.method('com.canonical.Friends.Service', in_signature='s')
+    @dbus.service.method(DBUS_INTERFACE, in_signature='s')
     def SendMessage(self, message):
         """Posts a message/status update to all send_enabled accounts.
 
         It takes one argument, which is a message formated as a string.
         example:
             import dbus
-            obj = dbus.SessionBus().get_object(
-                'com.canonical.Friends.Service',
-                '/com/canonical/friends/Service')
-            service = dbus.Interface(obj, 'com.canonical.Friends.Service')
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/Friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
             service.SendMessage('Your message')
         """
         if not self.online:
             return
         for account in self.account_manager.get_all():
             if account.send_enabled:
+                log.debug(
+                    'Sending message to {}'.format(
+                        account.protocol.__class__.__name__))
                 account.protocol('send', message)
 
-    @dbus.service.method('com.canonical.Friends.Service', out_signature='s')
+    @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
+    def SendReply(self, account_id, message_id, message):
+        """Posts a reply to the indicate message_id on account_id.
+
+        It takes three arguments, all strings.
+        example:
+            import dbus
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
+            service.SendReply('6/twitter', '34245645347345626', 'Your reply')
+        """
+        if not self.online:
+            return
+        log.debug('Replying to {}, {}'.format(account_id, message_id))
+        account = self.account_manager.get(account_id)
+        if account is not None:
+            account.protocol('send_thread', message_id, message)
+        else:
+            log.error('Could not find account: {}'.format(account_id))
+
+    @dbus.service.method(DBUS_INTERFACE, out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.
 
         example:
             import dbus, json
-            obj = dbus.SessionBus().get_object(
-                'com.canonical.Friends.Service',
-                '/com/canonical/friends/Service')
-            service = dbus.Interface(obj, 'com.canonical.Friends.Service')
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/Friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
             features = json.loads(service.GetFeatures('facebook'))
         """
         protocol = protocol_manager.protocols.get(protocol_name)
         return json.dumps(protocol.get_features())
 
-    @dbus.service.method('com.canonical.Friends.Service',
-                         in_signature='s',
-                         out_signature='s')
+    @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetAvatarPath(self, url):
         """Returns the path to the cached avatar image as a string.
 
         example:
             import dbus
-            obj = dbus.SessionBus().get_object(
-                'com.canonical.Friends.Service',
-                '/com/canonical/friends/Service')
-            service = dbus.Interface(obj, 'com.canonical.Friends.Service')
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/Friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
             avatar = service.GetAvatar(url)
         """
         if self.online:
@@ -197,16 +215,15 @@ class Dispatcher(dbus.service.Object):
             # Report the cache location without attempting download.
             return Avatar.get_path(url)
 
-    @dbus.service.method('com.canonical.Friends.Service')
+    @dbus.service.method(DBUS_INTERFACE)
     def Quit(self):
         """Shutdown the service.
 
         example:
             import dbus
-            obj = dbus.SessionBus().get_object(
-                'com.canonical.Friends.Service',
-                '/com/canonical/friends/Service')
-            service = dbus.Interface(obj, 'com.canonical.Friends.Service')
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/Friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
             service.Quit()
         """
         log.info('Friends Service is being shutdown')
