@@ -28,7 +28,6 @@ from friends.utils.download import get_json
 from friends.utils.time import parsetime, iso8601utc
 from gi.repository import EBook
 
-
 # 'id' can be the id of *any* Facebook object
 # https://developers.facebook.com/docs/reference/api/
 URL_BASE = 'https://{subdomain}.facebook.com/'
@@ -257,14 +256,6 @@ class Facebook(Base):
                 # I guess there are no more next pages.
                 break
         return contacts
-
-    # Fetch the full contact info from facebook
-    # Not being used now - all we need for now is the id and name
-    def fetch_contact(self, contact_details):
-        access_token = self._get_access_token()
-        url = BASE_URL + '/' + details['id']
-        params = dict(access_token=access_token)
-        return get_json(url, params)
 
     # This method can take the minimal contact information or full contact info
     # For now we only cache ID and the name in the addressbook. 

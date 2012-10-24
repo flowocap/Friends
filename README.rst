@@ -19,10 +19,6 @@ Package requirements.
     * python3-dbus
     * gir1.2-ebook-1.2    
     * gir1.2-edataserver-1.2    
-    * python (3.2)
-    * python-distutils-extra
-    * python-dbus (0.80.2)
-    * python-virtualenv
     * python3-mock
 
 
