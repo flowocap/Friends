@@ -208,15 +208,15 @@ class Base:
 
     def _insert_sorted(self, _cmp, *args):
         """If the SharedModel is empty, use Model.append for the first row."""
+        # After we're sure there's at least one row, it's *much* more
+        # efficient to just call Model.insert_sorted directly rather
+        # than doing this test over and over forever.
+        self._insert_sorted = Model.insert_sorted
         if Model.get_n_rows() == 0:
             log.debug('SharedModel empty; using Model.append.')
             return Model.append(*args)
         else:
             return Model.insert_sorted(_cmp, *args)
-        # After we're sure there's at least one row, it's *much* more
-        # efficient to just call Model.insert_sorted directly rather
-        # than doing this test over and over.
-        self._insert_sorted = Model.insert_sorted
 
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
