@@ -357,10 +357,10 @@ class Base:
         return None
 
     @classmethod
-    def previously_stored_contact(cls, source, field, contact_id):
+    def previously_stored_contact(cls, source, field, search_term):
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)
-        q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), contact_id)        
+        q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), search_term)        
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         log.debug("search string %s", q.to_string())
         if cs[0] == False:
