@@ -31,7 +31,8 @@ import threading
 from datetime import datetime
 
 from friends.utils.authentication import Authentication
-from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
+from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
+from friends.utils.model import Model, persist_model
 from friends.utils.time import ISO8601_FORMAT
 
 
@@ -205,6 +206,18 @@ class Base:
         if barrier is not None:
             barrier.wait()
 
+    def _insert_sorted(self, _cmp, *args):
+        """If the SharedModel is empty, use Model.append for the first row."""
+        # After we're sure there's at least one row, it's *much* more
+        # efficient to just call Model.insert_sorted directly rather
+        # than doing this test over and over forever.
+        self._insert_sorted = Model.insert_sorted
+        if Model.get_n_rows() == 0:
+            log.debug('SharedModel empty; using Model.append.')
+            return Model.append(*args)
+        else:
+            return Model.insert_sorted(_cmp, *args)
+
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
 
@@ -253,7 +266,7 @@ class Base:
             row_iter = _seen_messages.get(key)
             if row_iter is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = Model.insert_sorted(_cmp_date, *args)
+                _seen_messages[key] = self._insert_sorted(_cmp_date, *args)
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.
@@ -302,6 +315,7 @@ class Base:
         for triple in _seen_ids.copy():
             if self._account.id in triple:
                 self._unpublish(triple[-1])
+        persist_model()
 
     def _get_access_token(self):
         """Return an access token, logging in if necessary."""

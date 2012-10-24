@@ -1,3 +1,9 @@
+friends (0.0+r24) quantal; urgency=low
+
+  * rev 24
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 24 Oct 2012 23:31:27 +0200
+
 friends (0.0+r23) quantal; urgency=low
 
   * rev 23 from trunk
