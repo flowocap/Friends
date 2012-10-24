@@ -208,6 +208,7 @@ class Base:
     def _insert_sorted(self, _cmp, *args):
         """If the SharedModel is empty, use Model.append for the first row."""
         if Model.get_n_rows() == 0:
+            log.debug('SharedModel empty; using Model.append.')
             return Model.append(*args)
         else:
             return Model.insert_sorted(_cmp, *args)
