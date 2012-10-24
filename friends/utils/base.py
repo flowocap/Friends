@@ -31,7 +31,8 @@ import threading
 from datetime import datetime
 
 from friends.utils.authentication import Authentication
-from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
+from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
+from friends.utils.model import Model, persist_model
 from friends.utils.time import ISO8601_FORMAT
 
 
@@ -314,6 +315,7 @@ class Base:
         for triple in _seen_ids.copy():
             if self._account.id in triple:
                 self._unpublish(triple[-1])
+        persist_model()
 
     def _get_access_token(self):
         """Return an access token, logging in if necessary."""
