@@ -177,6 +177,7 @@ class TestAccountManager(unittest.TestCase):
     """Test the AccountManager API."""
 
     def setUp(self):
+        TestModel.clear()
         self.account_service = mock.Mock()
 
     @mock.patch('friends.utils.account.Accounts')
@@ -226,6 +227,8 @@ class TestAccountManager(unittest.TestCase):
         manager._on_account_deleted(accounts_manager, 'faker/than fake')
         self.assertNotIn('faker/than fake', manager._accounts)
 
+    @mock.patch('friends.utils.account.Model', TestModel)
+    @mock.patch('friends.utils.base.Model', TestModel)
     def test_account_manager_delete_account(self):
         # Deleting an account removes the id from the mapping. But if
         # that id is missing, then it does not cause an exception.
