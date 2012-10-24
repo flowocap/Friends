@@ -1,0 +1,54 @@
+<schemalist>
+  <schema id="com.canonical.friends" path="/com/canonical/friends/">
+
+    <key name="interval" type="i">
+      <default>15</default>
+      <summary>Refresh interval in minutes.</summary>
+      <description>
+        The number of minutes friends-service will wait in between
+        attempts at downloading new messages.
+      </description>
+    </key>
+
+    <key name="notifications" type="b">
+      <default>true</default>
+      <summary>Display notifications?</summary>
+      <description>
+        True if you want to see unread message counts in the messaging
+        menu, false otherwise.
+      </description>
+    </key>
+
+    <key name="debug" type="b">
+      <default>false</default>
+      <summary>Display debugging messages?</summary>
+      <description>
+        Whether or not to show verbose debugging messages in the logfile.
+      </description>
+    </key>
+
+    <key name="shorten-urls" type="b">
+      <default>true</default>
+      <summary>Shorten URLs?</summary>
+      <description>
+        Whether or not to automatically shorten URLs in messages that
+        we send out to the world.
+      </description>
+    </key>
+
+    <key name="urlshorter" type="s">
+      <choices>
+        <choice value="is.gd"/>
+        <choice value="cli.gs"/>
+        <choice value="tinyurl.com"/>
+        <choice value="ur1.ca"/>
+      </choices>
+      <default>"is.gd"</default>
+      <summary>URL shortening service.</summary>
+      <description>
+        Choose the preferred URL shortening service.
+      </description>
+    </key>
+
+  </schema>
+</schemalist>

@@ -55,9 +55,9 @@ def main():
             package, dot, class_name = cls.__name__.rpartition('.')
             print(class_name)
         return
+
     # Initialize the logging subsystem.
-    # XXX FIXME - this should be renamed to 'friends'.
-    gsettings = Gio.Settings.new('org.gwibber.preferences')
+    gsettings = Gio.Settings.new('com.canonical.friends')
     initialize(console=args.console,
                debug=args.debug or gsettings.get_boolean('debug'))
     log = logging.getLogger(__name__)
