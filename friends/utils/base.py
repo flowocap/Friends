@@ -343,7 +343,7 @@ class Base:
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
         source.set_display_name(online_service)
-        source.set_parent("local-stub")        
+        source.set_parent("local-stub")    
         extension = source.get_extension(EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
         extension.set_backend_name("local")
         if (self.source_registry.commit_source_sync(source, Gio.Cancellable())):
@@ -362,6 +362,7 @@ class Base:
         client.open_sync(False, None)
         q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), contact_id)        
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
+        log.debug("search string %s", q.to_string())
         if cs[0] == False:
            return False # is this right ...
         return len(cs[1]) > 0                        

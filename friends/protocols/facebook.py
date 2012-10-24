@@ -269,6 +269,7 @@ class Facebook(Base):
         vcard.add_attribute(vcafid)
         vcard.add_attribute(vcafn)
         c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
+        log.debug("Creating new contact for {}".format(contact_json['name']))
         return c
 
     def contacts(self):
