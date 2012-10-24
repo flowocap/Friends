@@ -205,6 +205,17 @@ class Base:
         if barrier is not None:
             barrier.wait()
 
+    def _insert_sorted(self, _cmp, *args):
+        """If the SharedModel is empty, use Model.append for the first row."""
+        if Model.get_n_rows() == 0:
+            return Model.append(*args)
+        else:
+            return Model.insert_sorted(_cmp, *args)
+        # After we're sure there's at least one row, it's *much* more
+        # efficient to just call Model.insert_sorted directly rather
+        # than doing this test over and over.
+        self._insert_sorted = Model.insert_sorted
+
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
 
@@ -253,7 +264,7 @@ class Base:
             row_iter = _seen_messages.get(key)
             if row_iter is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = Model.insert_sorted(_cmp_date, *args)
+                _seen_messages[key] = self._insert_sorted(_cmp_date, *args)
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.
