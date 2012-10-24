@@ -24,6 +24,8 @@ import logging
 
 from datetime import datetime, timedelta
 
+from gi.repository import EBook
+
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
 from friends.utils.time import parsetime, iso8601utc
@@ -35,6 +37,7 @@ URL_BASE = 'https://{subdomain}.facebook.com/'
 PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
+FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
 
 
 log = logging.getLogger(__name__)
@@ -220,3 +223,77 @@ class Facebook(Base):
             log.error('Failed to delete {} on Facebook'.format(obj_id))
         else:
             self._unpublish(obj_id)
+
+    def fetch_contacts(self):
+        """Retrieve a list of up to 100 Facebook friends."""
+        limit = self._DOWNLOAD_LIMIT * 2
+        access_token = self._get_access_token()
+        contacts = []
+        url = ME_URL + '/friends'
+        params = dict(
+            access_token=access_token,
+            limit=limit,
+            )
+
+        # Now access Facebook and follow pagination until we have at least
+        # LIMIT number of entries, or we've reached the end of pages.
+        while True:
+            response = get_json(url, params)
+            if self._is_error(response):
+                # We'll just use what we have so far, if anything.
+                break
+            data = response.get('data')
+            if data is None:
+                # I guess we're done.
+                break
+            contacts.extend(data)
+            if len(contacts) >= limit:
+                break
+            # We haven't gotten the requested number of entries.  Follow the
+            # next page if there is one to try to get more.
+            pages = response.get('paging')
+            if pages is None:
+                break
+            # The 'next' key has the full link to follow; no additional
+            # parameters are needed.  Specifically, this link will already
+            # include the access_token, and any since/limit values.
+            url = pages.get('next')
+            params = None
+            if url is None:
+                # I guess there are no more next pages.
+                break
+        return contacts
+
+    # This method can take the minimal contact information or full
+    # contact info For now we only cache ID and the name in the
+    # addressbook. Using custom field for name because I can't figure
+    # out how econtact name works.
+    def create_contact(self, contact_json):
+        vcafid = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'facebook-id')
+        vcafid.add_value(contact_json['id'])
+        vcafn = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'facebook-name')
+        vcafn.add_value(contact_json['name'])
+        vcard = EBook.VCard.new()
+        vcard.add_attribute(vcafid)
+        vcard.add_attribute(vcafn)
+        c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
+        log.debug('Creating new contact for {}'.format(contact_json['name']))
+        return c
+
+    def contacts(self):
+        contacts = self.fetch_contacts()
+        source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        for contact in contacts:
+            if source is not None:
+                if (Base.previously_stored_contact(
+                        source, 'facebook-id', contact['id'])):
+                    continue
+            # Let's not query the full contact info for now Show some
+            # respect for facebook and the chances are we won't be
+            # blocked.
+            eds_contact = self.create_contact(contact)
+            if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
+                log.error(
+                    'Unable to save facebook contact {}'.format(contact['name']))
