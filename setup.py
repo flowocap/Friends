@@ -33,6 +33,10 @@ setup(
     package_data = {
         'friends.service.templates': ['*.service.in'],
         },
+    data_files = [
+        ('/usr/share/glib-2.0/schemas',
+         ['data/com.canonical.friends.gschema.xml'])
+        ],
     entry_points = {
         'console_scripts': ['friends-service = friends.main:main'],
         'distutils.commands': [

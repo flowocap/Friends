@@ -28,7 +28,6 @@ import logging
 from base64 import encodebytes
 from contextlib import contextmanager
 from gi.repository import Soup, SoupGNOME
-from urllib.error import HTTPError
 from urllib.parse import urlencode
 
 log = logging.getLogger(__name__)
