@@ -26,10 +26,12 @@ import re
 import string
 import logging
 import threading
+import time
 
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
 from gi.repository import EDataServer, EBook, Gio
+
 
 IGNORED = string.punctuation + string.whitespace
 SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)
@@ -323,7 +325,7 @@ class Base:
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
         if source_match == None:
-            new_source_uid = Base._create_eds_source(online_service)
+            new_source_uid = self._create_eds_source(online_service)
             if new_source_uid == None:
                 log.error('Could not create a new source for {}'.format(online_service))
                 return False
