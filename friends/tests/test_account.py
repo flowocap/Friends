@@ -229,6 +229,7 @@ class TestAccountManager(unittest.TestCase):
 
     @mock.patch('friends.utils.account.Model', TestModel)
     @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_account_manager_delete_account(self):
         # Deleting an account removes the id from the mapping. But if
         # that id is missing, then it does not cause an exception.
