@@ -364,8 +364,9 @@ class Base:
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         log.debug("search string %s", q.to_string())
         if cs[0] == False:
-           return False # is this right ...
-        return len(cs[1]) > 0                        
+            log.error("Search failed")
+            return False
+        return len(cs[1]) > 0
 
     @classmethod
     def get_features(cls):
