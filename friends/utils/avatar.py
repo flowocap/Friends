@@ -31,10 +31,12 @@ from hashlib import sha1
 from friends.utils.download import Downloader
 
 
-log = logging.getLogger(__name__)
 CACHE_DIR = os.path.realpath(os.path.join(
     GLib.get_user_cache_dir(), 'friends', 'avatars'))
 CACHE_AGE = timedelta(weeks=4)
+
+
+log = logging.getLogger(__name__)
 
 
 class Avatar:
@@ -62,20 +64,23 @@ class Avatar:
             # Treat a missing file as zero length.
             size = 0
         if size == 0:
-            log.debug('Get avatar: {}'.format(url))
+            log.debug('Getting: {}'.format(url))
             image_data = Downloader(url).get_bytes()
             input_stream = Gio.MemoryInputStream.new_from_data(
                 image_data, None)
             # TODO: is this the right size for these? Ask Ken.
-            pixbuf = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
-                input_stream, 96, 96, True, None)
-            pixbuf.savev(local_path, 'png', [], [])
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
+                    input_stream, 96, 96, True, None)
+                pixbuf.savev(local_path, 'png', [], [])
+            except GLib.GError:
+                log.error('Failed to save image: {}'.format(url))
+                return ''
         return local_path
 
     @staticmethod
     def expire_old_avatars():
         """Evict old files from the cache."""
-        # TODO actually call this from somewhere.
         limit = date.today() - CACHE_AGE
         for filename in os.listdir(CACHE_DIR):
             path = os.path.join(CACHE_DIR, filename)
@@ -85,6 +90,7 @@ class Avatar:
                 # time we'll allow in the cache.  However, due to race
                 # conditions, ignore it if the file has already been removed.
                 try:
+                    log.debug('Expiring: {}'.format(path))
                     os.remove(path)
                 except OSError as error:
                     if error.errno != errno.ENOENT:

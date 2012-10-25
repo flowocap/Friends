@@ -33,6 +33,7 @@ GObject.threads_init(None)
 from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher
 from friends.service.shortener import URLShorten
+from friends.utils.avatar import Avatar
 from friends.utils.base import initialize_caches
 from friends.utils.logging import initialize
 from friends.utils.menus import MenuManager
@@ -62,6 +63,11 @@ def main():
                debug=args.debug or gsettings.get_boolean('debug'))
     log = logging.getLogger(__name__)
     log.info('Friends backend service starting')
+
+    # Expire old Avatars. Without this we would never notice when
+    # somebody changes their avatar, we would just keep the stale old
+    # one forever.
+    Avatar.expire_old_avatars()
 
     # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
     # size, because anything larger will have problems being transmitted
