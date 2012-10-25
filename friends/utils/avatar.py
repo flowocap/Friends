@@ -62,7 +62,7 @@ class Avatar:
             # Treat a missing file as zero length.
             size = 0
         if size == 0:
-            log.debug('Avatar {} empty or missing, downloading'.format(url))
+            log.debug('Get avatar: {}'.format(url))
             image_data = Downloader(url).get_bytes()
             input_stream = Gio.MemoryInputStream.new_from_data(
                 image_data, None)
