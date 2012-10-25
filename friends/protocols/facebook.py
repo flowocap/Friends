@@ -87,7 +87,6 @@ class Facebook(Base):
 
         from_record = entry.get('from')
         if from_record is not None:
-            access_token = self._get_access_token()
             args['sender'] = sender_id = from_record.get('id', '')
             args['icon_uri'] = Avatar.get_image(
                 API_BASE.format(id=sender_id) + '/picture?type=large')
