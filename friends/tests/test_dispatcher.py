@@ -109,7 +109,7 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.account_manager.get.assert_called_once_with(
             '345/friendface')
         account.protocol.assert_called_once_with(
-            'like', message_id='23346356767354626')
+            'like', '23346356767354626')
 
         self.assertEqual(self.log_mock.empty(),
                          '345/friendface: like 23346356767354626\n')

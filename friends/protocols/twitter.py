@@ -99,7 +99,7 @@ class Twitter(Base):
 
     def _publish_tweet(self, tweet, stream='messages'):
         """Publish a single tweet into the Dee.SharedModel."""
-        tweet_id = tweet.get('id_str')
+        tweet_id = tweet.get('id_str') or str(tweet.get('id'))
         if tweet_id is None:
             log.info('Ignoring tweet with no id_str value')
             return

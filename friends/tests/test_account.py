@@ -150,6 +150,7 @@ class TestAccount(unittest.TestCase):
         # Two accounts are equal if their account services are equal.
         other = Account(self.account_service)
         self.assertEqual(self.account, other)
+        assert not self.account == None
 
     def test_unequal(self):
         # Two accounts are unequal if their account services are unequal.  The
@@ -164,6 +165,8 @@ class TestAccount(unittest.TestCase):
                 }),
             }))
         self.assertNotEqual(self.account, other)
+        assert self.account != None
+
 
 
 accounts_manager = mock.Mock()
