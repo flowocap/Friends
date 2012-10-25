@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 
 from gi.repository import EBook
 
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
 from friends.utils.time import parsetime, iso8601utc
@@ -60,14 +61,14 @@ class Facebook(Base):
             error.get('code'), error.get('type'), error.get('message')))
         return True
 
-    def _publish_entry(self, entry):
+    def _publish_entry(self, entry, reply_stream=None):
         message_id = entry.get('id')
         if message_id is None:
             # We can't do much with this entry.
             return
 
         args = dict(
-            stream='messages',
+            stream=reply_stream or 'messages',
             message=entry.get('message', ''),
             url=PERMALINK.format(id=message_id),
             icon_uri=entry.get('icon', ''),
@@ -77,27 +78,35 @@ class Facebook(Base):
             link_desc=entry.get('description', ''),
             link_caption=entry.get('caption', ''),
             )
+
+        # Posts gives us a likes dict, while replies give us an int.
+        likes = entry.get('likes', 0)
+        if isinstance(likes, dict):
+            likes = likes.get('count', 0)
+        args['likes'] = likes
+
         from_record = entry.get('from')
         if from_record is not None:
             args['sender'] = sender_id = from_record.get('id', '')
+            args['icon_uri'] = Avatar.get_image(
+                API_BASE.format(id=sender_id) + '/picture?type=large')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
+
         # Normalize the timestamp.
         timestamp = entry.get('updated_time', entry.get('created_time'))
         if timestamp is not None:
             args['timestamp'] = iso8601utc(parsetime(timestamp))
-        like_count = entry.get('likes', {}).get('count')
-        if like_count is not None:
-            args['likes'] = like_count
-            args['liked'] = (like_count > 0)
-        # Parse comments now.
-        all_comments = []
-        for comment_data in entry.get('comments', {}).get('data', []):
-            comment_message = comment_data.get('message')
-            if comment_message is not None:
-                all_comments.append(comment_message)
-        args['comments'] = all_comments
+
+        # Publish this message into the SharedModel.
         self._publish(message_id, **args)
+
+        # If there are any replies, publish them as well.
+        for comment in entry.get('comments', {}).get('data', []):
+            if comment:
+                self._publish_entry(
+                    reply_stream='reply_to/{}'.format(message_id),
+                    entry=comment)
 
     @feature
     def receive(self, since=None):
