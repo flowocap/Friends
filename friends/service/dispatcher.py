@@ -121,7 +121,7 @@ class Dispatcher(dbus.service.Object):
         pass #TODO
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
-    def Do(self, action, account_id=None, message_id=None):
+    def Do(self, action, account_id='', message_id=''):
         """Performs a certain operation specific to individual messages.
 
         This is how the client initiates retweeting, liking, unliking, etc.
@@ -134,12 +134,21 @@ class Dispatcher(dbus.service.Object):
         """
         if not self.online:
             return
-        log.debug('{}-ing {}'.format(action, message_id))
-        account = self.account_manager.get(account_id)
-        if account is not None:
-            account.protocol(action, message_id=message_id)
+        if account_id:
+            accounts = [self.account_manager.get(account_id)]
+            if accounts == [None]:
+                log.error('Could not find account: {}'.format(account_id))
+                return
         else:
-            log.error('Could not find account: {}'.format(account_id))
+            accounts = list(self.account_manager.get_all())
+
+        for account in accounts:
+            if message_id:
+                log.debug('{}: {} {}'.format(account.id, action, message_id))
+                account.protocol(action, message_id=message_id)
+            else:
+                log.debug('{}: {}'.format(account.id, action))
+                account.protocol(action)
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s')
     def SendMessage(self, message):

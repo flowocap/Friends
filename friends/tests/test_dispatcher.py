@@ -101,16 +101,18 @@ class TestDispatcher(unittest.TestCase):
 
     def test_do(self):
         account = mock.Mock()
+        account.id = '345/friendface'
         self.dispatcher.account_manager = mock.Mock()
         self.dispatcher.account_manager.get.return_value = account
 
-        self.dispatcher.Do('like', '6/twitter', '23346356767354626')
-        self.dispatcher.account_manager.get.assert_called_once_with('6/twitter')
+        self.dispatcher.Do('like', '345/friendface', '23346356767354626')
+        self.dispatcher.account_manager.get.assert_called_once_with(
+            '345/friendface')
         account.protocol.assert_called_once_with(
             'like', message_id='23346356767354626')
 
         self.assertEqual(self.log_mock.empty(),
-                         'like-ing 23346356767354626\n')
+                         '345/friendface: like 23346356767354626\n')
 
     def test_failing_do(self):
         account = mock.Mock()
@@ -122,7 +124,6 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'unlike-ing 23346356767354626\n' +
                          'Could not find account: 6/twitter\n')
 
     def test_send_message(self):
