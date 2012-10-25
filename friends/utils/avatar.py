@@ -66,9 +66,9 @@ class Avatar:
             image_data = Downloader(url).get_bytes()
             input_stream = Gio.MemoryInputStream.new_from_data(
                 image_data, None)
-            # TODO: is 48x48 the right size for these? Ask Ken.
+            # TODO: is this the right size for these? Ask Ken.
             pixbuf = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
-                input_stream, 48, 48, True, None)
+                input_stream, 96, 96, True, None)
             pixbuf.savev(local_path, 'png', [], [])
         return local_path
 

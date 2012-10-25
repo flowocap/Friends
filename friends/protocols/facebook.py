@@ -89,14 +89,8 @@ class Facebook(Base):
         if from_record is not None:
             access_token = self._get_access_token()
             args['sender'] = sender_id = from_record.get('id', '')
-            sender = get_json(
-                API_BASE.format(id=sender_id),
-                dict(access_token=access_token,
-                     fields='picture',
-                     type='large'))
-            avatar = sender.get('picture', {}).get('data', {}).get('url')
-            if avatar is not None:
-                args['icon_uri'] = Avatar.get_image(avatar)
+            args['icon_uri'] = Avatar.get_image(
+                API_BASE.format(id=sender_id) + '/picture?type=large')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
 
