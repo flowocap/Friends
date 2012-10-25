@@ -121,25 +121,37 @@ class Dispatcher(dbus.service.Object):
         pass #TODO
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
-    def Do(self, action, account_id=None, message_id=None):
-        """Performs a certain operation specific to individual messages.
+    def Do(self, action, account_id='', arg=''):
+        """Performs an arbitrary operation with an optional argument.
 
-        This is how the client initiates retweeting, liking, unliking, etc.
+        This is how the client initiates retweeting, liking, searching, etc.
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/Friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.Do('like', account, message_id)
+            service.Do('like', '3/facebook', 'post_id') # Likes that FB post.
+            service.Do('search', '', 'search terms') # Searches all accounts.
+            service.Do('list', '6/twitter', 'list_id') # Fetch a single list.
         """
         if not self.online:
             return
-        log.debug('{}-ing {}'.format(action, message_id))
-        account = self.account_manager.get(account_id)
-        if account is not None:
-            account.protocol(action, message_id=message_id)
+        if account_id:
+            accounts = [self.account_manager.get(account_id)]
+            if accounts == [None]:
+                log.error('Could not find account: {}'.format(account_id))
+                return
         else:
-            log.error('Could not find account: {}'.format(account_id))
+            accounts = list(self.account_manager.get_all())
+
+        for account in accounts:
+            log.debug('{}: {} {}'.format(account.id, action, arg))
+            args = (action, arg) if arg else (action)
+            try:
+                account.protocol(*args)
+            except NotImplementedError:
+                # Not all accounts are expected to implement every action.
+                pass
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s')
     def SendMessage(self, message):
