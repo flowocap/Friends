@@ -116,6 +116,11 @@ class Downloader:
         message = Soup.Message.new(self.method, url)
         for header, value in self.headers.items():
             message.request_headers.append(header, value)
+
+        if True and data is not None:
+            message.set_request('multipart/form-data',
+                Soup.MemoryUse.COPY, data, len(data))
+            data = None
         if data is not None:
             message.set_request(
                 'application/x-www-form-urlencoded; charset=utf-8',
@@ -144,6 +149,7 @@ class Downloader:
             # non-success error codes are received.  This lets the clients do
             # additional work if they want, and it prevents rate limiting from
             # occurring.
+            print (message)
             raise HTTPError(self.url,
                             message.status_code,
                             message.reason_phrase,

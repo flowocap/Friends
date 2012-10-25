@@ -220,3 +220,29 @@ class Facebook(Base):
             log.error('Failed to delete {} on Facebook'.format(obj_id))
         else:
             self._unpublish(obj_id)
+
+    def _upload(self, obj_id, picture_url, message, endpoint):
+        url = API_BASE.format(id=obj_id) + endpoint
+        token = self._get_access_token()
+        # from io import BytesIO
+        picture_source = open (picture_url, 'rb', buffering=0) # BytesIO(picture_url)
+
+        result = get_json(
+            url,
+            method='POST',
+            params=dict(access_token=token, source=picture_source))
+        new_id = result.get('id')
+        if new_id is None:
+            log.error('Failed sending to Facebook: {!r}'.format(result))
+            return
+        print (picture_url + " uploaded as " + new_id + " to " + API_BASE.format(id=new_id))
+
+    @feature
+    def upload(self, picture_url, message='', obj_id='me'):
+        # http://www.banubanu.de/images/produkte/i41/4167-Crocs-rainfloe-boot-canary-jpg2.jpg
+        # http://developers.facebook.com/docs/reference/api/photo/
+        """Upload local or remote image or video to album"""
+        # TODO: add "picture" to Post, URL to album
+        # HTTP POST to USER_ID/photos (ALBUM_ID/photos), source=multipart/form-data, message=string (optional), return id=string
+        self._upload(obj_id, picture_url, message, '/photos')
+
