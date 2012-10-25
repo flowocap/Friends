@@ -61,14 +61,14 @@ class Facebook(Base):
             error.get('code'), error.get('type'), error.get('message')))
         return True
 
-    def _publish_entry(self, entry, reply_stream=None):
+    def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
         if message_id is None:
             # We can't do much with this entry.
             return
 
         args = dict(
-            stream=reply_stream or 'messages',
+            stream=stream,
             message=entry.get('message', ''),
             url=PERMALINK.format(id=message_id),
             icon_uri=entry.get('icon', ''),
@@ -105,14 +105,49 @@ class Facebook(Base):
         for comment in entry.get('comments', {}).get('data', []):
             if comment:
                 self._publish_entry(
-                    reply_stream='reply_to/{}'.format(message_id),
+                    stream='reply_to/{}'.format(message_id),
                     entry=comment)
+
+    def _follow_pagination(self, url, params, limit=None):
+        """Follow Facebook's pagination until we hit the limit."""
+        limit = limit or self._DOWNLOAD_LIMIT
+        entries = []
+
+        while True:
+            response = get_json(url, params)
+            if self._is_error(response):
+                break
+
+            data = response.get('data')
+            if data is None:
+                break
+
+            entries.extend(data)
+            if len(entries) >= limit:
+                break
+
+            # We haven't gotten the requested number of entries.  Follow the
+            # next page if there is one to try to get more.
+            pages = response.get('paging')
+            if pages is None:
+                break
+
+            # The 'next' key has the full link to follow; no additional
+            # parameters are needed.  Specifically, this link will already
+            # include the access_token, and any since/limit values.
+            url = pages.get('next')
+            params = None
+            if url is None:
+                break
+
+        # We've gotten everything Facebook is going to give us.
+        return entries
 
     @feature
     def receive(self, since=None):
         """Retrieve a list of Facebook objects.
 
-        A maximum of 100 objects are requested.
+        A maximum of 50 objects are requested.
 
         :param since: Only get objects posted since this date.  If not given,
             then only objects younger than 10 days are retrieved.  The value
@@ -129,38 +164,26 @@ class Facebook(Base):
         params = dict(access_token=access_token,
                       since=when.isoformat(),
                       limit=self._DOWNLOAD_LIMIT)
-        # Now access Facebook and follow pagination until we have at least
-        # _DOWNLOAD_LIMIT number of entries, or we've reached the end of pages.
-        while True:
-            response = get_json(url, params)
-            if self._is_error(response):
-                # We'll just use what we have so far, if anything.
-                break
-            data = response.get('data')
-            if data is None:
-                # I guess we're done.
-                break
-            entries.extend(data)
-            if len(entries) >= self._DOWNLOAD_LIMIT:
-                break
-            # We haven't gotten the requested number of entries.  Follow the
-            # next page if there is one to try to get more.
-            pages = response.get('paging')
-            if pages is None:
-                break
-            # The 'next' key has the full link to follow; no additional
-            # parameters are needed.  Specifically, this link will already
-            # include the access_token, and any since/limit values.
-            url = pages.get('next')
-            params = None
-            if url is None:
-                # I guess there are no more next pages.
-                break
-        # We've gotten everything Facebook is going to give us.  Now, decipher
-        # the data and publish it.
+
+        entries = self._follow_pagination(url, params)
         # https://developers.facebook.com/docs/reference/api/post/
         for entry in entries:
             self._publish_entry(entry)
+
+    @feature
+    def search(self, query):
+        """Search for up to 50 items matching query."""
+        access_token = self._get_access_token()
+        entries = []
+        url = API_BASE.format(id='search')
+        params = dict(
+            access_token=access_token,
+            q=query)
+
+        entries = self._follow_pagination(url, params)
+        # https://developers.facebook.com/docs/reference/api/post/
+        for entry in entries:
+            self._publish_entry(entry, 'search/{}'.format(query))
 
     def _like(self, obj_id, method):
         url = API_BASE.format(id=obj_id) + '/likes'
@@ -241,37 +264,9 @@ class Facebook(Base):
         url = ME_URL + '/friends'
         params = dict(
             access_token=access_token,
-            limit=limit,
-            )
+            limit=limit)
 
-        # Now access Facebook and follow pagination until we have at least
-        # LIMIT number of entries, or we've reached the end of pages.
-        while True:
-            response = get_json(url, params)
-            if self._is_error(response):
-                # We'll just use what we have so far, if anything.
-                break
-            data = response.get('data')
-            if data is None:
-                # I guess we're done.
-                break
-            contacts.extend(data)
-            if len(contacts) >= limit:
-                break
-            # We haven't gotten the requested number of entries.  Follow the
-            # next page if there is one to try to get more.
-            pages = response.get('paging')
-            if pages is None:
-                break
-            # The 'next' key has the full link to follow; no additional
-            # parameters are needed.  Specifically, this link will already
-            # include the access_token, and any since/limit values.
-            url = pages.get('next')
-            params = None
-            if url is None:
-                # I guess there are no more next pages.
-                break
-        return contacts
+        return self._follow_pagination(url, params, limit)
 
     # This method can take the minimal contact information or full
     # contact info For now we only cache ID and the name in the

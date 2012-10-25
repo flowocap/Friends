@@ -52,7 +52,7 @@ if __name__ == '__main__':
     args = sys.argv[2:]
 
     found = False
-    a = AccountManager(None)
+    a = AccountManager()
 
     Model.connect('row-added', row_added)
 
