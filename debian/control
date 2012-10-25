@@ -37,7 +37,9 @@ Depends: ${misc:Depends},
          python3-dbus,
          gir1.2-networkmanager-1.0,
          gir1.2-signon-1.0,
-         gir1.2-soup-2.4
+         gir1.2-soup-2.4,
+         gir1.2-ebook-1.2,
+         gir1.2-edataserver-1.2
 Recommends: gir1.2-messagingmenu-1.0,
             gir1.2-dbusmenu-glib-0.4,
             gir1.2-unity-5.0,

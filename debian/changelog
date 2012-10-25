@@ -1,3 +1,11 @@
+friends (0.0+r27) quantal; urgency=low
+
+  * rev 27 which adds facebook contacts sync
+  * debian/control
+    - added depends for gir1.2-ebook-1.2 and gir1.2-edataserver-1.2
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 25 Oct 2012 10:59:22 +0200
+
 friends (0.0+r24) quantal; urgency=low
 
   * rev 24
