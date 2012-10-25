@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 
 from gi.repository import EBook
 
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
 from friends.utils.time import parsetime, iso8601utc
@@ -86,7 +87,16 @@ class Facebook(Base):
 
         from_record = entry.get('from')
         if from_record is not None:
+            access_token = self._get_access_token()
             args['sender'] = sender_id = from_record.get('id', '')
+            sender = get_json(
+                API_BASE.format(id=sender_id),
+                dict(access_token=access_token,
+                     fields='picture',
+                     type='large'))
+            avatar = sender.get('picture', {}).get('data', {}).get('url')
+            if avatar is not None:
+                args['icon_uri'] = Avatar.get_image(avatar)
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
 
@@ -102,7 +112,7 @@ class Facebook(Base):
         for comment in entry.get('comments', {}).get('data', []):
             if comment:
                 self._publish_entry(
-                    reply_id='reply_to/{}'.format(message_id),
+                    reply_stream='reply_to/{}'.format(message_id),
                     entry=comment)
 
     @feature

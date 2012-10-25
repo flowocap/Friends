@@ -62,10 +62,11 @@ class Avatar:
             # Treat a missing file as zero length.
             size = 0
         if size == 0:
-            log.debug('Avatar {} empty or missing, downloading', url)
+            log.debug('Avatar {} empty or missing, downloading'.format(url))
             image_data = Downloader(url).get_bytes()
             input_stream = Gio.MemoryInputStream.new_from_data(
                 image_data, None)
+            # TODO: is 48x48 the right size for these? Ask Ken.
             pixbuf = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
                 input_stream, 48, 48, True, None)
             pixbuf.savev(local_path, 'png', [], [])
