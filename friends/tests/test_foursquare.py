@@ -108,7 +108,7 @@ class TestFourSquare(unittest.TestCase):
             'https://api.foursquare.com/v2/checkins/50574c9ce4b0a9a6e84433a0' +
             '?oauth_token=tokeny goodness&v=20120917', '', '', '', '', 0.0,
             False, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-            '', '', '', [], '', '', '',
+            '', '', '', '', '', '',
             ]
         for got, want in zip(TestModel.get_row(0), expected):
             self.assertEqual(got, want)

@@ -256,12 +256,12 @@ class TestAccountManager(unittest.TestCase):
             'messages', 'Fred Flintstone', 'fred', True,
             '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '', '', '', '',
             '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '', '',
-            '', '', '', '', '', '', [], '', '', '']
+            '', '', '', '', '', '', '', '', '']
         result_row = [[['twitter', '6/twitter', '1234']],
             'messages', 'Fred Flintstone', 'fred', True,
             '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '', '', '', '',
             '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '', '',
-            '', '', '', '', '', '', [], '', '', '']
+            '', '', '', '', '', '', '', '', '']
         row_iter = TestModel.append(*example_row)
         from friends.utils.base import _seen_ids
         _seen_ids[('base', 'faker/than fake', '5678')] = row_iter

@@ -121,8 +121,47 @@ Facebook.receive has completed, thread exiting.
         self.maxDiff = None
         self.account.access_token = 'abc'
         self.protocol.receive()
-        self.assertEqual(TestModel.get_n_rows(), 2)
+        self.assertEqual(TestModel.get_n_rows(), 4)
         self.assertEqual(list(TestModel.get_row(0)), [
+            [['facebook',
+              'faker/than fake',
+              '117402931676347_386054134801436_3235476']],
+            'reply_to/109',
+            '809',
+            'Bruce Peart',
+            False,
+            '2012-09-26T17:16:00',
+            'OK Don...10) Headlong Flight',
+            '',
+            '',
+            'https://www.facebook.com/117402931676347_386054134801436_3235476',
+            '',
+            '',
+            '',
+            '',
+            0.0,
+            False,
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            ''])
+        self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '108']],
             'messages',
             '117402931676347',
@@ -138,7 +177,7 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             16.0,
-            True,
+            False,
             '',
             '',
             '',
@@ -156,11 +195,10 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             '',
-            [],
             '',
             '',
             ''])
-        self.assertEqual(list(TestModel.get_row(1)), [
+        self.assertEqual(list(TestModel.get_row(3)), [
             [['facebook', 'faker/than fake', '109']],
             'messages',
             '117402931676347',
@@ -176,7 +214,7 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             27.0,
-            True,
+            False,
             '',
             '',
             '',
@@ -194,11 +232,9 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             '',
-            ['OK Don...10) Headlong Flight',
-             'No Cygnus X-1 Bruce?  I call shenanigans!'],
-             '',
-             '',
-             ''])
+            '',
+            '',
+            ''])
 
     # XXX We really need full coverage of the receive() method, including
     # cases where some data is missing, or can't be converted

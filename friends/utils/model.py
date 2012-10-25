@@ -93,7 +93,6 @@ SCHEMA = (
     ('video_src',      's'),
     ('video_url',      's'),
     ('video_name',     's'),
-    ('comments',       'as'),
     ('recipient',      's'),
     ('recipient_nick', 's'),
     ('recipient_icon', 's'),
