@@ -19,14 +19,18 @@ __all__ = [
     'Facebook',
     ]
 
+
 import logging
 
 from datetime import datetime, timedelta
 
+from gi.repository import EBook
+
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
 from friends.utils.time import parsetime, iso8601utc
-from gi.repository import EBook
+
 
 # 'id' can be the id of *any* Facebook object
 # https://developers.facebook.com/docs/reference/api/
@@ -34,9 +38,11 @@ URL_BASE = 'https://{subdomain}.facebook.com/'
 PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
-LIMIT = 100
-FACEBOOK_ADDRESS_BOOK = "friends-facebook-contacts"
+FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
+
+
 log = logging.getLogger(__name__)
+
 
 class Facebook(Base):
     def _whoami(self, authdata):
@@ -55,14 +61,14 @@ class Facebook(Base):
             error.get('code'), error.get('type'), error.get('message')))
         return True
 
-    def _publish_entry(self, entry):
+    def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
         if message_id is None:
             # We can't do much with this entry.
             return
 
         args = dict(
-            stream='messages',
+            stream=stream,
             message=entry.get('message', ''),
             url=PERMALINK.format(id=message_id),
             icon_uri=entry.get('icon', ''),
@@ -72,33 +78,76 @@ class Facebook(Base):
             link_desc=entry.get('description', ''),
             link_caption=entry.get('caption', ''),
             )
+
+        # Posts gives us a likes dict, while replies give us an int.
+        likes = entry.get('likes', 0)
+        if isinstance(likes, dict):
+            likes = likes.get('count', 0)
+        args['likes'] = likes
+
         from_record = entry.get('from')
         if from_record is not None:
             args['sender'] = sender_id = from_record.get('id', '')
+            args['icon_uri'] = Avatar.get_image(
+                API_BASE.format(id=sender_id) + '/picture?type=large')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
+
         # Normalize the timestamp.
         timestamp = entry.get('updated_time', entry.get('created_time'))
         if timestamp is not None:
             args['timestamp'] = iso8601utc(parsetime(timestamp))
-        like_count = entry.get('likes', {}).get('count')
-        if like_count is not None:
-            args['likes'] = like_count
-            args['liked'] = (like_count > 0)
-        # Parse comments now.
-        all_comments = []
-        for comment_data in entry.get('comments', {}).get('data', []):
-            comment_message = comment_data.get('message')
-            if comment_message is not None:
-                all_comments.append(comment_message)
-        args['comments'] = all_comments
+
+        # Publish this message into the SharedModel.
         self._publish(message_id, **args)
+
+        # If there are any replies, publish them as well.
+        for comment in entry.get('comments', {}).get('data', []):
+            if comment:
+                self._publish_entry(
+                    stream='reply_to/{}'.format(message_id),
+                    entry=comment)
+
+    def _follow_pagination(self, url, params, limit=None):
+        """Follow Facebook's pagination until we hit the limit."""
+        limit = limit or self._DOWNLOAD_LIMIT
+        entries = []
+
+        while True:
+            response = get_json(url, params)
+            if self._is_error(response):
+                break
+
+            data = response.get('data')
+            if data is None:
+                break
+
+            entries.extend(data)
+            if len(entries) >= limit:
+                break
+
+            # We haven't gotten the requested number of entries.  Follow the
+            # next page if there is one to try to get more.
+            pages = response.get('paging')
+            if pages is None:
+                break
+
+            # The 'next' key has the full link to follow; no additional
+            # parameters are needed.  Specifically, this link will already
+            # include the access_token, and any since/limit values.
+            url = pages.get('next')
+            params = None
+            if url is None:
+                break
+
+        # We've gotten everything Facebook is going to give us.
+        return entries
 
     @feature
     def receive(self, since=None):
         """Retrieve a list of Facebook objects.
 
-        A maximum of 100 objects are requested.
+        A maximum of 50 objects are requested.
 
         :param since: Only get objects posted since this date.  If not given,
             then only objects younger than 10 days are retrieved.  The value
@@ -115,39 +164,27 @@ class Facebook(Base):
         params = dict(access_token=access_token,
                       since=when.isoformat(),
                       limit=self._DOWNLOAD_LIMIT)
-        # Now access Facebook and follow pagination until we have at least
-        # _DOWNLOAD_LIMIT number of entries, or we've reached the end of pages.
-        while True:
-            response = get_json(url, params)
-            if self._is_error(response):
-                # We'll just use what we have so far, if anything.
-                break
-            data = response.get('data')
-            if data is None:
-                # I guess we're done.
-                break
-            entries.extend(data)
-            if len(entries) >= self._DOWNLOAD_LIMIT:
-                break
-            # We haven't gotten the requested number of entries.  Follow the
-            # next page if there is one to try to get more.
-            pages = response.get('paging')
-            if pages is None:
-                break
-            # The 'next' key has the full link to follow; no additional
-            # parameters are needed.  Specifically, this link will already
-            # include the access_token, and any since/limit values.
-            url = pages.get('next')
-            params = None
-            if url is None:
-                # I guess there are no more next pages.
-                break
-        # We've gotten everything Facebook is going to give us.  Now, decipher
-        # the data and publish it.
+
+        entries = self._follow_pagination(url, params)
         # https://developers.facebook.com/docs/reference/api/post/
         for entry in entries:
             self._publish_entry(entry)
-        
+
+    @feature
+    def search(self, query):
+        """Search for up to 50 items matching query."""
+        access_token = self._get_access_token()
+        entries = []
+        url = API_BASE.format(id='search')
+        params = dict(
+            access_token=access_token,
+            q=query)
+
+        entries = self._follow_pagination(url, params)
+        # https://developers.facebook.com/docs/reference/api/post/
+        for entry in entries:
+            self._publish_entry(entry, 'search/{}'.format(query))
+
     def _like(self, obj_id, method):
         url = API_BASE.format(id=obj_id) + '/likes'
         token = self._get_access_token()
@@ -220,51 +257,28 @@ class Facebook(Base):
             self._unpublish(obj_id)
 
     def fetch_contacts(self):
-        """ Retrieve a list of Facebook friends
-            A maximum of 100 friends are requested.
-        """
+        """Retrieve a list of up to 100 Facebook friends."""
+        limit = self._DOWNLOAD_LIMIT * 2
         access_token = self._get_access_token()
         contacts = []
         url = ME_URL + '/friends'
-        params = dict(access_token=access_token,
-                      limit=LIMIT)
-        # Now access Facebook and follow pagination until we have at least
-        # LIMIT number of entries, or we've reached the end of pages.
-        while True:
-            response = get_json(url, params)
-            if self._is_error(response):
-                # We'll just use what we have so far, if anything.
-                break
-            data = response.get('data')
-            if data is None:
-                # I guess we're done.
-                break
-            contacts.extend(data)
-            if len(contacts) >= LIMIT:
-                break
-            # We haven't gotten the requested number of entries.  Follow the
-            # next page if there is one to try to get more.
-            pages = response.get('paging')
-            if pages is None:
-                break
-            # The 'next' key has the full link to follow; no additional
-            # parameters are needed.  Specifically, this link will already
-            # include the access_token, and any since/limit values.
-            url = pages.get('next')
-            params = None
-            if url is None:
-                # I guess there are no more next pages.
-                break
-        return contacts
+        params = dict(
+            access_token=access_token,
+            limit=limit)
 
-    # This method can take the minimal contact information or full contact info
-    # For now we only cache ID and the name in the addressbook. 
-    # Using custom field for name because I can't figure out how econtact name works.
+        return self._follow_pagination(url, params, limit)
+
+    # This method can take the minimal contact information or full
+    # contact info For now we only cache ID and the name in the
+    # addressbook. Using custom field for name because I can't figure
+    # out how econtact name works.
     def create_contact(self, contact_json):
-        vcafid = EBook.VCardAttribute.new("social-networking-attributes", "facebook-id")      
-        vcafid.add_value(contact_json["id"])
-        vcafn = EBook.VCardAttribute.new("social-networking-attributes", "facebook-name")      
-        vcafn.add_value(contact_json["name"])
+        vcafid = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'facebook-id')
+        vcafid.add_value(contact_json['id'])
+        vcafn = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'facebook-name')
+        vcafn.add_value(contact_json['name'])
         vcard = EBook.VCard.new()
         vcard.add_attribute(vcafid)
         vcard.add_attribute(vcafn)
@@ -277,12 +291,14 @@ class Facebook(Base):
         contacts = self.fetch_contacts()
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
         for contact in contacts:
-            if source != None and Base.previously_stored_contact(source, "facebook-id", contact['id']) == True:
-                continue
-            #Let's not query the full contact info for now
-            #Show some respect for facebook and the chances are we won't be blocked.
+            if source is not None:
+                if (Base.previously_stored_contact(
+                        source, 'facebook-id', contact['id'])):
+                    continue
+            # Let's not query the full contact info for now Show some
+            # respect for facebook and the chances are we won't be
+            # blocked.
             eds_contact = self.create_contact(contact)
-            if(self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact) == False):
-                log.error("Warning: Unable to save facebook contact {}".format(contact["name"]))
-
-
+            if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
+                log.error(
+                    'Unable to save facebook contact {}'.format(contact['name']))

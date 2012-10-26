@@ -46,10 +46,6 @@ class Identica(Twitter):
         self._account.user_id = result.get('id')
         self._account.user_name = result.get('screen_name')
 
-    def _publish_tweet(self, tweet):
-        tweet['id_str'] = str(tweet['id'])
-        super()._publish_tweet(tweet)
-
     def list(self, list_id):
         """Identi.ca does not have this feature."""
         raise NotImplementedError

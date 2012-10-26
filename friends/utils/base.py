@@ -19,18 +19,24 @@
 __all__ = [
     'Base',
     'feature',
+    'initialize_caches',
     ]
 
 
 import re
+import time
 import string
 import logging
 import threading
-import time
+
+from datetime import datetime
+
+from gi.repository import EDataServer, EBook, Gio
 
 from friends.utils.authentication import Authentication
-from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS, Model
-from gi.repository import EDataServer, EBook, Gio
+from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
+from friends.utils.model import Model, persist_model
+from friends.utils.time import ISO8601_FORMAT
 
 
 IGNORED = string.punctuation + string.whitespace
@@ -40,6 +46,7 @@ COMMA_SPACE = ', '
 SENDER_IDX = COLUMN_INDICES['sender']
 MESSAGE_IDX = COLUMN_INDICES['message']
 IDS_IDX = COLUMN_INDICES['message_ids']
+TIME_IDX = COLUMN_INDICES['timestamp']
 
 
 # This is a mapping from Dee.SharedModel row keys to the DeeModelIters
@@ -68,7 +75,7 @@ def feature(method):
 
     Then find all feature methods for a protocol with:
 
-    for feature_name in ProtocolClass.features:
+    for feature_name in ProtocolClass.get_features():
         # ...
     """
     method.is_feature = True
@@ -102,6 +109,35 @@ def _make_key(row):
     key = SCHEME_RE.sub('', row[SENDER_IDX] + row[MESSAGE_IDX])
     # Now remove all punctuation and whitespace.
     return EMPTY_STRING.join(char for char in key if char not in IGNORED)
+
+
+def _cmp(a, b):
+    """Ressurrect cmp() because Dee.SharedModel demands it."""
+    return (a > b) - (a < b)
+
+
+def _cmp_date(row1, row1_length, row2, row2_length, user_data):
+    """Comparison function that sorts Model rows by UTC timestamp."""
+    row1_key = row1[TIME_IDX].get_string()
+    row2_key = row2[TIME_IDX].get_string()
+    return _cmp(row1_key, row2_key)
+
+
+def initialize_caches():
+    """Populate _seen_ids and _seen_messages with Model data.
+
+    Our Dee.SharedModel persists across instances, so we need to
+    populate these caches at launch.
+    """
+    for i in range(Model.get_n_rows()):
+        row_iter = Model.get_iter_at_row(i)
+        row = Model.get_row(row_iter)
+        _seen_messages[_make_key(row)] = row_iter
+        for triple in row[IDS_IDX]:
+            _seen_ids[tuple(triple)] = row_iter
+    log.debug(
+        '_seen_ids: {}, _seen_messages: {}'.format(
+            len(_seen_ids), len(_seen_messages)))
 
 
 class _OperationThread(threading.Thread):
@@ -143,7 +179,7 @@ class Base:
     _SYNCHRONIZE = False
 
     def __init__(self, account):
-        self.source_registry = EDataServer.SourceRegistry.new_sync(None)
+        self._source_registry = EDataServer.SourceRegistry.new_sync(None)
         self._account = account
 
     def __call__(self, operation, *args, **kwargs):
@@ -173,6 +209,18 @@ class Base:
         # before returning.
         if barrier is not None:
             barrier.wait()
+
+    def _insert_sorted(self, _cmp, *args):
+        """If the SharedModel is empty, use Model.append for the first row."""
+        # After we're sure there's at least one row, it's *much* more
+        # efficient to just call Model.insert_sorted directly rather
+        # than doing this test over and over forever.
+        self._insert_sorted = Model.insert_sorted
+        if Model.get_n_rows() == 0:
+            log.debug('SharedModel empty; using Model.append.')
+            return Model.append(*args)
+        else:
+            return Model.insert_sorted(_cmp, *args)
 
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
@@ -210,6 +258,11 @@ class Base:
         if len(kwargs) > 0:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
+        if not args[TIME_IDX]:
+            # We *need* a timestamp for sorting so badly that it's better
+            # to use the current time than to fail too loudly.
+            log.error('No timestamp for message: {!r}'.format(triple))
+            args[TIME_IDX] = datetime.today().strftime(ISO8601_FORMAT)
         with _publish_lock:
             # Don't let duplicate messages into the model, but do record the
             # unique message ids of each duplicate message.
@@ -217,7 +270,7 @@ class Base:
             row_iter = _seen_messages.get(key)
             if row_iter is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = Model.append(*args)
+                _seen_messages[key] = self._insert_sorted(_cmp_date, *args)
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.
@@ -243,6 +296,7 @@ class Base:
         triple = (self.__class__.__name__.lower(),
                   self._account.id,
                   message_id)
+        log.debug('Unpublishing {}!'.format(triple))
 
         row_iter = _seen_ids.pop(triple, None)
         if row_iter is None:
@@ -259,6 +313,13 @@ class Base:
             row[IDS_IDX] = [ids for ids
                             in row[IDS_IDX]
                             if message_id not in ids]
+
+    def _unpublish_all(self):
+        """Remove all of this account's messages from the Model."""
+        for triple in _seen_ids.copy():
+            if self._account.id in triple:
+                self._unpublish(triple[-1])
+        persist_model()
 
     def _get_access_token(self):
         """Return an access token, logging in if necessary."""
@@ -324,37 +385,40 @@ class Base:
 
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
-        if source_match == None:
+        if source_match is None:
             new_source_uid = self._create_eds_source(online_service)
-            if new_source_uid == None:
-                log.error('Could not create a new source for {}'.format(online_service))
+            if new_source_uid is None:
+                log.error(
+                    'Could not create a new source for {}'.format(
+                        online_service))
                 return False
             else:
-                #Potential race condition - need to sleep for a couple of cycles
-                #to ensure the registry will return a valid source object after commiting
-                #Evolution fix on the way but for now we need to have this in place.
-                #https://bugzilla.gnome.org/show_bug.cgi?id=685986                
+                # https://bugzilla.gnome.org/show_bug.cgi?id=685986
+                # Potential race condition - need to sleep for a
+                # couple of cycles to ensure the registry will return
+                # a valid source object after commiting Evolution fix
+                # on the way but for now we need this.
                 time.sleep(1)
-                source_match = self.source_registry.ref_source(new_source_uid)
+                source_match = self._source_registry.ref_source(new_source_uid)
         client = EBook.BookClient.new(source_match)
         client.open_sync(False, None)
-        return client.add_contact_sync(contact, Gio.Cancellable());
+        return client.add_contact_sync(contact, Gio.Cancellable())
 
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
         source.set_display_name(online_service)
-        source.set_parent("local-stub")    
-        extension = source.get_extension(EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
-        extension.set_backend_name("local")
-        if (self.source_registry.commit_source_sync(source, Gio.Cancellable())):
+        source.set_parent('local-stub')
+        extension = source.get_extension(
+            EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
+        extension.set_backend_name('local')
+        if self._source_registry.commit_source_sync(source, Gio.Cancellable()):
             return source.get_uid()
-        return None
 
     def _get_eds_source(self, online_service):
-        for previous_source in self.source_registry.list_sources(None):
+        for previous_source in self._source_registry.list_sources(None):
             if previous_source.get_display_name() == online_service:
-                return self.source_registry.ref_source(previous_source.get_uid())
-        return None
+                return self._source_registry.ref_source(
+                    previous_source.get_uid())
 
     @classmethod
     def previously_stored_contact(cls, source, field, search_term):
@@ -364,7 +428,7 @@ class Base:
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
         log.debug("search string %s", q.to_string())
         if cs[0] == False:
-            log.error("Search failed")
+            log.error("EDS Search failed on field %s", field)
             return False
         return len(cs[1]) > 0
 

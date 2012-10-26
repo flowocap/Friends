@@ -19,16 +19,18 @@ __all__ = [
     'TestFacebook',
     ]
 
+
 import unittest
 
-from gi.repository import Dee
-from gi.repository import EBook, EDataServer, Gio, GLib
+from gi.repository import Dee, EBook, EDataServer, Gio, GLib
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock, EDSBookClientMock, EDSSource, EDSRegistry
+from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_TYPES
+
 
 try:
     # Python 3.3
@@ -36,10 +38,12 @@ try:
 except ImportError:
     import mock
 
+
 # Create a test model that will not interfere with the user's environment.
 # We'll use this object as a mock of the real model.
 TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
+
 
 @mock.patch('friends.utils.download._soup', mock.Mock())
 class TestFacebook(unittest.TestCase):
@@ -117,8 +121,47 @@ Facebook.receive has completed, thread exiting.
         self.maxDiff = None
         self.account.access_token = 'abc'
         self.protocol.receive()
-        self.assertEqual(TestModel.get_n_rows(), 2)
+        self.assertEqual(TestModel.get_n_rows(), 4)
         self.assertEqual(list(TestModel.get_row(0)), [
+            [['facebook',
+              'faker/than fake',
+              '117402931676347_386054134801436_3235476']],
+            'reply_to/109',
+            '809',
+            'Bruce Peart',
+            False,
+            '2012-09-26T17:16:00',
+            'OK Don...10) Headlong Flight',
+            '',
+            '',
+            'https://www.facebook.com/117402931676347_386054134801436_3235476',
+            '',
+            '',
+            '',
+            '',
+            0.0,
+            False,
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            ''])
+        self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '108']],
             'messages',
             '117402931676347',
@@ -127,14 +170,14 @@ Facebook.receive has completed, thread exiting.
             '2012-09-26T17:34:00',
             'Rush takes off to the Great White North',
             '',
-            'https://s-static.ak.facebook.com/rsrc.php/v2/yD/r/a.gif',
+            '',
             'https://www.facebook.com/108',
             '',
             '',
             '',
             '',
             16.0,
-            True,
+            False,
             '',
             '',
             '',
@@ -152,11 +195,10 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             '',
-            [],
             '',
             '',
             ''])
-        self.assertEqual(list(TestModel.get_row(1)), [
+        self.assertEqual(list(TestModel.get_row(3)), [
             [['facebook', 'faker/than fake', '109']],
             'messages',
             '117402931676347',
@@ -165,14 +207,14 @@ Facebook.receive has completed, thread exiting.
             '2012-09-26T17:49:06',
             'http://www2.gibson.com/Alex-Lifeson-0225-2011.aspx',
             '',
-            'https://s-static.ak.facebook.com/rsrc.php/v2/yD/r/a.gif',
+            '',
             'https://www.facebook.com/109',
             '',
             '',
             '',
             '',
             27.0,
-            True,
+            False,
             '',
             '',
             '',
@@ -190,11 +232,9 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             '',
-            ['OK Don...10) Headlong Flight',
-             'No Cygnus X-1 Bruce?  I call shenanigans!'],
-             '',
-             '',
-             ''])
+            '',
+            '',
+            ''])
 
     # XXX We really need full coverage of the receive() method, including
     # cases where some data is missing, or can't be converted
@@ -313,35 +353,34 @@ Facebook.receive has completed, thread exiting.
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
 
-
-
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-contacts.dat'))
     @mock.patch('friends.protocols.facebook.Facebook._login',
                 return_value=True)
     def test_fetch_contacts(self, *mocks):
         # Receive the users friends.
-        results = self.protocol.fetch_contacts() 
+        results = self.protocol.fetch_contacts()
         self.assertEqual(len(results), 8)
-        self.assertEqual(results[7]["name"], "John Smith")
-        self.assertEqual(results[7]["id"], "444444")
+        self.assertEqual(results[7]['name'], 'John Smith')
+        self.assertEqual(results[7]['id'], '444444')
 
     def test_create_contact(self, *mocks):
         # Receive the users friends.
-        bare_contact = {"name": "Lucy Baron", "id": "555555555"}
-        eds_contact = self.protocol.create_contact(bare_contact) 
-        facebook_id_attr = eds_contact.get_attribute("facebook-id")
-        self.assertEqual(facebook_id_attr.get_value(), "555555555")
-        facebook_name_attr = eds_contact.get_attribute("facebook-name")
-        self.assertEqual(facebook_name_attr.get_value(), "Lucy Baron")
+        bare_contact = {'name': 'Lucy Baron', 'id': '555555555'}
+        eds_contact = self.protocol.create_contact(bare_contact)
+        facebook_id_attr = eds_contact.get_attribute('facebook-id')
+        self.assertEqual(facebook_id_attr.get_value(), '555555555')
+        facebook_name_attr = eds_contact.get_attribute('facebook-name')
+        self.assertEqual(facebook_name_attr.get_value(), 'Lucy Baron')
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=True)
-    @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
+    @mock.patch('gi.repository.EBook.BookClient.new',
+                return_value=EDSBookClientMock())
     def test_successfull_push_to_eds(self, *mocks):
-        bare_contact = {"name": "Lucy Baron", "id": "555555555"}
-        eds_contact = self.protocol.create_contact(bare_contact) 
-        result = self.protocol._push_to_eds("test-address-book", eds_contact)
+        bare_contact = {'name': 'Lucy Baron', 'id': '555555555'}
+        eds_contact = self.protocol.create_contact(bare_contact)
+        result = self.protocol._push_to_eds('test-address-book', eds_contact)
         self.assertEqual(result, True)
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
@@ -349,25 +388,38 @@ Facebook.receive has completed, thread exiting.
     @mock.patch('friends.utils.base.Base._create_eds_source',
                 return_value=None)
     def test_unsuccessfull_push_to_eds(self, *mocks):
-        bare_contact = {"name": "Lucy Baron", "id": "555555555"}
-        eds_contact = self.protocol.create_contact(bare_contact) 
-        result = self.protocol._push_to_eds("test-address-book", eds_contact)
+        bare_contact = {'name': 'Lucy Baron', 'id': '555555555'}
+        eds_contact = self.protocol.create_contact(bare_contact)
+        result = self.protocol._push_to_eds('test-address-book', eds_contact)
         self.assertEqual(result, False)
 
-    @mock.patch('gi.repository.EDataServer.Source.new', return_value=EDSSource("foo", "bar"))
+    @mock.patch('gi.repository.EDataServer.Source.new',
+                return_value=EDSSource('foo', 'bar'))
     def test_create_eds_source(self, *mocks):
-        res = self.protocol._create_eds_source('facebook-test-address')
-        self.assertEqual(res, "test-source-uid")
+        self.protocol._source_registry = mock.Mock()
+        result = self.protocol._create_eds_source('facebook-test-address')
+        self.assertEqual(result, 'test-source-uid')
 
-    @mock.patch('gi.repository.EBook.BookClient.new', return_value=EDSBookClientMock())
+    @mock.patch('gi.repository.EBook.BookClient.new',
+                return_value=EDSBookClientMock())
     def test_successful_previously_stored_contact(self, *mocks):
-        result = Facebook.previously_stored_contact(True, "facebook-id", "11111")
+        result = Facebook.previously_stored_contact(
+            True, 'facebook-id', '11111')
         self.assertEqual(result, True)
 
     def test_successful_get_eds_source(self, *mocks):
-        result = self.protocol._get_eds_source("test-facebook-contacts")
-        self.assertEqual(result.get_display_name(), "test-facebook-contacts")
+        class FakeSource:
+            def get_display_name(self):
+                return 'test-facebook-contacts'
+            def get_uid(self):
+                return 1345245
+
+        reg_mock = self.protocol._source_registry = mock.Mock()
+        reg_mock.list_sources.return_value = [FakeSource()]
+        reg_mock.ref_source = lambda x: x
+        result = self.protocol._get_eds_source('test-facebook-contacts')
+        self.assertEqual(result, 1345245)
 
     def test_unsuccessful_get_eds_source(self, *mocks):
-        result = self.protocol._get_eds_source("test-incorrect-contacts")
-        self.assertEqual(result, None)        
+        result = self.protocol._get_eds_source('test-incorrect-contacts')
+        self.assertIsNone(result)

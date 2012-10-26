@@ -17,8 +17,8 @@ Package requirements.
     * python3 (>= 3.2, although 3.3 will soon be required)
     * python3-distutils-extra
     * python3-dbus
-    * gir1.2-ebook-1.2    
-    * gir1.2-edataserver-1.2    
+    * gir1.2-ebook-1.2
+    * gir1.2-edataserver-1.2
     * python3-mock
 
 

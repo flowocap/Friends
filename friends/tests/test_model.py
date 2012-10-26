@@ -26,19 +26,85 @@ __all__ = [
 
 import unittest
 
-from friends.utils.model import Model
+from friends.utils.model import Model, first_run, stale_schema
+from friends.utils.model import prune_model, persist_model
+from friends.testing.mocks import LogMock
 from gi.repository import Dee
+
+
+try:
+    # Python 3.3
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class TestModel(unittest.TestCase):
     """Test our Dee.SharedModel instance."""
 
+    def setUp(self):
+        self.log_mock = LogMock('friends.utils.model')
+
+    def tearDown(self):
+        self.log_mock.stop()
+
     def test_basic_properties(self):
         self.assertIsInstance(Model, Dee.SharedModel)
-        self.assertEqual(Model.get_n_columns(), 37)
-        self.assertEqual(Model.get_n_rows(), 0)
+        self.assertEqual(Model.get_n_columns(), 36)
         self.assertEqual(Model.get_schema(),
                          ['aas', 's', 's', 's', 'b', 's', 's', 's',
                           's', 's', 's', 's', 's', 's', 'd', 'b', 's', 's',
                           's', 's', 's', 's', 's', 's', 's', 's', 's', 's',
-                          's', 's', 's', 's', 's', 'as', 's', 's', 's'])
+                          's', 's', 's', 's', 's', 's', 's', 's'])
+        if first_run or stale_schema:
+            # Then the Model should be brand-new and empty
+            self.assertEqual(Model.get_n_rows(), 0)
+
+    @mock.patch('friends.utils.model._resource_manager')
+    def test_persistence(self, resource_manager):
+        persist_model()
+        resource_manager.store.assert_called_once_with(
+            Model, 'com.canonical.Friends.Streams')
+
+    @mock.patch('friends.utils.model.Model')
+    @mock.patch('friends.utils.model.persist_model')
+    def test_prune_one(self, persist, model):
+        model.get_n_rows.return_value = 8001
+        def side_effect(arg):
+            model.get_n_rows.return_value -= 1
+        model.remove.side_effect = side_effect
+        prune_model(8000)
+        persist.assert_called_once_with()
+        model.get_first_iter.assert_called_once_with()
+        model.remove.assert_called_once_with(model.get_first_iter())
+        self.assertEqual(self.log_mock.empty(),
+                         'Deleted 1 rows from Dee.SharedModel.\n')
+
+    @mock.patch('friends.utils.model.Model')
+    @mock.patch('friends.utils.model.persist_model')
+    def test_prune_one_hundred(self, persist, model):
+        model.get_n_rows.return_value = 8100
+        def side_effect(arg):
+            model.get_n_rows.return_value -= 1
+        model.remove.side_effect = side_effect
+        prune_model(8000)
+        persist.assert_called_once_with()
+        self.assertEqual(model.get_first_iter.call_count, 100)
+        model.remove.assert_called_with(model.get_first_iter())
+        self.assertEqual(model.remove.call_count, 100)
+        self.assertEqual(self.log_mock.empty(),
+                         'Deleted 100 rows from Dee.SharedModel.\n')
+
+    @mock.patch('friends.utils.model.Model')
+    @mock.patch('friends.utils.model.persist_model')
+    def test_prune_none(self, persist, model):
+        model.get_n_rows.return_value = 100
+        def side_effect(arg):
+            model.get_n_rows.return_value -= 1
+        model.remove.side_effect = side_effect
+        prune_model(8000)
+        model.get_n_rows.assert_called_once_with()
+        self.assertFalse(persist.called)
+        self.assertFalse(model.get_first_iter.called)
+        self.assertFalse(model.remove.called)
+        self.assertEqual(self.log_mock.empty(), '')

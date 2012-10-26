@@ -262,7 +262,7 @@ Flickr.receive has completed, thread exiting.
         self.assertEqual(col('sender'), '123')
         self.assertEqual(col('timestamp'), '2012-05-10T13:36:45')
         self.assertFalse(col('from_me'))
-        row = list(TestModel.get_row(1))
+        row = list(TestModel.get_row(2))
         # Image 2 data.  The image is from the account owner.
         self.assertEqual(col('message'), 'bee')
         self.assertEqual(col('html'), 'bee')
@@ -272,7 +272,7 @@ Flickr.receive has completed, thread exiting.
         self.assertTrue(col('from_me'))
         # Image 3 data.  This data set has some additional entries that allow
         # various image urls and other keys to be added.
-        row = list(TestModel.get_row(2))
+        row = list(TestModel.get_row(1))
         self.assertEqual(col('message'), 'cat')
         self.assertEqual(col('html'), 'cat')
         self.assertEqual(

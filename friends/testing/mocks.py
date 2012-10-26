@@ -249,11 +249,11 @@ class LogMock:
         return False
 
 class EDSBookClientMock:
-    """A Mocker object to simulate use of BookClient
-    """
+    """A Mocker object to simulate use of BookClient."""
+
     def __init__(self):
         pass
-        
+
     def open_sync(val1, val2, val3):
         pass
 
@@ -267,7 +267,8 @@ class EDSBookClientMock:
             return [True, []]
 
 class EDSExtension:
-    """A Extension mocker object for testing create source"""
+    """A Extension mocker object for testing create source."""
+
     def __init__(self):
         pass
 
@@ -275,28 +276,29 @@ class EDSExtension:
         pass
 
 class EDSSource:
-    """A Mocker object to simulate use of a Source object to create address books in EDS
-    """
+    """Simulate a Source object to create address books in EDS."""
+
     def __init__(self, val1, val2):
         pass
 
-    def set_display_name(self,name):
+    def set_display_name(self, name):
         self.name = name
 
     def get_display_name(self):
         return self.name
 
-    def set_parent(self,parent):
+    def set_parent(self, parent):
         pass
-    
-    def get_uid(self):
-        return "test-source-uid"
 
-    def get_extension(self,extension_name):
+    def get_uid(self):
+        return 'test-source-uid'
+
+    def get_extension(self, extension_name):
         return EDSExtension()
 
 class EDSRegistry:
-    """A Mocker object for the registry"""
+    """A Mocker object for the registry."""
+
     def __init__(self):
         pass
 
@@ -306,14 +308,14 @@ class EDSRegistry:
     def list_sources(self, category):
         res = []
         s1 = EDSSource(None, None)
-        s1.set_display_name("test-facebook-contacts")
+        s1.set_display_name('test-facebook-contacts')
         res.append(s1)
         s2 = EDSSource(None, None)
-        s2.set_display_name("test-twitter-contacts")
+        s2.set_display_name('test-twitter-contacts')
         res.append(s2)
         return res
-    
+
     def ref_source(self, src_uid):
         s1 = EDSSource(None, None)
-        s1.set_display_name("test-facebook-contacts")
+        s1.set_display_name('test-facebook-contacts')
         return s1
