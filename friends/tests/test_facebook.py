@@ -309,6 +309,19 @@ Facebook.receive has completed, thread exiting.
                        params=dict(access_token='face'))
              ])
 
+    def test_search(self):
+        self.protocol._get_access_token = lambda: '12345'
+        get_pages = self.protocol._follow_pagination = mock.Mock(
+            return_value=['search results'])
+        publish = self.protocol._publish_entry = mock.Mock()
+
+        self.protocol.search('hello')
+
+        publish.assert_called_with('search results', 'search/hello')
+        get_pages.assert_called_with(
+            'https://graph.facebook.com/search',
+            dict(q='hello', access_token='12345'))
+
     @mock.patch('friends.protocols.facebook.get_json',
                 return_value=True)
     def test_like(self, get_json):
