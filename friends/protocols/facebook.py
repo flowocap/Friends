@@ -265,9 +265,15 @@ class Facebook(Base):
         params = dict(
             access_token=access_token,
             limit=limit)
-
         return self._follow_pagination(url, params, limit)
-
+    
+    # Fetch the full contact info from facebook
+    def fetch_contact(self, contact_id):
+        access_token = self._get_access_token()
+        url = API_BASE.format(id=contact_id)
+        params = dict(access_token=access_token)
+        return get_json(url, params)
+    
     # This method can take the minimal contact information or full
     # contact info For now we only cache ID and the name in the
     # addressbook. Using custom field for name because I can't figure
@@ -279,11 +285,20 @@ class Facebook(Base):
         vcafn = EBook.VCardAttribute.new(
             'social-networking-attributes', 'facebook-name')
         vcafn.add_value(contact_json['name'])
+        vcauri = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-URIS')
+        vcauri.add_value(contact_json['link'])
+        vcag = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-GENDER')
+        vcag.add_value(contact_json['gender'])
         vcard = EBook.VCard.new()
         vcard.add_attribute(vcafid)
         vcard.add_attribute(vcafn)
+        vcard.add_attribute(vcauri)
+        vcard.add_attribute(vcag)
         c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
         c.set_property("full-name", contact_json["name"])
+        c.set_property('nickname', contact_json["username"])
         log.debug("Creating new contact for {}".format(c.get_property("full-name")))
         return c
 
@@ -295,10 +310,9 @@ class Facebook(Base):
                 if (Base.previously_stored_contact(
                         source, 'facebook-id', contact['id'])):
                     continue
-            # Let's not query the full contact info for now Show some
-            # respect for facebook and the chances are we won't be
-            # blocked.
-            eds_contact = self.create_contact(contact)
+            log.debug("fetch full contact info for %s and id %s", contact['name'], contact['id'])
+            full_contact = self.fetch_contact(contact['id'])
+            eds_contact = self.create_contact(full_contact)
             if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
                 log.error(
                     'Unable to save facebook contact {}'.format(contact['name']))

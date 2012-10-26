@@ -426,11 +426,13 @@ class Base:
         client.open_sync(False, None)
         q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), search_term)        
         cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
-        log.debug("search string %s", q.to_string())
         if cs[0] == False:
             log.error("EDS Search failed on field %s", field)
             return False
         return len(cs[1]) > 0
+#            log.debug("Deleting contact")
+#            client.remove_contact_sync(cs[1][0], Gio.Cancellable())
+#        return True
 
     @classmethod
     def get_features(cls):
