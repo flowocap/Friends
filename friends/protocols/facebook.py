@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 
 from gi.repository import EBook
 
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
 from friends.utils.time import parsetime, iso8601utc
@@ -60,14 +61,14 @@ class Facebook(Base):
             error.get('code'), error.get('type'), error.get('message')))
         return True
 
-    def _publish_entry(self, entry):
+    def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
         if message_id is None:
             # We can't do much with this entry.
             return
 
         args = dict(
-            stream='messages',
+            stream=stream,
             message=entry.get('message', ''),
             url=PERMALINK.format(id=message_id),
             icon_uri=entry.get('icon', ''),
@@ -77,33 +78,76 @@ class Facebook(Base):
             link_desc=entry.get('description', ''),
             link_caption=entry.get('caption', ''),
             )
+
+        # Posts gives us a likes dict, while replies give us an int.
+        likes = entry.get('likes', 0)
+        if isinstance(likes, dict):
+            likes = likes.get('count', 0)
+        args['likes'] = likes
+
         from_record = entry.get('from')
         if from_record is not None:
             args['sender'] = sender_id = from_record.get('id', '')
+            args['icon_uri'] = Avatar.get_image(
+                API_BASE.format(id=sender_id) + '/picture?type=large')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
+
         # Normalize the timestamp.
         timestamp = entry.get('updated_time', entry.get('created_time'))
         if timestamp is not None:
             args['timestamp'] = iso8601utc(parsetime(timestamp))
-        like_count = entry.get('likes', {}).get('count')
-        if like_count is not None:
-            args['likes'] = like_count
-            args['liked'] = (like_count > 0)
-        # Parse comments now.
-        all_comments = []
-        for comment_data in entry.get('comments', {}).get('data', []):
-            comment_message = comment_data.get('message')
-            if comment_message is not None:
-                all_comments.append(comment_message)
-        args['comments'] = all_comments
+
+        # Publish this message into the SharedModel.
         self._publish(message_id, **args)
+
+        # If there are any replies, publish them as well.
+        for comment in entry.get('comments', {}).get('data', []):
+            if comment:
+                self._publish_entry(
+                    stream='reply_to/{}'.format(message_id),
+                    entry=comment)
+
+    def _follow_pagination(self, url, params, limit=None):
+        """Follow Facebook's pagination until we hit the limit."""
+        limit = limit or self._DOWNLOAD_LIMIT
+        entries = []
+
+        while True:
+            response = get_json(url, params)
+            if self._is_error(response):
+                break
+
+            data = response.get('data')
+            if data is None:
+                break
+
+            entries.extend(data)
+            if len(entries) >= limit:
+                break
+
+            # We haven't gotten the requested number of entries.  Follow the
+            # next page if there is one to try to get more.
+            pages = response.get('paging')
+            if pages is None:
+                break
+
+            # The 'next' key has the full link to follow; no additional
+            # parameters are needed.  Specifically, this link will already
+            # include the access_token, and any since/limit values.
+            url = pages.get('next')
+            params = None
+            if url is None:
+                break
+
+        # We've gotten everything Facebook is going to give us.
+        return entries
 
     @feature
     def receive(self, since=None):
         """Retrieve a list of Facebook objects.
 
-        A maximum of 100 objects are requested.
+        A maximum of 50 objects are requested.
 
         :param since: Only get objects posted since this date.  If not given,
             then only objects younger than 10 days are retrieved.  The value
@@ -120,38 +164,26 @@ class Facebook(Base):
         params = dict(access_token=access_token,
                       since=when.isoformat(),
                       limit=self._DOWNLOAD_LIMIT)
-        # Now access Facebook and follow pagination until we have at least
-        # _DOWNLOAD_LIMIT number of entries, or we've reached the end of pages.
-        while True:
-            response = get_json(url, params)
-            if self._is_error(response):
-                # We'll just use what we have so far, if anything.
-                break
-            data = response.get('data')
-            if data is None:
-                # I guess we're done.
-                break
-            entries.extend(data)
-            if len(entries) >= self._DOWNLOAD_LIMIT:
-                break
-            # We haven't gotten the requested number of entries.  Follow the
-            # next page if there is one to try to get more.
-            pages = response.get('paging')
-            if pages is None:
-                break
-            # The 'next' key has the full link to follow; no additional
-            # parameters are needed.  Specifically, this link will already
-            # include the access_token, and any since/limit values.
-            url = pages.get('next')
-            params = None
-            if url is None:
-                # I guess there are no more next pages.
-                break
-        # We've gotten everything Facebook is going to give us.  Now, decipher
-        # the data and publish it.
+
+        entries = self._follow_pagination(url, params)
         # https://developers.facebook.com/docs/reference/api/post/
         for entry in entries:
             self._publish_entry(entry)
+
+    @feature
+    def search(self, query):
+        """Search for up to 50 items matching query."""
+        access_token = self._get_access_token()
+        entries = []
+        url = API_BASE.format(id='search')
+        params = dict(
+            access_token=access_token,
+            q=query)
+
+        entries = self._follow_pagination(url, params)
+        # https://developers.facebook.com/docs/reference/api/post/
+        for entry in entries:
+            self._publish_entry(entry, 'search/{}'.format(query))
 
     def _like(self, obj_id, method):
         url = API_BASE.format(id=obj_id) + '/likes'
@@ -232,37 +264,9 @@ class Facebook(Base):
         url = ME_URL + '/friends'
         params = dict(
             access_token=access_token,
-            limit=limit,
-            )
+            limit=limit)
 
-        # Now access Facebook and follow pagination until we have at least
-        # LIMIT number of entries, or we've reached the end of pages.
-        while True:
-            response = get_json(url, params)
-            if self._is_error(response):
-                # We'll just use what we have so far, if anything.
-                break
-            data = response.get('data')
-            if data is None:
-                # I guess we're done.
-                break
-            contacts.extend(data)
-            if len(contacts) >= limit:
-                break
-            # We haven't gotten the requested number of entries.  Follow the
-            # next page if there is one to try to get more.
-            pages = response.get('paging')
-            if pages is None:
-                break
-            # The 'next' key has the full link to follow; no additional
-            # parameters are needed.  Specifically, this link will already
-            # include the access_token, and any since/limit values.
-            url = pages.get('next')
-            params = None
-            if url is None:
-                # I guess there are no more next pages.
-                break
-        return contacts
+        return self._follow_pagination(url, params, limit)
 
     # This method can take the minimal contact information or full
     # contact info For now we only cache ID and the name in the

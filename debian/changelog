@@ -1,3 +1,9 @@
+friends (0.0+r29) quantal; urgency=low
+
+  * rev 29
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 26 Oct 2012 09:54:54 +0200
+
 friends (0.0+r27) quantal; urgency=low
 
   * rev 27 which adds facebook contacts sync
