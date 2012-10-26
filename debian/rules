@@ -20,7 +20,7 @@ override_dh_auto_install:
 	python3 setup.py install_service_files -d $(CURDIR)/debian/tmp/usr
 
 override_dh_auto_test:
-	dbus-test-runner -t make -p check
+	dbus-test-runner -t make -p check -m 60
 
 %:
 	dh $@ --with python3

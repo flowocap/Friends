@@ -1,3 +1,10 @@
+friends (0.0+r29-1) quantal; urgency=low
+
+  * debian/control
+    - added build depends for evolution-data-server
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 26 Oct 2012 10:10:23 +0200
+
 friends (0.0+r29) quantal; urgency=low
 
   * rev 29
