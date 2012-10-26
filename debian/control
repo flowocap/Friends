@@ -2,89 +2,82 @@ Source: friends
 Section: misc
 Priority: extra
 Maintainer: Ken VanDine <ken.vandine@canonical.com>
-Build-Depends: debhelper (>= 9),
-               python3,
-               python3-distutils-extra,
-               python3-pkg-resources,
-               python3-setuptools,
-               python3-gobject,
-               python3-gi,
-               python3-dbus,
-               python3-mock,
-               python3-oauthlib,
+Build-Depends: dbus-test-runner,
+               debhelper (>= 9),
+               gir1.2-dbusmenu-glib-0.4,
                gir1.2-dee-1.0,
-               gir1.2-soup-2.4,
-               gir1.2-glib-2.0,
+               gir1.2-ebook-1.2,
+               gir1.2-edataserver-1.2,
                gir1.2-gdkpixbuf-2.0,
-               gir1.2-signon-1.0,
+               gir1.2-glib-2.0,
+               gir1.2-messagingmenu-1.0,
                gir1.2-networkmanager-1.0,
+               gir1.2-signon-1.0,
+               gir1.2-soup-2.4,
+               gir1.2-unity-5.0,
                libaccounts-glib-dev,
                libsignon-glib1,
-               shared-mime-info,
-               dbus-test-runner
+               python3,
+               python3-dbus,
+               python3-distutils-extra,
+               python3-gi,
+               python3-gobject,
+               python3-mock,
+               python3-oauthlib,
+               python3-pkg-resources,
+               python3-setuptools,
+               shared-mime-info
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/friends
 XS-Testsuite: autopkgtest
 
 Package: friends
 Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         gir1.2-dee-1.0,
-         gir1.2-soup-2.4,
-         gir1.2-glib-2.0,
+Depends: gir1.2-dee-1.0,
+         gir1.2-ebook-1.2,
+         gir1.2-edataserver-1.2,
          gir1.2-gdkpixbuf-2.0,
-         python3-dbus,
+         gir1.2-glib-2.0,
          gir1.2-networkmanager-1.0,
          gir1.2-signon-1.0,
          gir1.2-soup-2.4,
-         gir1.2-ebook-1.2,
-         gir1.2-edataserver-1.2
-Recommends: gir1.2-messagingmenu-1.0,
+         python3-dbus,
+         ${misc:Depends},
+         ${python3:Depends}
+Recommends: friends-facebook,
+            friends-twitter,
             gir1.2-dbusmenu-glib-0.4,
-            gir1.2-unity-5.0,
-            friends-facebook,
-            friends-twitter
+            gir1.2-messagingmenu-1.0,
+            gir1.2-unity-5.0
 Description: Social integration with the desktop
  Provides social networking integration with the desktop
 
 Package: friends-facebook
 Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         friends
+Depends: friends, ${misc:Depends}, ${python3:Depends}
 Description: Social integration with the desktop - Facebook
  Provides social networking integration with the desktop
 
 Package: friends-twitter
 Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         friends
+Depends: friends, ${misc:Depends}, ${python3:Depends}
 Description: Social integration with the desktop - Twitter
  Provides social networking integration with the desktop
 
 Package: friends-identica
 Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         friends
+Depends: friends, ${misc:Depends}, ${python3:Depends}
 Description: Social integration with the desktop - Identi.ca
  Provides social networking integration with the desktop
 
 Package: friends-foursquare
 Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         friends
+Depends: friends, ${misc:Depends}, ${python3:Depends}
 Description: Social integration with the desktop - Foursquare
  Provides social networking integration with the desktop
 
 Package: friends-flickr
 Architecture: all
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         friends
+Depends: friends, ${misc:Depends}, ${python3:Depends}
 Description: Social integration with the desktop - Flickr
  Provides social networking integration with the desktop
-
