@@ -4,6 +4,7 @@ Priority: extra
 Maintainer: Ken VanDine <ken.vandine@canonical.com>
 Build-Depends: dbus-test-runner,
                debhelper (>= 9),
+               evolution-data-server,
                gir1.2-dbusmenu-glib-0.4,
                gir1.2-dee-1.0,
                gir1.2-ebook-1.2,
