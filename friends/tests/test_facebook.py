@@ -26,17 +26,10 @@ from gi.repository import Dee, EBook, EDataServer, Gio, GLib
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, mock
 from friends.testing.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_TYPES
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -127,7 +120,7 @@ Facebook.receive has completed, thread exiting.
               'faker/than fake',
               '117402931676347_386054134801436_3235476']],
             'reply_to/109',
-            '809',
+            'Bruce Peart',
             'Bruce Peart',
             False,
             '2012-09-26T17:16:00',
@@ -164,7 +157,7 @@ Facebook.receive has completed, thread exiting.
         self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '108']],
             'messages',
-            '117402931676347',
+            'Rush is a Band',
             'Rush is a Band',
             False,
             '2012-09-26T17:34:00',
@@ -201,7 +194,7 @@ Facebook.receive has completed, thread exiting.
         self.assertEqual(list(TestModel.get_row(3)), [
             [['facebook', 'faker/than fake', '109']],
             'messages',
-            '117402931676347',
+            'Rush is a Band',
             'Rush is a Band',
             False,
             '2012-09-26T17:49:06',
@@ -308,6 +301,19 @@ Facebook.receive has completed, thread exiting.
              mock.call('https://graph.facebook.com/comment_id',
                        params=dict(access_token='face'))
              ])
+
+    def test_search(self):
+        self.protocol._get_access_token = lambda: '12345'
+        get_pages = self.protocol._follow_pagination = mock.Mock(
+            return_value=['search results'])
+        publish = self.protocol._publish_entry = mock.Mock()
+
+        self.protocol.search('hello')
+
+        publish.assert_called_with('search results', 'search/hello')
+        get_pages.assert_called_with(
+            'https://graph.facebook.com/search',
+            dict(q='hello', access_token='12345'))
 
     @mock.patch('friends.protocols.facebook.get_json',
                 return_value=True)

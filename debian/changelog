@@ -1,3 +1,9 @@
+friends (0.0+r34) quantal; urgency=low
+
+  * rev 34
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Sat, 27 Oct 2012 02:45:37 +0200
+
 friends (0.0+r29-2) quantal; urgency=low
 
   * debian/control

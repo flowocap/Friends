@@ -29,14 +29,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GObject
 
 from friends.service.dispatcher import Dispatcher
-from friends.testing.mocks import LogMock
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
+from friends.testing.mocks import LogMock, mock
 
 
 # Set up the DBus main loop.

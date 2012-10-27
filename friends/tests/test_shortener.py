@@ -31,13 +31,7 @@ from friends.shorteners import snipurlcom
 from friends.shorteners import tinyurlcom
 from friends.shorteners import ur1ca
 from friends.shorteners import zima
-from friends.testing.mocks import FakeOpen, FakeSoupMessage
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
+from friends.testing.mocks import FakeOpen, FakeSoupMessage, mock
 
 
 @mock.patch('friends.utils.download._soup', mock.Mock())

@@ -28,14 +28,8 @@ from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.

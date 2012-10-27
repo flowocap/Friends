@@ -26,12 +26,7 @@ import unittest
 from itertools import product
 
 from friends.utils.options import Options
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
+from friends.testing.mocks import mock
 
 
 class TestCommandLine(unittest.TestCase):

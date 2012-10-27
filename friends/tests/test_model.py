@@ -28,15 +28,8 @@ import unittest
 
 from friends.utils.model import Model, first_run, stale_schema
 from friends.utils.model import prune_model, persist_model
-from friends.testing.mocks import LogMock
+from friends.testing.mocks import LogMock, mock
 from gi.repository import Dee
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 class TestModel(unittest.TestCase):
