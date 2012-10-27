@@ -169,7 +169,7 @@ class LogMock:
     """
     def __init__(self, *modules):
         self._queue = Queue()
-        self._log = logging.getLogger(__name__)
+        self._log = logging.getLogger('friends')
         handler = QueueHandler(self._queue)
         formatter = logging.Formatter(LOG_FORMAT, style='{')
         handler.setFormatter(formatter)
@@ -207,7 +207,7 @@ class LogMock:
         for patcher in self._patchers:
             patcher.stop()
         # Get rid of the mock logger.
-        del logging.Logger.manager.loggerDict[__name__]
+        del logging.Logger.manager.loggerDict['friends']
 
     def empty(self, trim=True):
         """Return all the log messages written to this log.
@@ -248,6 +248,7 @@ class LogMock:
     def __exit__(self, *exception_info):
         self.stop()
         return False
+
 
 class EDSBookClientMock:
     """A Mocker object to simulate use of BookClient."""
