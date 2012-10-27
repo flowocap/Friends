@@ -28,13 +28,7 @@ import unittest
 
 from friends.testing.helpers import FakeAccount
 from friends.utils.authentication import Authentication
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
+from friends.testing.mocks import mock
 
 
 class FakeSignon:

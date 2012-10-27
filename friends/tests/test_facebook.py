@@ -26,17 +26,10 @@ from gi.repository import Dee, EBook, EDataServer, Gio, GLib
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, mock
 from friends.testing.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_TYPES
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.

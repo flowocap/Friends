@@ -20,6 +20,7 @@ __all__ = [
     'FakeSoupMessage',
     'LogMock',
     'SettingsIterMock',
+    'mock',
     ]
 
 

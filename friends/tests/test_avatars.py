@@ -30,15 +30,8 @@ from datetime import date, timedelta
 from gi.repository import GdkPixbuf
 from pkg_resources import resource_filename
 
-from friends.testing.mocks import FakeSoupMessage
+from friends.testing.mocks import FakeSoupMessage, mock
 from friends.utils.avatar import Avatar
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 @mock.patch('friends.utils.download._soup', mock.Mock())

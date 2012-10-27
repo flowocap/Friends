@@ -29,16 +29,11 @@ from gi.repository import Dee
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
 from friends.testing.helpers import FakeAccount
+from friends.testing.mocks import mock
 from friends.utils.base import Base, feature, _cmp, _cmp_date, TIME_IDX
 from friends.utils.manager import ProtocolManager
 from friends.utils.model import (
     COLUMN_INDICES, COLUMN_NAMES, COLUMN_TYPES, Model)
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.

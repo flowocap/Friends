@@ -29,16 +29,10 @@ from gi.repository import Dee
 from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import LogMock, SettingsIterMock
+from friends.testing.mocks import LogMock, SettingsIterMock, mock
 from friends.utils.account import Account, AccountManager
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.
