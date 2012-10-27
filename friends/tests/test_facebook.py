@@ -120,7 +120,7 @@ Facebook.receive has completed, thread exiting.
               'faker/than fake',
               '117402931676347_386054134801436_3235476']],
             'reply_to/109',
-            '809',
+            'Bruce Peart',
             'Bruce Peart',
             False,
             '2012-09-26T17:16:00',
@@ -157,7 +157,7 @@ Facebook.receive has completed, thread exiting.
         self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '108']],
             'messages',
-            '117402931676347',
+            'Rush is a Band',
             'Rush is a Band',
             False,
             '2012-09-26T17:34:00',
@@ -194,7 +194,7 @@ Facebook.receive has completed, thread exiting.
         self.assertEqual(list(TestModel.get_row(3)), [
             [['facebook', 'faker/than fake', '109']],
             'messages',
-            '117402931676347',
+            'Rush is a Band',
             'Rush is a Band',
             False,
             '2012-09-26T17:49:06',
