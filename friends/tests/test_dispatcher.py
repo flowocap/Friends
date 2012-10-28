@@ -168,21 +168,6 @@ class TestDispatcher(unittest.TestCase):
         """See test_dbus.py for a thorough test of Dispatcher.GetFeatures."""
         pass
 
-    @mock.patch('friends.service.dispatcher.Avatar')
-    def test_get_avatar_path(self, avatar):
-        url = 'http://example.com/profile_photo.jpg'
-        self.dispatcher.GetAvatarPath(url)
-        avatar.get_image.assert_called_once_with(url)
-        self.assertEqual(avatar.get_path.call_count, 0)
-
-    @mock.patch('friends.service.dispatcher.Avatar')
-    def test_get_avatar_path_offline(self, avatar):
-        url = 'http://example.com/profile_photo.jpg'
-        self.dispatcher._timer_id = None
-        self.dispatcher.GetAvatarPath(url)
-        avatar.get_path.assert_called_once_with(url)
-        self.assertEqual(avatar.get_image.call_count, 0)
-
     @mock.patch('friends.service.dispatcher.logging')
     def test_quit(self, logging_mock):
         self.dispatcher.Quit()
