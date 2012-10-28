@@ -247,7 +247,7 @@ Flickr.receive has completed, thread exiting.
         self.assertEqual(col('html'), 'ant')
         self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '801']])
         self.assertEqual(col('sender'), '123')
-        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45')
+        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45Z')
         self.assertFalse(col('from_me'))
         row = list(TestModel.get_row(2))
         # Image 2 data.  The image is from the account owner.

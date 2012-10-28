@@ -122,7 +122,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         expected = [
             [[['twitter', 'faker/than fake', '240539141056638977']],
              'messages', 'Taylor Singletary', 'episod', False,
-             '2012-08-28T19:59:34',
+             '2012-08-28T19:59:34Z',
              'You\'d be right more often if you thought you were wrong.', '',
              '', 'https://twitter.com/episod/status/240539141056638977', '',
              '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
@@ -130,7 +130,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              ],
             [[['twitter', 'faker/than fake', '240556426106372096']],
              'messages', 'Raffi Krikorian', 'raffi', False,
-             '2012-08-28T21:08:15', 'lecturing at the "analyzing big data ' +
+             '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data ' +
              'with twitter" class at @cal with @othman  http://t.co/bfj7zkDJ',
              '', '', 'https://twitter.com/raffi/status/240556426106372096', '',
              '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
@@ -138,7 +138,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              ],
             [[['twitter', 'faker/than fake', '240558470661799936']],
              'messages', 'OAuth Dancer', 'oauth_dancer', False,
-             '2012-08-28T21:16:23', 'just another test', '', '',
+             '2012-08-28T21:16:23Z', 'just another test', '', '',
              'https://twitter.com/oauth_dancer/status/240558470661799936', '',
              '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
              '', '', '', '', '', '', '', '', '', '',
@@ -170,7 +170,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         expected_row = [
             [['twitter', 'faker/than fake', '240558470661799936']],
             'messages', 'OAuth Dancer', 'oauth_dancer', True,
-            '2012-08-28T21:16:23', 'just another test', '', '',
+            '2012-08-28T21:16:23Z', 'just another test', '', '',
             'https://twitter.com/oauth_dancer/status/240558470661799936', '',
             '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
             '', '', '', '', '', '', '', '', '', '',

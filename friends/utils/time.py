@@ -32,6 +32,7 @@ from datetime import datetime, timedelta
 
 # Date time formats.  Assume no microseconds and no timezone.
 ISO8601_FORMAT = '%Y-%m-%dT%H:%M:%S'
+ISO8601_UTC_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 TWITTER_FORMAT = '%a %b %d %H:%M:%S %Y'
 IDENTICA_FORMAT = '%a, %d %b %Y %H:%M:%S'
 
@@ -47,6 +48,10 @@ def _c_locale():
 
 def _from_iso8601(t):
     return datetime.strptime(t, ISO8601_FORMAT)
+
+
+def _from_iso8601_utc(t):
+    return datetime.strptime(t, ISO8601_UTC_FORMAT)
 
 
 def _from_iso8601alt(t):
@@ -65,7 +70,7 @@ def _fromutctimestamp(t):
     return datetime.utcfromtimestamp(float(t))
 
 
-PARSERS = (_from_iso8601, _from_iso8601alt, _from_twitter,
+PARSERS = (_from_iso8601, _from_iso8601_utc, _from_iso8601alt, _from_twitter,
            _from_identica, _fromutctimestamp)
 
 
@@ -150,4 +155,4 @@ def iso8601utc(timestamp, timezone_offset=0, sep='T'):
     correction = timedelta(hours=hours_east, minutes=minutes_east)
     # Subtract the correction to move closer to UTC, since the offset is
     # positive when east of UTC and negative when west of UTC.
-    return (dt - correction).isoformat(sep=sep)
+    return (dt - correction).isoformat(sep=sep) + ('Z' if sep == 'T' else '')
