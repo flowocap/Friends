@@ -150,7 +150,6 @@ Flickr.receive has completed, thread exiting.
         # AccessToken, but this fails.
         self.protocol('receive')
         log_lines = self.log_mock.empty().splitlines()
-        import pdb;pdb.set_trace()
         log_message = log_lines[-2]
         self.assertEqual(log_message, """\
 friends.errors.AuthorizationError:\
