@@ -150,12 +150,11 @@ Flickr.receive has completed, thread exiting.
         # AccessToken, but this fails.
         self.protocol('receive')
         log_lines = self.log_mock.empty().splitlines()
-        log_message = '\n'.join(log_lines[-3:])
-        self.assertEqual(log_lines, """\
+        import pdb;pdb.set_trace()
+        log_message = log_lines[-2]
+        self.assertEqual(log_message, """\
 friends.errors.AuthorizationError:\
- No Flickr user id available (account: faker/than fake)
-Flickr.receive has completed, thread exiting.
-""")
+ No Flickr user id available (account: faker/than fake)""")
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
