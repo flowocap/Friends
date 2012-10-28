@@ -50,6 +50,10 @@ class TestAvatars(unittest.TestCase):
         # Clean up the temporary cache directory.
         shutil.rmtree(self._temp_cache)
 
+    def test_noop(self):
+        # If a tweet is missing a profile image, silently ignore it.
+        self.assertEqual(Avatar.get_image(''), '')
+
     def test_hashing(self):
         # Check that the path hashing algorithm return a hash based on the
         # download url.
