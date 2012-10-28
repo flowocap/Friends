@@ -54,6 +54,8 @@ class Avatar:
 
     @staticmethod
     def get_image(url):
+        if not url:
+            return url
         local_path = Avatar.get_path(url)
         try:
             size = os.stat(local_path).st_size
