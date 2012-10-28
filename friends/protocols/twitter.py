@@ -120,7 +120,7 @@ class Twitter(Base):
             sender_nick=screen_name,
             from_me=(screen_name == self._account.user_name),
             icon_uri=Avatar.get_image(
-                avatar_url.replace('_normal.', '_bigger.')),
+                avatar_url.replace('_normal.', '.')),
             liked=tweet.get('favorited', False),
             url=self._tweet_permalink.format(user_id=screen_name,
                                              tweet_id=tweet_id),
