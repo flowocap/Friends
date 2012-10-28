@@ -29,16 +29,11 @@ from gi.repository import Dee
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
 from friends.testing.helpers import FakeAccount
-from friends.utils.base import Base, feature
+from friends.testing.mocks import LogMock, mock
+from friends.utils.base import Base, feature, _cmp, _cmp_date, TIME_IDX
 from friends.utils.manager import ProtocolManager
 from friends.utils.model import (
     COLUMN_INDICES, COLUMN_NAMES, COLUMN_TYPES, Model)
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -52,6 +47,10 @@ class TestProtocolManager(unittest.TestCase):
 
     def setUp(self):
         self.manager = ProtocolManager()
+        self.log_mock = LogMock('friends.utils.base')
+
+    def tearDown(self):
+        self.log_mock.stop()
 
     def test_find_all_protocols(self):
         # The manager can find all the protocol classes.
@@ -146,14 +145,38 @@ class TestProtocols(unittest.TestCase):
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_shared_model_successfully_mocked(self):
-        self.assertEqual(Model.get_n_rows(), 0)
+        count = Model.get_n_rows()
         self.assertEqual(TestModel.get_n_rows(), 0)
         base = Base(FakeAccount())
         base._publish('alpha', message='a')
         base._publish('beta', message='b')
         base._publish('omega', message='c')
-        self.assertEqual(Model.get_n_rows(), 0)
+        self.assertEqual(Model.get_n_rows(), count)
         self.assertEqual(TestModel.get_n_rows(), 3)
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base._seen_messages', {})
+    def test_seen_dicts_successfully_instantiated(self):
+        from friends.utils.base import _seen_ids, _seen_messages
+        from friends.utils.base import initialize_caches
+        self.assertEqual(TestModel.get_n_rows(), 0)
+        base = Base(FakeAccount())
+        base._publish('alpha', sender='a', message='a')
+        base._publish('beta', sender='a', message='a')
+        base._publish('omega', sender='a', message='b')
+        self.assertEqual(TestModel.get_n_rows(), 2)
+        _seen_ids.clear()
+        _seen_messages.clear()
+        initialize_caches()
+        self.assertEqual(sorted(list(_seen_messages.keys())), ['aa', 'ab'])
+        self.assertEqual(sorted(list(_seen_ids.keys())),
+                         [('base', 'faker/than fake', 'alpha'),
+                          ('base', 'faker/than fake', 'beta'),
+                          ('base', 'faker/than fake', 'omega')])
+        # These two point at the same row because sender+message are identical
+        self.assertEqual(_seen_ids[('base', 'faker/than fake', 'alpha')],
+                         _seen_ids[('base', 'faker/than fake', 'beta')])
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_invalid_argument(self):
@@ -342,10 +365,10 @@ class TestProtocols(unittest.TestCase):
         # See?  Two rows in the table.
         self.assertEqual(2, TestModel.get_n_rows())
         # The first row is the message from fred.
-        self.assertEqual(TestModel.get_row(0)[COLUMN_INDICES['sender']],
+        self.assertEqual(TestModel.get_row(1)[COLUMN_INDICES['sender']],
                          'fred')
         # The second row is the message from tedtholomew.
-        self.assertEqual(TestModel.get_row(1)[COLUMN_INDICES['sender']],
+        self.assertEqual(TestModel.get_row(0)[COLUMN_INDICES['sender']],
                          'tedtholomew')
 
     def test_basic_login(self):
@@ -370,3 +393,27 @@ class TestProtocols(unittest.TestCase):
 
     def test_features(self):
         self.assertEqual(MyProtocol.get_features(), ['feature_1', 'feature_2'])
+
+    def test_cmp(self):
+        self.assertEqual(_cmp('2007-05-15T16:45:00', '2007-05-15T16:45:01'), -1)
+        self.assertEqual(_cmp('2007-05-15T16:45:00', '2007-05-15T16:45:00'), 0)
+        self.assertEqual(_cmp('2007-05-15T16:45:01', '2007-05-15T16:45:00'), 1)
+
+    def test_cmp_date(self):
+        """Ensure that our SharedModel sorting func sorts correctly."""
+        row1 = ['foo'] * 100
+        row2 = ['bar'] * 100
+        class fake_variant:
+            def __init__(self, string):
+                self.string = string
+            def get_string(self):
+                return self.string
+        row1[TIME_IDX] = fake_variant('2012-01-01T11:59:59')
+        row2[TIME_IDX] = fake_variant('2012-01-01T11:59:59')
+        self.assertEqual(_cmp_date(row1, len(row1), row2, len(row2), None), 0)
+        row1[TIME_IDX] = fake_variant('2012-01-01T11:59:58')
+        row2[TIME_IDX] = fake_variant('2012-01-01T11:59:59')
+        self.assertEqual(_cmp_date(row1, len(row1), row2, len(row2), None), -1)
+        row1[TIME_IDX] = fake_variant('2012-01-01T11:59:58')
+        row2[TIME_IDX] = fake_variant('2012-01-01T11:59:57')
+        self.assertEqual(_cmp_date(row1, len(row1), row2, len(row2), None), 1)

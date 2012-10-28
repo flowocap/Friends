@@ -28,10 +28,9 @@ import logging
 from base64 import encodebytes
 from contextlib import contextmanager
 from gi.repository import Soup, SoupGNOME
-from urllib.error import HTTPError
 from urllib.parse import urlencode
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 # Global libsoup session instance.
@@ -144,17 +143,9 @@ class Downloader:
         message = self._build_request()
         _soup.send_message(message)
         if message.status_code != 200:
-            # Even though we're using libsoup instead of Python's urllib
-            # libraries, it's helpful for clients to receive an exception when
-            # non-success error codes are received.  This lets the clients do
-            # additional work if they want, and it prevents rate limiting from
-            # occurring.
-            print (message)
-            raise HTTPError(self.url,
-                            message.status_code,
-                            message.reason_phrase,
-                            self.headers,
-                            None)
+            log.error('{}: {} {}'.format(self.url,
+                                         message.status_code,
+                                         message.reason_phrase))
         yield message
         self._rate_limiter.update(message)
 

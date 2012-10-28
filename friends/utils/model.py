@@ -29,10 +29,16 @@ __all__ = [
     'COLUMN_TYPES',
     'COLUMN_INDICES',
     'DEFAULTS',
+    'MODEL_DBUS_NAME',
+    'persist_model',
+    'prune_model',
     ]
 
 
 from gi.repository import Dee
+
+import logging
+log = logging.getLogger(__name__)
 
 
 # Most of this schema is very straightforward, but the 'message_ids' column
@@ -87,7 +93,6 @@ SCHEMA = (
     ('video_src',      's'),
     ('video_url',      's'),
     ('video_name',     's'),
-    ('comments',       'as'),
     ('recipient',      's'),
     ('recipient_nick', 's'),
     ('recipient_icon', 's'),
@@ -108,5 +113,45 @@ DEFAULTS = {
     }
 
 
-Model = Dee.SharedModel.new('com.canonical.Friends.Streams')
-Model.set_schema_full(COLUMN_TYPES)
+MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'
+_resource_manager = Dee.ResourceManager.get_default()
+Model = _resource_manager.load(MODEL_DBUS_NAME)
+
+
+first_run = Model is None
+if not first_run:
+    stale_schema = Model.get_schema() != list(COLUMN_TYPES)
+else:
+    stale_schema = True
+
+
+def persist_model():
+    """Write our Dee.SharedModel instance to disk."""
+    log.debug('Saving Dee.SharedModel with {} rows.'.format(len(Model)))
+    _resource_manager.store(Model, MODEL_DBUS_NAME)
+
+
+# If this is first run, or the schema has changed since last run,
+# we'll need to make a new, empty Model.
+if first_run or stale_schema:
+    log.debug('Starting a new, empty Dee.SharedModel.')
+    Model = Dee.SharedModel.new(MODEL_DBUS_NAME)
+    Model.set_schema_full(COLUMN_TYPES)
+
+    # Calling this from here ensures that schema changes are persisted
+    # ASAP, but we also call it periodically in the dispatcher in
+    # order to ensure data is saved often in case of power loss.
+    persist_model()
+
+
+def prune_model(maximum):
+    """If there are more than maximum rows, remove the oldest ones."""
+    pruned = 0
+    while Model.get_n_rows() > maximum:
+        Model.remove(Model.get_first_iter())
+        pruned += 1
+
+    if pruned:
+        log.debug('Deleted {} rows from Dee.SharedModel.'.format(pruned))
+        # Delete those messages from disk, too, not just memory.
+        persist_model()

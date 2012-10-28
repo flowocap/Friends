@@ -28,14 +28,8 @@ from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -126,13 +120,14 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         # This test data was ripped directly from Twitter's API docs.
         expected = [
-            [[['twitter', 'faker/than fake', '240558470661799936']],
-             'messages', 'OAuth Dancer', 'oauth_dancer', False,
-             '2012-08-28T21:16:23', 'just another test', '',
-             'https://si0.twimg.com/profile_images/730275945/oauth-dancer_normal.jpg',
-             'https://twitter.com/oauth_dancer/status/240558470661799936', '',
+            [[['twitter', 'faker/than fake', '240539141056638977']],
+             'messages', 'Taylor Singletary', 'episod', False,
+             '2012-08-28T19:59:34',
+             'You\'d be right more often if you thought you were wrong.', '',
+             'https://si0.twimg.com/profile_images/2546730059/f6a8zq58mg1hn0ha8vie_normal.jpeg',
+             'https://twitter.com/episod/status/240539141056638977', '',
              '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-             '', '', '', '', '', '', '', [], '', '', '',
+             '', '', '', '', '', '', '', '', '', '',
              ],
             [[['twitter', 'faker/than fake', '240556426106372096']],
              'messages', 'Raffi Krikorian', 'raffi', False,
@@ -142,16 +137,15 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'https://si0.twimg.com/profile_images/1270234259/raffi-headshot-casual_normal.png',
              'https://twitter.com/raffi/status/240556426106372096', '',
              '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-             '', '', '', '', '', '', '', [], '', '', '',
+             '', '', '', '', '', '', '', '', '', '',
              ],
-            [[['twitter', 'faker/than fake', '240539141056638977']],
-             'messages', 'Taylor Singletary', 'episod', False,
-             '2012-08-28T19:59:34',
-             'You\'d be right more often if you thought you were wrong.', '',
-             'https://si0.twimg.com/profile_images/2546730059/f6a8zq58mg1hn0ha8vie_normal.jpeg',
-             'https://twitter.com/episod/status/240539141056638977', '',
+            [[['twitter', 'faker/than fake', '240558470661799936']],
+             'messages', 'OAuth Dancer', 'oauth_dancer', False,
+             '2012-08-28T21:16:23', 'just another test', '',
+             'https://si0.twimg.com/profile_images/730275945/oauth-dancer_normal.jpg',
+             'https://twitter.com/oauth_dancer/status/240558470661799936', '',
              '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-             '', '', '', '', '', '', '', [], '', '', '',
+             '', '', '', '', '', '', '', '', '', '',
              ],
             ]
         for i, expected_row in enumerate(expected):
@@ -184,7 +178,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'https://si0.twimg.com/profile_images/730275945/oauth-dancer_normal.jpg',
             'https://twitter.com/oauth_dancer/status/240558470661799936', '',
             '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-            '', '', '', '', '', '', '', [], '', '', '',
+            '', '', '', '', '', '', '', '', '', '',
             ]
         for got, want in zip(TestModel.get_row(0), expected_row):
             self.assertEqual(got, want)

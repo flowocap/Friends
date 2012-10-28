@@ -30,14 +30,8 @@ from datetime import date, timedelta
 from gi.repository import GdkPixbuf
 from pkg_resources import resource_filename
 
-from friends.testing.mocks import FakeSoupMessage
+from friends.testing.mocks import FakeSoupMessage, mock
 from friends.utils.avatar import Avatar
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 @mock.patch('friends.utils.download._soup', mock.Mock())
@@ -117,8 +111,8 @@ class TestAvatars(unittest.TestCase):
             path = Avatar.get_image('http://example.com')
         # The image must have been downloaded at least once.
         pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
-        self.assertEqual(pixbuf.get_height(), 48)
-        self.assertEqual(pixbuf.get_width(), 48)
+        self.assertEqual(pixbuf.get_height(), 100)
+        self.assertEqual(pixbuf.get_width(), 100)
         # Confirm that the resulting cache image is actually a PNG.
         with open(path, 'rb') as raw:
             # This is the PNG file format magic number, living in the first 8

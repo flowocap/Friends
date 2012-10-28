@@ -27,14 +27,8 @@ from gi.repository import Dee
 
 from friends.protocols.identica import Identica
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import LogMock
+from friends.testing.mocks import LogMock, mock
 from friends.utils.model import COLUMN_TYPES
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.

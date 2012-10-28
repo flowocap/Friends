@@ -31,14 +31,13 @@ from friends.utils.manager import protocol_manager
 from friends.utils.model import COLUMN_INDICES, Model
 
 
-log = logging.getLogger('friends.service')
+log = logging.getLogger(__name__)
 
 
 class AccountManager:
     """Manage the accounts that we know about."""
 
-    def __init__(self, refresh_callback):
-        self._callback = refresh_callback
+    def __init__(self):
         self._accounts = {}
         # Ask libaccounts for a manager of the microblogging services.
         # Connect callbacks to the manager so that we can react when accounts
@@ -48,43 +47,54 @@ class AccountManager:
         manager.connect('account-deleted', self._on_account_deleted)
         # Add all the currently known accounts.
         for account_service in manager.get_enabled_account_services():
-            self.add_new_account(account_service)
+            self._add_new_account(account_service)
         log.info('Accounts found: {}'.format(len(self._accounts)))
 
-    def _on_enabled_event(self, manager, account_id):
-        """React to new microblogging accounts being added."""
-        log.debug('Adding account {}'.format(account_id))
+    def _get_id(self, manager, account_id):
+        """Instantiate an AccountService and identify it."""
         account = manager.get_account(account_id)
         for service in account.list_services():
             account_service = Accounts.AccountService.new(account, service)
-            if account_service.get_enabled():
-                self.add_new_account(account_service)
-        self._callback()
+            id_ = '{}/{}'.format(
+                account_id,
+                account_service.get_service().get_display_name().lower())
+            return account_service, id_
+        return (None, None)
+
+    def _on_enabled_event(self, manager, account_id):
+        """React to new microblogging accounts being enabled or disabled."""
+        account_service, id_ = self._get_id(manager, account_id)
+        if account_service is not None and account_service.get_enabled():
+            log.debug('Adding account {}'.format(id_))
+            account = self._add_new_account(account_service)
+            if account is not None:
+                account.protocol('receive')
+        else:
+            # If an account has been disabled in UOA, we should remove
+            # it's messages from the SharedModel.
+            self._unpublish_entire_account(id_)
 
     def _on_account_deleted(self, manager, account_id):
-        log.debug('Deleting account {}', account_id)
-        # If we don't know about the given account id, just return and do not
-        # call the refresh callback.
-        try:
-            account = self._accounts.pop(account_id)
-        except KeyError:
-            log.debug('Attempting to delete unknown account: {}', account_id)
-            return
+        account_service, id_ = self._get_id(manager, account_id)
+        if id_ is not None:
+            log.debug('Deleting account {}'.format(id_))
+            self._unpublish_entire_account(id_)
 
-        for row in Model:
-            for triple in row[COLUMN_INDICES['message_ids']]:
-                if account_id in triple:
-                    account.protocol._unpublish(triple[-1])
+    def _unpublish_entire_account(self, id_):
+        """Delete all the account's messages from the SharedModel."""
+        log.debug('Deleting all messages from {}.'.format(id_))
+        account = self._accounts.pop(id_, None)
+        if account is not None:
+            account.protocol._unpublish_all()
 
-        self._callback()
-
-    def add_new_account(self, account_service):
+    def _add_new_account(self, account_service):
         try:
             new_account = Account(account_service)
         except UnsupportedProtocolError as error:
             log.info(error)
         else:
             self._accounts[new_account.id] = new_account
+            return new_account
 
     def get_all(self):
         return self._accounts.values()
@@ -181,7 +191,11 @@ class Account:
         return self.account_service.get_enabled()
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.account_service == other.account_service
 
     def __ne__(self, other):
+        if other is None:
+            return True
         return self.account_service != other.account_service

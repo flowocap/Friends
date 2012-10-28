@@ -26,15 +26,9 @@ from gi.repository import Dee
 
 from friends.protocols.foursquare import FourSquare
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, mock
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_TYPES
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -108,7 +102,7 @@ class TestFourSquare(unittest.TestCase):
             'https://api.foursquare.com/v2/checkins/50574c9ce4b0a9a6e84433a0' +
             '?oauth_token=tokeny goodness&v=20120917', '', '', '', '', 0.0,
             False, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-            '', '', '', [], '', '', '',
+            '', '', '', '', '', '',
             ]
         for got, want in zip(TestModel.get_row(0), expected):
             self.assertEqual(got, want)

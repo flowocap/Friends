@@ -26,13 +26,18 @@ __all__ = [
 import logging
 
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import Gio, GLib
+from gi.repository import Gio, GLib, GObject
+
+GObject.threads_init(None)
 
 from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher
 from friends.service.shortener import URLShorten
+from friends.utils.avatar import Avatar
+from friends.utils.base import initialize_caches
 from friends.utils.logging import initialize
 from friends.utils.menus import MenuManager
+from friends.utils.model import prune_model
 from friends.utils.options import Options
 
 
@@ -51,13 +56,32 @@ def main():
             package, dot, class_name = cls.__name__.rpartition('.')
             print(class_name)
         return
+
     # Initialize the logging subsystem.
-    # XXX FIXME - this should be renamed to 'friends'.
-    gsettings = Gio.Settings.new('org.gwibber.preferences')
+    gsettings = Gio.Settings.new('com.canonical.friends')
     initialize(console=args.console,
                debug=args.debug or gsettings.get_boolean('debug'))
-    log = logging.getLogger('friends.service')
+    log = logging.getLogger(__name__)
     log.info('Friends backend service starting')
+
+    # Expire old Avatars. Without this we would never notice when
+    # somebody changes their avatar, we would just keep the stale old
+    # one forever.
+    Avatar.expire_old_avatars()
+
+    # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
+    # size, because anything larger will have problems being transmitted
+    # over DBus. I have conservatively calculated our average row length
+    # to be 500 bytes, which means that we shouldn't let our model exceed
+    # approximately 16,000 rows. However, that seems like a lot to me, so
+    # I'm going to set it to 8,000 for now and we can tweak this later if
+    # necessary. Do you really need more than 8,000 tweets in memory at
+    # once? What are you doing with all these tweets?
+    prune_model(8000)
+
+    # This builds two different indexes of our persisted Dee.Model
+    # data for the purposes of faster duplicate checks.
+    initialize_caches()
 
     # Set up the DBus main loop.
     DBusGMainLoop(set_as_default=True)

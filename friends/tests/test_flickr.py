@@ -26,15 +26,9 @@ from gi.repository import Dee
 
 from friends.protocols.flickr import Flickr
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, mock
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -48,6 +42,7 @@ class TestFlickr(unittest.TestCase):
     """Test the Flickr API."""
 
     def setUp(self):
+        self.maxDiff = None
         self.account = FakeAccount()
         self.protocol = Flickr(self.account)
         # Enable sub-thread synchronization, and mock out the loggers.
@@ -71,12 +66,14 @@ class TestFlickr(unittest.TestCase):
         with mock.patch.object(self.protocol, '_get_nsid', return_value=None):
             self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
 Flickr: No NSID available
 Friends operation exception:
  Traceback (most recent call last):
  ...
 friends.errors.AuthorizationError:\
  No Flickr user id available (account: faker/than fake)
+Flickr.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',
@@ -90,7 +87,10 @@ friends.errors.AuthorizationError:\
         # AuthorizationError.
         self.protocol('receive')
         # No error messages.
-        self.assertEqual(self.log_mock.empty(), '')
+        self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
+Flickr.receive has completed, thread exiting.
+""")
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
@@ -108,11 +108,13 @@ friends.errors.AuthorizationError:\
                                side_effect=side_effect):
             self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
 Friends operation exception:
  Traceback (most recent call last):
  ...
 friends.errors.AuthorizationError:\
  No Flickr user id available (account: faker/than fake)
+Flickr.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',
@@ -129,7 +131,10 @@ friends.errors.AuthorizationError:\
                                side_effect=side_effect):
             self.protocol('receive')
         # No error message.
-        self.assertEqual(self.log_mock.empty(), '')
+        self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
+Flickr.receive has completed, thread exiting.
+""")
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
@@ -144,17 +149,11 @@ friends.errors.AuthorizationError:\
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
         self.protocol('receive')
-        self.assertEqual(self.log_mock.empty(), """\
-Logging in to Flickr
-No AccessToken in Flickr session:\
- {'TokenSecret': 'abc', 'username': 'Bob Dobbs', 'user_nsid': 'bob'}
-Flickr: No NSID available
-Friends operation exception:
- Traceback (most recent call last):
- ...
+        log_lines = self.log_mock.empty().splitlines()
+        log_message = log_lines[-2]
+        self.assertEqual(log_message, """\
 friends.errors.AuthorizationError:\
- No Flickr user id available (account: faker/than fake)
-""")
+ No Flickr user id available (account: faker/than fake)""")
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -166,6 +165,7 @@ friends.errors.AuthorizationError:\
         # AccessToken, but this fails.
         self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
+Flickr.receive is starting in a new thread.
 Logging in to Flickr
 No Flickr authentication results received.
 Flickr: No NSID available
@@ -174,6 +174,7 @@ Friends operation exception:
  ...
 friends.errors.AuthorizationError:\
  No Flickr user id available (account: faker/than fake)
+Flickr.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.download.Soup.Message',
@@ -207,7 +208,7 @@ friends.errors.AuthorizationError:\
         url, GET_args = all_call_args[0][0]
         self.assertEqual(url, 'http://api.flickr.com/services/rest')
         self.assertEqual(GET_args, dict(
-            extras='date_updated,owner_name,icon_server',
+            extras='date_upload,owner_name,icon_server',
             user_id='jim',
             format='json',
             nojsoncallback='1',
@@ -248,7 +249,7 @@ friends.errors.AuthorizationError:\
         self.assertEqual(col('sender'), '123')
         self.assertEqual(col('timestamp'), '2012-05-10T13:36:45')
         self.assertFalse(col('from_me'))
-        row = list(TestModel.get_row(1))
+        row = list(TestModel.get_row(2))
         # Image 2 data.  The image is from the account owner.
         self.assertEqual(col('message'), 'bee')
         self.assertEqual(col('html'), 'bee')
@@ -258,7 +259,7 @@ friends.errors.AuthorizationError:\
         self.assertTrue(col('from_me'))
         # Image 3 data.  This data set has some additional entries that allow
         # various image urls and other keys to be added.
-        row = list(TestModel.get_row(2))
+        row = list(TestModel.get_row(1))
         self.assertEqual(col('message'), 'cat')
         self.assertEqual(col('html'), 'cat')
         self.assertEqual(
