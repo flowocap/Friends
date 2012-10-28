@@ -42,6 +42,7 @@ class TestFlickr(unittest.TestCase):
     """Test the Flickr API."""
 
     def setUp(self):
+        self.maxDiff = None
         self.account = FakeAccount()
         self.protocol = Flickr(self.account)
         # Enable sub-thread synchronization, and mock out the loggers.
