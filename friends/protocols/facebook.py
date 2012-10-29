@@ -258,7 +258,7 @@ class Facebook(Base):
 
     def fetch_contacts(self):
         """Retrieve a list of up to 100 Facebook friends."""
-        limit = self._DOWNLOAD_LIMIT * 2
+        limit = 1000
         access_token = self._get_access_token()
         contacts = []
         url = ME_URL + '/friends'
@@ -307,6 +307,7 @@ class Facebook(Base):
 
     def contacts(self):
         contacts = self.fetch_contacts()
+        log.debug("Size of the contacts returned %i", len(contacts))
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
         for contact in contacts:
             if source is not None:
