@@ -365,7 +365,7 @@ Facebook.receive has completed, thread exiting.
                 return_value=True)
     def test_fetch_contacts(self, *mocks):
         # Receive the users friends.
-        results = self.protocol.fetch_contacts()
+        results = self.protocol._fetch_contacts()
         self.assertEqual(len(results), 8)
         self.assertEqual(results[7]['name'], 'John Smith')
         self.assertEqual(results[7]['id'], '444444')
@@ -376,7 +376,7 @@ Facebook.receive has completed, thread exiting.
                         'id': '555555555',
                         'username': "lucy.baron5",
                         'link': 'http:www.facebook.com/lucy.baron5'}
-        eds_contact = self.protocol.create_contact(bare_contact)
+        eds_contact = self.protocol._create_contact(bare_contact)
         facebook_id_attr = eds_contact.get_attribute('facebook-id')
         self.assertEqual(facebook_id_attr.get_value(), '555555555')
         facebook_name_attr = eds_contact.get_attribute('facebook-name')
@@ -396,7 +396,7 @@ Facebook.receive has completed, thread exiting.
                         'id': '555555555',
                         'username': "lucy.baron5",
                         'link': 'http:www.facebook.com/lucy.baron5'}
-        eds_contact = self.protocol.create_contact(bare_contact)
+        eds_contact = self.protocol._create_contact(bare_contact)
         result = self.protocol._push_to_eds('test-address-book', eds_contact)
         self.assertEqual(result, True)
 
@@ -409,7 +409,7 @@ Facebook.receive has completed, thread exiting.
                         'id': '555555555',
                         'username': "lucy.baron5",
                         'link': 'http:www.facebook.com/lucy.baron5'}
-        eds_contact = self.protocol.create_contact(bare_contact)
+        eds_contact = self.protocol._create_contact(bare_contact)
         result = self.protocol._push_to_eds('test-address-book', eds_contact)
         self.assertEqual(result, False)
 

@@ -257,7 +257,7 @@ class Facebook(Base):
         else:
             self._unpublish(obj_id)
 
-    def fetch_contacts(self):
+    def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""
         limit = 1000
         access_token = self._get_access_token()
@@ -268,8 +268,8 @@ class Facebook(Base):
             limit=limit)
         return self._follow_pagination(url, params, limit=limit)
 
-    def fetch_contact(self, contact_id):
-        """Fetch the full, individual contact info from."""
+    def _fetch_contact(self, contact_id):
+        """Fetch the full, individual contact info."""
         access_token = self._get_access_token()
         url = API_BASE.format(id=contact_id)
         params = dict(access_token=access_token)
@@ -279,7 +279,7 @@ class Facebook(Base):
     # contact info For now we only cache ID and the name in the
     # addressbook. Using custom field for name because I can't figure
     # out how econtact name works.
-    def create_contact(self, contact_json):
+    def _create_contact(self, contact_json):
         vcard = EBook.VCard.new()
 
         vcafid = EBook.VCardAttribute.new(
@@ -325,11 +325,12 @@ class Facebook(Base):
         contacts = self._fetch_contacts()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        if source is None:
+            self._make_eds_source(FACEBOOK_ADDRESS_BOOK)
         for contact in contacts:
-            if source is not None:
-                if self._previously_stored_contact(
-                        source, 'facebook-id', contact['id']):
-                    continue
+            if self._previously_stored_contact(
+                    source, 'facebook-id', contact['id']):
+                continue
             log.debug(
                 'Fetch full contact info for {} and id {}'.format(
                     contact['name'], contact['id']))
