@@ -430,9 +430,21 @@ class Base:
             log.error("EDS Search failed on field %s", field)
             return False
         return len(cs[1]) > 0
-#            log.debug("Deleting contact")
-#            client.remove_contact_sync(cs[1][0], Gio.Cancellable())
-#        return True
+
+    @classmethod
+    def delete_service_contacts(cls, source):
+        client = EBook.BookClient.new(source)
+        client.open_sync(False, None)
+        
+        cs = client.get_contacts_sync(None, None)
+        if cs[0] == False:
+            log.error("EDS search for delete all contacts failed")
+            return
+        for r in cs[1]:
+            log.debug("Deleting contact")
+            client.remove_contact_sync(r, None)
+
+
 
     @classmethod
     def get_features(cls):

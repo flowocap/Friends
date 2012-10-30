@@ -291,12 +291,12 @@ class Facebook(Base):
             '', 'X-URIS')
         vcauri.add_value(contact_json['link'])
 
-
-        if("username" in contact_json.keys()):
-            vcaws = EBook.VCardAttribute.new('', 'X-FOLKS-WEB-SERVICES-IDS')
-            vcaws.add_value("jabber:" + contact_json['username'] + "@chat.facebook.com")
-            log.debug("Adding folks web services id as jabber:%s@chat.facebook.com", contact_json['username'])
-            vcard.add_attribute(vcaws)
+        vcaws = EBook.VCardAttribute.new('', 'X-FOLKS-WEB-SERVICES-IDS')
+        vcaws_param = EBook.VCardAttributeParam.new ("jabber")
+        vcaws_param.add_value("-" + contact_json['id'] + "@chat.facebook.com")
+        vcaws.add_param(vcaws_param)
+        log.debug("Adding folks web services id as jabber:%s@chat.facebook.com", contact_json['username'])
+        vcard.add_attribute(vcaws)
 
         if("gender" in contact_json.keys()):
             vcag = EBook.VCardAttribute.new(
@@ -331,3 +331,7 @@ class Facebook(Base):
             if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
                 log.error(
                     'Unable to save facebook contact {}'.format(contact['name']))
+
+    def delete_contacts(self):
+        source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        Base.delete_service_contacts(source)        
