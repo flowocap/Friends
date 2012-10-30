@@ -288,20 +288,31 @@ class Facebook(Base):
             'social-networking-attributes', 'facebook-name')
         vcafn.add_value(contact_json['name'])
         vcauri = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'X-URIS')
+            '', 'X-URIS')
         vcauri.add_value(contact_json['link'])
+
+
+        if("username" in contact.keys()):
+            vcaws = EBook.VCardAttribute.new('', 'X-FOLKS-WEB-SERVICES-IDS')
+            vcaws.add_value("jabber:" + contact_json['username'] + "@chat.facebook.com")
+            log.debug("Adding folks web services id as jabber:%s@chat.facebook.com", contact_json['username'])
+            vcard.add_attribute(vcaws)
+
         if("gender" in contact_json.keys()):
             vcag = EBook.VCardAttribute.new(
                 'social-networking-attributes', 'X-GENDER')
             vcag.add_value(contact_json['gender'])
             vcard.add_attribute(vcag)
         
-        vcard.add_attribute(vcafid)
         vcard.add_attribute(vcafn)
         vcard.add_attribute(vcauri)
+        vcard.add_attribute(vcafid)
+
         c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
         c.set_property("full-name", contact_json["name"])
-        c.set_property('nickname', contact_json["username"])
+        if ("username" in contact.keys()):
+            c.set_property('nickname', contact_json["username"])
+
         log.debug("Creating new contact for {}".format(c.get_property("full-name")))
         return c
 
