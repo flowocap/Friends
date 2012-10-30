@@ -263,10 +263,11 @@ class EDSBookClientMock:
         return True
 
     def get_contacts_sync(val1, val2, val3):
-        if val1:
-            return [True, [{'name':'john doe', 'id': 11111}]]
-        else:
-            return [True, []]
+        return [True, [{'name':'john doe', 'id': 11111}]]
+    
+    def remove_contact_sync(val1, val2):
+        pass
+
 
 class EDSExtension:
     """A Extension mocker object for testing create source."""
