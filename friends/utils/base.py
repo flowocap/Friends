@@ -440,6 +440,7 @@ class Base:
         if cs[0] == False:
             log.error("EDS search for delete all contacts failed")
             return
+        log.debug("Found %i contacts to delete", len(cs[1]))
         for r in cs[1]:
             log.debug("Deleting contact %s", r.get_property("full-name"))
             client.remove_contact_sync(r, None)

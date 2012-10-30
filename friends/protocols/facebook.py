@@ -295,7 +295,6 @@ class Facebook(Base):
         vcaws_param = EBook.VCardAttributeParam.new ("jabber")
         vcaws_param.add_value("-" + contact_json['id'] + "@chat.facebook.com")
         vcaws.add_param(vcaws_param)
-        log.debug("Adding folks web services id as jabber:%s@chat.facebook.com", contact_json['username'])
         vcard.add_attribute(vcaws)
 
         if("gender" in contact_json.keys()):
