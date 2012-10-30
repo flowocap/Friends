@@ -31,7 +31,7 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import EDataServer, EBook, Gio
+from gi.repository import EDataServer, EBook
 
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
@@ -402,7 +402,7 @@ class Base:
                 source_match = self._source_registry.ref_source(new_source_uid)
         client = EBook.BookClient.new(source_match)
         client.open_sync(False, None)
-        return client.add_contact_sync(contact, Gio.Cancellable())
+        return client.add_contact_sync(contact, None)
 
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
@@ -411,7 +411,7 @@ class Base:
         extension = source.get_extension(
             EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
         extension.set_backend_name('local')
-        if self._source_registry.commit_source_sync(source, Gio.Cancellable()):
+        if self._source_registry.commit_source_sync(source, None):
             return source.get_uid()
 
     def _get_eds_source(self, online_service):
@@ -425,7 +425,7 @@ class Base:
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)
         q = EBook.book_query_vcard_field_test(field, EBook.BookQueryTest(0), search_term)        
-        cs = client.get_contacts_sync(q.to_string(), Gio.Cancellable())
+        cs = client.get_contacts_sync(q.to_string(), None)
         if cs[0] == False:
             log.error("EDS Search failed on field %s", field)
             return False
