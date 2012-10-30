@@ -292,7 +292,7 @@ class Facebook(Base):
         vcauri.add_value(contact_json['link'])
 
 
-        if("username" in contact.keys()):
+        if("username" in contact_json.keys()):
             vcaws = EBook.VCardAttribute.new('', 'X-FOLKS-WEB-SERVICES-IDS')
             vcaws.add_value("jabber:" + contact_json['username'] + "@chat.facebook.com")
             log.debug("Adding folks web services id as jabber:%s@chat.facebook.com", contact_json['username'])
@@ -310,7 +310,7 @@ class Facebook(Base):
 
         c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
         c.set_property("full-name", contact_json["name"])
-        if ("username" in contact.keys()):
+        if ("username" in contact_json.keys()):
             c.set_property('nickname', contact_json["username"])
 
         log.debug("Creating new contact for {}".format(c.get_property("full-name")))
