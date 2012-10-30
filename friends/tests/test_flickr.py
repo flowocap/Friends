@@ -26,15 +26,9 @@ from gi.repository import Dee
 
 from friends.protocols.flickr import Flickr
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock
+from friends.testing.mocks import FakeSoupMessage, LogMock, mock
 from friends.utils.base import Base
 from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -48,6 +42,7 @@ class TestFlickr(unittest.TestCase):
     """Test the Flickr API."""
 
     def setUp(self):
+        self.maxDiff = None
         self.account = FakeAccount()
         self.protocol = Flickr(self.account)
         # Enable sub-thread synchronization, and mock out the loggers.
@@ -154,19 +149,11 @@ Flickr.receive has completed, thread exiting.
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
         self.protocol('receive')
-        self.assertEqual(self.log_mock.empty(), """\
-Flickr.receive is starting in a new thread.
-Logging in to Flickr
-No AccessToken in Flickr session:\
- {'TokenSecret': 'abc', 'username': 'Bob Dobbs', 'user_nsid': 'bob'}
-Flickr: No NSID available
-Friends operation exception:
- Traceback (most recent call last):
- ...
+        log_lines = self.log_mock.empty().splitlines()
+        log_message = log_lines[-2]
+        self.assertEqual(log_message, """\
 friends.errors.AuthorizationError:\
- No Flickr user id available (account: faker/than fake)
-Flickr.receive has completed, thread exiting.
-""")
+ No Flickr user id available (account: faker/than fake)""")
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -260,7 +247,7 @@ Flickr.receive has completed, thread exiting.
         self.assertEqual(col('html'), 'ant')
         self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '801']])
         self.assertEqual(col('sender'), '123')
-        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45')
+        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45Z')
         self.assertFalse(col('from_me'))
         row = list(TestModel.get_row(2))
         # Image 2 data.  The image is from the account owner.

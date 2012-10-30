@@ -87,7 +87,8 @@ class Facebook(Base):
 
         from_record = entry.get('from')
         if from_record is not None:
-            args['sender'] = sender_id = from_record.get('id', '')
+            args['sender'] = from_record.get('name', '')
+            sender_id = from_record.get('id', '')
             args['icon_uri'] = Avatar.get_image(
                 API_BASE.format(id=sender_id) + '/picture?type=large')
             args['sender_nick'] = from_record.get('name', '')
@@ -288,10 +289,10 @@ class Facebook(Base):
             'social-networking-attributes', 'facebook-name')
         vcafn.add_value(contact_json['name'])
         vcauri = EBook.VCardAttribute.new(
-            '', 'X-URIS')
+            'social-networking-attributes', 'X-URIS')
         vcauri.add_value(contact_json['link'])
 
-        vcaws = EBook.VCardAttribute.new('', 'X-FOLKS-WEB-SERVICES-IDS')
+        vcaws = EBook.VCardAttribute.new('social-networking-attributes', 'X-FOLKS-WEB-SERVICES-IDS')
         vcaws_param = EBook.VCardAttributeParam.new ("jabber")
         vcaws_param.add_value("-" + contact_json['id'] + "@chat.facebook.com")
         vcaws.add_param(vcaws_param)
@@ -333,4 +334,4 @@ class Facebook(Base):
 
     def delete_contacts(self):
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
-        Base.delete_service_contacts(source)        
+        return Base.delete_service_contacts(source)        

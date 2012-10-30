@@ -439,11 +439,12 @@ class Base:
         cs = client.get_contacts_sync  (q.to_string(), None)
         if cs[0] == False:
             log.error("EDS search for delete all contacts failed")
-            return
+            return False
         log.debug("Found %i contacts to delete", len(cs[1]))
         for r in cs[1]:
             log.debug("Deleting contact %s", r.get_property("full-name"))
             client.remove_contact_sync(r, None)
+        return True
 
     @classmethod
     def get_features(cls):

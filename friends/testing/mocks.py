@@ -20,6 +20,7 @@ __all__ = [
     'FakeSoupMessage',
     'LogMock',
     'SettingsIterMock',
+    'mock',
     ]
 
 
@@ -168,7 +169,7 @@ class LogMock:
     """
     def __init__(self, *modules):
         self._queue = Queue()
-        self._log = logging.getLogger(__name__)
+        self._log = logging.getLogger('friends')
         handler = QueueHandler(self._queue)
         formatter = logging.Formatter(LOG_FORMAT, style='{')
         handler.setFormatter(formatter)
@@ -206,7 +207,7 @@ class LogMock:
         for patcher in self._patchers:
             patcher.stop()
         # Get rid of the mock logger.
-        del logging.Logger.manager.loggerDict[__name__]
+        del logging.Logger.manager.loggerDict['friends']
 
     def empty(self, trim=True):
         """Return all the log messages written to this log.
@@ -248,6 +249,7 @@ class LogMock:
         self.stop()
         return False
 
+
 class EDSBookClientMock:
     """A Mocker object to simulate use of BookClient."""
 
@@ -261,10 +263,11 @@ class EDSBookClientMock:
         return True
 
     def get_contacts_sync(val1, val2, val3):
-        if val1:
-            return [True, [{'name':'john doe', 'id': 11111}]]
-        else:
-            return [True, []]
+        return [True, [{'name':'john doe', 'id': 11111}]]
+    
+    def remove_contact_sync(val1, val2):
+        pass
+
 
 class EDSExtension:
     """A Extension mocker object for testing create source."""

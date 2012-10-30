@@ -29,6 +29,7 @@ from oauthlib.oauth1 import Client
 from urllib.error import HTTPError
 from urllib.parse import quote
 
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import RateLimiter as BaseRateLimiter, get_json
 from friends.utils.time import parsetime, iso8601utc
@@ -106,6 +107,10 @@ class Twitter(Base):
 
         user = tweet.get('user', {})
         screen_name = user.get('screen_name', '')
+        avatar_url = (user.get('profile_image_url_https') or # Twitter, or
+                      user.get('profile_image_url') or       # Identi.ca
+                      '')
+
         self._publish(
             message_id=tweet_id,
             message=tweet.get('text', ''),
@@ -114,7 +119,8 @@ class Twitter(Base):
             sender=user.get('name', ''),
             sender_nick=screen_name,
             from_me=(screen_name == self._account.user_name),
-            icon_uri=user.get('profile_image_url_https', ''),
+            icon_uri=Avatar.get_image(
+                avatar_url.replace('_normal.', '.')),
             liked=tweet.get('favorited', False),
             url=self._tweet_permalink.format(user_id=screen_name,
                                              tweet_id=tweet_id),
