@@ -435,16 +435,14 @@ class Base:
     def delete_service_contacts(cls, source):
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)
-        
-        cs = client.get_contacts_sync(None, None)
+        q = EBook.book_query_any_field_contains("")
+        cs = client.get_contacts_sync  (q.to_string(), None)
         if cs[0] == False:
             log.error("EDS search for delete all contacts failed")
             return
         for r in cs[1]:
-            log.debug("Deleting contact")
+            log.debug("Deleting contact %s", r.get_property("full-name"))
             client.remove_contact_sync(r, None)
-
-
 
     @classmethod
     def get_features(cls):
