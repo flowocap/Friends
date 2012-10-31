@@ -29,7 +29,7 @@ from gi.repository import Dee
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
 from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import mock
+from friends.testing.mocks import LogMock, mock
 from friends.utils.base import Base, feature, _cmp, _cmp_date, TIME_IDX
 from friends.utils.manager import ProtocolManager
 from friends.utils.model import (
@@ -47,6 +47,10 @@ class TestProtocolManager(unittest.TestCase):
 
     def setUp(self):
         self.manager = ProtocolManager()
+        self.log_mock = LogMock('friends.utils.base')
+
+    def tearDown(self):
+        self.log_mock.stop()
 
     def test_find_all_protocols(self):
         # The manager can find all the protocol classes.

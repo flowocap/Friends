@@ -28,15 +28,19 @@ from friends.utils.time import iso8601utc, parsetime
 class TestParseTime(unittest.TestCase):
     def test_type(self):
         # parsetime() should always return int seconds since the epoch.
-        self.assertTrue(isinstance(parsetime('2012-05-10T13:36:45'), int))
+        self.assertTrue(isinstance(parsetime('2012-05-10T13:36:45Z'), int))
 
     def test_parse_naive(self):
         # ISO 8601 standard format without timezone.
         self.assertEqual(parsetime('2012-05-10T13:36:45'), 1336657005)
 
-    def test_parse_utctz(self):
+    def test_parse_utctz_alt(self):
         # ISO 8601 standard format with UTC timezone.
         self.assertEqual(parsetime('2012-05-10T13:36:45 +0000'), 1336657005)
+
+    def test_parse_utctz(self):
+        # ISO 8601 standard format with UTC timezone.
+        self.assertEqual(parsetime('2012-05-10T13:36:45Z'), 1336657005)
 
     def test_parse_naive_altsep(self):
         # ISO 8601 alternative format without timezone.
@@ -80,7 +84,7 @@ class TestParseTime(unittest.TestCase):
     def test_iso8601_utc(self):
         # Convert a Unix epoch time seconds in UTC (the default) to an ISO
         # 8601 UTC date time string.
-        self.assertEqual(iso8601utc(1336657005), '2012-05-10T13:36:45')
+        self.assertEqual(iso8601utc(1336657005), '2012-05-10T13:36:45Z')
 
     def test_iso8601_utc_with_sep(self):
         # Convert a Unix epoch time seconds in UTC (the default) to an ISO
@@ -91,21 +95,21 @@ class TestParseTime(unittest.TestCase):
     def test_iso8601_west_of_utc(self):
         # Convert a Unix epoch time seconds plus an offset to an ISO 8601 UTC
         # date time string.
-        self.assertEqual(iso8601utc(1336657005, -400), '2012-05-10T17:36:45')
+        self.assertEqual(iso8601utc(1336657005, -400), '2012-05-10T17:36:45Z')
 
     def test_iso8601_west_of_utc_with_sep(self):
         # Convert a Unix epoch time seconds plus an offset to an ISO 8601 UTC
         # date time string, with a different separator.
-        self.assertEqual(iso8601utc(1336657005, -400, sep= ' '),
+        self.assertEqual(iso8601utc(1336657005, -400, sep=' '),
                          '2012-05-10 17:36:45')
 
     def test_iso8601_east_of_utc(self):
         # Convert a Unix epoch time seconds plus an offset to an ISO 8601 UTC
         # date time string.
-        self.assertEqual(iso8601utc(1336657005, 130), '2012-05-10T12:06:45')
+        self.assertEqual(iso8601utc(1336657005, 130), '2012-05-10T12:06:45Z')
 
     def test_iso8601_east_of_utc_with_sep(self):
         # Convert a Unix epoch time seconds plus an offset to an ISO 8601 UTC
         # date time string, with a different separator.
-        self.assertEqual(iso8601utc(1336657005, 130, sep= ' '),
+        self.assertEqual(iso8601utc(1336657005, 130, sep=' '),
                          '2012-05-10 12:06:45')

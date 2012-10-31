@@ -108,7 +108,7 @@ def _make_key(row):
     # schemes, punctuation, and whitespace, that allow for the fuzzy matching.
     key = SCHEME_RE.sub('', row[SENDER_IDX] + row[MESSAGE_IDX])
     # Now remove all punctuation and whitespace.
-    return EMPTY_STRING.join(char for char in key if char not in IGNORED)
+    return EMPTY_STRING.join([char for char in key if char not in IGNORED])
 
 
 def _cmp(a, b):
