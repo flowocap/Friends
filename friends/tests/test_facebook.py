@@ -115,12 +115,13 @@ Facebook.receive has completed, thread exiting.
         self.account.access_token = 'abc'
         self.protocol.receive()
         self.assertEqual(TestModel.get_n_rows(), 4)
-        self.assertEqual(list(TestModel.get_row(0)), [
+        self.assertEqual(list(TestModel.get_row(2)), [
             [['facebook',
               'faker/than fake',
               '117402931676347_386054134801436_3235476']],
             'reply_to/109',
             'Bruce Peart',
+            '809',
             'Bruce Peart',
             False,
             '2012-09-26T17:16:00Z',
@@ -154,10 +155,11 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             ''])
-        self.assertEqual(list(TestModel.get_row(1)), [
+        self.assertEqual(list(TestModel.get_row(0)), [
             [['facebook', 'faker/than fake', '108']],
             'messages',
             'Rush is a Band',
+            '117402931676347',
             'Rush is a Band',
             False,
             '2012-09-26T17:34:00Z',
@@ -191,10 +193,11 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             ''])
-        self.assertEqual(list(TestModel.get_row(3)), [
+        self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '109']],
             'messages',
             'Rush is a Band',
+            '117402931676347',
             'Rush is a Band',
             False,
             '2012-09-26T17:49:06Z',

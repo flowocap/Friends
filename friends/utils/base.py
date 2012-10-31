@@ -111,18 +111,6 @@ def _make_key(row):
     return EMPTY_STRING.join([char for char in key if char not in IGNORED])
 
 
-def _cmp(a, b):
-    """Ressurrect cmp() because Dee.SharedModel demands it."""
-    return (a > b) - (a < b)
-
-
-def _cmp_date(row1, row1_length, row2, row2_length, user_data):
-    """Comparison function that sorts Model rows by UTC timestamp."""
-    row1_key = row1[TIME_IDX].get_string()
-    row2_key = row2[TIME_IDX].get_string()
-    return _cmp(row1_key, row2_key)
-
-
 def initialize_caches():
     """Populate _seen_ids and _seen_messages with Model data.
 
@@ -210,18 +198,6 @@ class Base:
         if barrier is not None:
             barrier.wait()
 
-    def _insert_sorted(self, _cmp, *args):
-        """If the SharedModel is empty, use Model.append for the first row."""
-        # After we're sure there's at least one row, it's *much* more
-        # efficient to just call Model.insert_sorted directly rather
-        # than doing this test over and over forever.
-        self._insert_sorted = Model.insert_sorted
-        if Model.get_n_rows() == 0:
-            log.debug('SharedModel empty; using Model.append.')
-            return Model.append(*args)
-        else:
-            return Model.insert_sorted(_cmp, *args)
-
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
 
@@ -258,11 +234,6 @@ class Base:
         if len(kwargs) > 0:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
-        if not args[TIME_IDX]:
-            # We *need* a timestamp for sorting so badly that it's better
-            # to use the current time than to fail too loudly.
-            log.error('No timestamp for message: {!r}'.format(triple))
-            args[TIME_IDX] = datetime.today().strftime(ISO8601_FORMAT)
         with _publish_lock:
             # Don't let duplicate messages into the model, but do record the
             # unique message ids of each duplicate message.
@@ -270,7 +241,7 @@ class Base:
             row_iter = _seen_messages.get(key)
             if row_iter is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = self._insert_sorted(_cmp_date, *args)
+                _seen_messages[key] = Model.append(*args)
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.

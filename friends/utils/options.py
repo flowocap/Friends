@@ -40,6 +40,10 @@ class Options:
             action='store_true', default=False,
             help='Enable logging to standard output.')
         self.parser.add_argument(
+            '-p', '--performance',
+            action='store_true', default=False,
+            help='Enable performance tuning instrumentation.')
+        self.parser.add_argument(
             '--list-protocols',
             action='store_true', default=False,
             help='List all the known protocols and exit.')

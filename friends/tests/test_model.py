@@ -43,9 +43,9 @@ class TestModel(unittest.TestCase):
 
     def test_basic_properties(self):
         self.assertIsInstance(Model, Dee.SharedModel)
-        self.assertEqual(Model.get_n_columns(), 36)
+        self.assertEqual(Model.get_n_columns(), 37)
         self.assertEqual(Model.get_schema(),
-                         ['aas', 's', 's', 's', 'b', 's', 's', 's',
+                         ['aas', 's', 's', 's', 's', 'b', 's', 's', 's',
                           's', 's', 's', 's', 's', 's', 'd', 'b', 's', 's',
                           's', 's', 's', 's', 's', 's', 's', 's', 's', 's',
                           's', 's', 's', 's', 's', 's', 's', 's'])
