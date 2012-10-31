@@ -15,6 +15,7 @@
 
 """Mocks, doubles, and fakes for testing."""
 
+
 __all__ = [
     'FakeOpen',
     'FakeSoupMessage',
@@ -35,6 +36,7 @@ from queue import Empty, Queue
 from urllib.parse import urlsplit
 
 from friends.utils.logging import LOG_FORMAT
+
 
 try:
     # Python 3.3
@@ -263,10 +265,11 @@ class EDSBookClientMock:
         return True
 
     def get_contacts_sync(val1, val2, val3):
-        if val1:
-            return [True, [{'name':'john doe', 'id': 11111}]]
-        else:
-            return [True, []]
+        return [True, [{'name':'john doe', 'id': 11111}]]
+
+    def remove_contact_sync(val1, val2):
+        pass
+
 
 class EDSExtension:
     """A Extension mocker object for testing create source."""
@@ -276,6 +279,7 @@ class EDSExtension:
 
     def set_backend_name(self, name):
         pass
+
 
 class EDSSource:
     """Simulate a Source object to create address books in EDS."""
@@ -297,6 +301,7 @@ class EDSSource:
 
     def get_extension(self, extension_name):
         return EDSExtension()
+
 
 class EDSRegistry:
     """A Mocker object for the registry."""

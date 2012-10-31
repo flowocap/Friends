@@ -15,6 +15,7 @@
 
 """Internal Friends exceptions."""
 
+
 __all__ = [
     'AuthorizationError',
     'FriendsError',
