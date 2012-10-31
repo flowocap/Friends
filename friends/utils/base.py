@@ -385,21 +385,6 @@ class Base:
 
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
-        if source_match is None:
-            new_source_uid = self._create_eds_source(online_service)
-            if new_source_uid is None:
-                log.error(
-                    'Could not create a new source for {}'.format(
-                        online_service))
-                return False
-            else:
-                # https://bugzilla.gnome.org/show_bug.cgi?id=685986
-                # Potential race condition - need to sleep for a
-                # couple of cycles to ensure the registry will return
-                # a valid source object after commiting Evolution fix
-                # on the way but for now we need this.
-                time.sleep(1)
-                source_match = self._source_registry.ref_source(new_source_uid)
         client = EBook.BookClient.new(source_match)
         client.open_sync(False, None)
         return client.add_contact_sync(contact, None)
@@ -412,13 +397,20 @@ class Base:
             EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
         extension.set_backend_name('local')
         if self._source_registry.commit_source_sync(source, None):
-            return source.get_uid()
+            # https://bugzilla.gnome.org/show_bug.cgi?id=685986
+            # Potential race condition - need to sleep for a
+            # couple of cycles to ensure the registry will return
+            # a valid source object after commiting. Evolution fix
+            # on the way but for now we need this.
+            time.sleep(2)            
+            return self._source_registry.ref_source(source.get_uid())
 
     def _get_eds_source(self, online_service):
         for previous_source in self._source_registry.list_sources(None):
             if previous_source.get_display_name() == online_service:
                 return self._source_registry.ref_source(
                     previous_source.get_uid())
+        return None
 
     def _previously_stored_contact(self, source, field, search_term):
         client = EBook.BookClient.new(source)

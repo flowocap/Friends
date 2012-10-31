@@ -416,9 +416,16 @@ Facebook.receive has completed, thread exiting.
     @mock.patch('gi.repository.EDataServer.Source.new',
                 return_value=EDSSource('foo', 'bar'))
     def test_create_eds_source(self, *mocks):
-        self.protocol._source_registry = mock.Mock()
+        class FakeSource:
+            def get_display_name(self):
+                return 'test-facebook-contacts'
+            def get_uid(self):
+                return 1345245
+        regmock = self.protocol._source_registry = mock.Mock()
+        regmock.ref_source = lambda x: x
+        
         result = self.protocol._create_eds_source('facebook-test-address')
-        self.assertEqual(result, 'test-source-uid')
+        self.assertEqual(result.get_uid(), 'test-source-uid')
 
     @mock.patch('gi.repository.EBook.BookClient.new',
                 return_value=EDSBookClientMock())

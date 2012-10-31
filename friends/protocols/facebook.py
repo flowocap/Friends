@@ -326,7 +326,7 @@ class Facebook(Base):
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
         if source is None:
-            self._make_eds_source(FACEBOOK_ADDRESS_BOOK)
+            source = self._create_eds_source(FACEBOOK_ADDRESS_BOOK)
         for contact in contacts:
             if self._previously_stored_contact(
                     source, 'facebook-id', contact['id']):
