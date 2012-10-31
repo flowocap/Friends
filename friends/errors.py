@@ -21,7 +21,6 @@ __all__ = [
     'UnsupportedProtocolError',
     ]
 
-
 class FriendsError(Exception):
     """Base class for all internal Friends exceptions."""
 
