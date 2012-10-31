@@ -435,6 +435,7 @@ Facebook.receive has completed, thread exiting.
                 return 'test-facebook-contacts'
             def get_uid(self):
                 return 1345245
+                
         reg_mock = self.protocol._source_registry = mock.Mock()
         reg_mock.list_sources.return_value = [FakeSource()]
         reg_mock.ref_source = lambda x: x
