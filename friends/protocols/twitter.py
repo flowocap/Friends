@@ -117,6 +117,7 @@ class Twitter(Base):
             timestamp=iso8601utc(parsetime(tweet.get('created_at', ''))),
             stream=stream,
             sender=user.get('name', ''),
+            sender_id=str(user.get('id', '')),
             sender_nick=screen_name,
             from_me=(screen_name == self._account.user_name),
             icon_uri=Avatar.get_image(

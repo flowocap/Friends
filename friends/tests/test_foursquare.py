@@ -96,7 +96,7 @@ class TestFourSquare(unittest.TestCase):
         self.assertEqual(1, TestModel.get_n_rows())
         expected = [
             [['foursquare', 'faker/than fake', '50574c9ce4b0a9a6e84433a0']],
-            'messages', 'Jimbob Smith', '', True, '2012-09-17T19:15:24Z',
+            'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.", '',
             'https://irs0.4sqi.net/img/user/100x100/5IEW3VIX55BBEXAO.jpg',
             'https://api.foursquare.com/v2/checkins/50574c9ce4b0a9a6e84433a0' +
