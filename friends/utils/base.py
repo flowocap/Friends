@@ -402,7 +402,7 @@ class Base:
             # couple of cycles to ensure the registry will return
             # a valid source object after commiting. Evolution fix
             # on the way but for now we need this.
-            time.sleep(2)            
+            time.sleep(2)
             return self._source_registry.ref_source(source.get_uid())
 
     def _get_eds_source(self, online_service):
