@@ -386,7 +386,7 @@ class Base:
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
         if source_match is None:
-            log.error("Push to EDS fails because we have been handed an online" + 
+            log.error("Push to EDS failed because we have been handed an online" + 
                       "service (%s) which does not have an address book", online_service)
             return False
         client = EBook.BookClient.new(source_match)
