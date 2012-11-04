@@ -42,12 +42,9 @@ from friends.utils.menus import MenuManager
 from friends.utils.model import prune_model
 from friends.utils.options import Options
 
+
 # Optional performance profiling module.
 yappi = None
-try:
-    import yappi
-except ImportError:
-    pass
 
 
 # Logger must be initialized before it can be used.
@@ -67,10 +64,13 @@ def main():
             print(class_name)
         return
 
-    do_profiling = args.performance and yappi is not None
-
-    if do_profiling:
-        yappi.start()
+    if args.performance:
+        try:
+            import yappi
+        except ImportError:
+            pass
+        else:
+            yappi.start()
 
     # Initialize the logging subsystem.
     gsettings = Gio.Settings.new('com.canonical.friends')
@@ -123,7 +123,7 @@ def main():
     except KeyboardInterrupt:
         log.info('Stopped friends-service main loop')
 
-    if do_profiling:
+    if args.performance and yappi is not None:
         yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
 
 
