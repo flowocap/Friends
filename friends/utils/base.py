@@ -33,6 +33,7 @@ from datetime import datetime
 
 from gi.repository import EDataServer, EBook
 
+from friends.errors import AuthorizationError
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
@@ -296,10 +297,11 @@ class Base:
         """Return an access token, logging in if necessary."""
         if self._account.access_token is None:
             if not self._login():
-                log.error(
+                raise AuthorizationError(
+                    self._account.id,
                     'No {} authentication results received.'.format(
                         self.__class__.__name__))
-                return None
+
         return self._account.access_token
 
     def _login(self):
