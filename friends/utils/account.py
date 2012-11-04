@@ -28,7 +28,6 @@ from threading import Lock
 
 from friends.errors import UnsupportedProtocolError
 from friends.utils.manager import protocol_manager
-from friends.utils.model import COLUMN_INDICES, Model
 
 
 log = logging.getLogger(__name__)

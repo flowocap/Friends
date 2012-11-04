@@ -58,7 +58,7 @@ class Flickr(Base):
     def receive(self):
         """Download all of a user's public photos."""
         # This triggers logging in, if necessary.
-        access_token = self._get_access_token()
+        self._get_access_token()
 
         GET_arguments = dict(
             api_key         = API_KEY,

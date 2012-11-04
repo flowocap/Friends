@@ -20,17 +20,19 @@ import subprocess
 
 from gettext import gettext as _
 
+Unity = None
+Dbusmenu = None
 try:
     from gi.repository import Unity, Dbusmenu
 except ImportError:
-    Unity = None
-    Dbusmenu = None
+    pass
 
 
+MessagingMenu = None
 try:
     from gi.repository import MessagingMenu
 except ImportError:
-    MessagingMenu = None
+    pass
 
 
 DESKTOP_ID = 'friends.desktop'

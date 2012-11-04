@@ -30,7 +30,6 @@ import dbus.service
 from gi.repository import GLib
 
 from friends.utils.account import AccountManager
-from friends.utils.avatar import Avatar
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
 from friends.utils.model import persist_model

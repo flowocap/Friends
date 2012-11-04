@@ -22,7 +22,7 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee, EBook, EDataServer, Gio, GLib
+from gi.repository import Dee
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount

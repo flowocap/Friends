@@ -261,7 +261,6 @@ class Facebook(Base):
         """Retrieve a list of up to 1,000 Facebook friends."""
         limit = 1000
         access_token = self._get_access_token()
-        contacts = []
         url = ME_URL + '/friends'
         params = dict(
             access_token=access_token,

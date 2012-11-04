@@ -42,12 +42,12 @@ from friends.utils.menus import MenuManager
 from friends.utils.model import prune_model
 from friends.utils.options import Options
 
-
+# Optional performance profiling module.
+yappi = None
 try:
-    # Optional performance profiling module.
     import yappi
 except ImportError:
-    yappi = None
+    pass
 
 
 # Logger must be initialized before it can be used.
