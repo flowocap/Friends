@@ -242,6 +242,38 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              mock.call('https://api.twitter.com/1.1/direct_messages/sent.json')
              ])
 
+    @mock.patch('friends.protocols.twitter.Avatar.get_image',
+                return_value='~/.cache/friends/avatars/hash')
+    def test_private_avatars(self, image_mock):
+        get_url = self.protocol._get_url = mock.Mock(
+            return_value=[
+                dict(
+                    created_at='Sun Nov 04 17:14:52 2012',
+                    text='Does my avatar show up?',
+                    id_str='1452456',
+                    sender=dict(
+                        screen_name='some_guy',
+                        name='Bob',
+                        profile_image_url_https='https://example.com/bob.jpg',
+                        ),
+                    )])
+        publish = self.protocol._publish = mock.Mock()
+
+        self.protocol.private()
+
+        publish.assert_called_with(
+            liked=False, sender='Bob', stream='private',
+            url='https://twitter.com/some_guy/status/1452456',
+            icon_uri='~/.cache/friends/avatars/hash',
+            sender_nick='some_guy', sender_id='', from_me=False,
+            timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
+            message_id='1452456')
+        self.assertEqual(
+            get_url.mock_calls,
+            [mock.call('https://api.twitter.com/1.1/direct_messages.json'),
+             mock.call('https://api.twitter.com/1.1/direct_messages/sent.json')
+             ])
+
     def test_send_private(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
         publish = self.protocol._publish_tweet = mock.Mock()

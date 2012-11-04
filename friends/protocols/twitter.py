@@ -105,7 +105,8 @@ class Twitter(Base):
             log.info('Ignoring tweet with no id_str value')
             return
 
-        user = tweet.get('user', {})
+        # 'user' for tweets, 'sender' for direct messages.
+        user = tweet.get('user', {}) or tweet.get('sender', {})
         screen_name = user.get('screen_name', '')
         avatar_url = (user.get('profile_image_url_https') or # Twitter, or
                       user.get('profile_image_url') or       # Identi.ca
