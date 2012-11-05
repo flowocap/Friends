@@ -15,17 +15,20 @@
 
 """Convenient uploading."""
 
+
 __all__ = [
     'Uploader',
     ]
 
+
+import json
 import logging
 
 from base64 import encodebytes
 from gi.repository import Soup, GdkPixbuf
 from urllib.parse import urlencode
 
-from friends.utils.download import _soup
+from friends.utils.download import _soup, _get_charset
 
 
 log = logging.getLogger(__name__)
@@ -50,5 +53,36 @@ class Uploader:
             'source', self.filename, 'image/jpeg', body)
         message = Soup.form_request_new_from_multipart(self.url, multipart)
         _soup.send_message(message)
-        log.debug('{}: {}'.format(message.status_code, message.reason_phrase))
+        if message.status_code != 200:
+            log.error(
+                '{}: {} {}'.format(
+                    self.url,
+                    message.status_code,
+                    message.reason_phrase))
         return message
+
+    def get_json(self):
+        # TODO this is very similar to Downloader.get_json, need to
+        # generalize these.
+        message = self.send()
+        payload = message.response_body.flatten().get_data()
+        charset = _get_charset(message)
+        # RFC 4627 $3.  JSON text SHALL be encoded in Unicode.  The default
+        # encoding is UTF-8.  Since the first two characters of a JSON text
+        # will always be ASCII characters [RFC0020], it is possible to
+        # determine whether an octet stream is UTF-8, UTF-16 (BE or LE), or
+        # UTF-32 (BE or LE) by looking at the pattern of nulls in the first
+        # four octets.
+        if charset is None:
+            octet_0, octet_1, octet_2, octet_3 = payload[:4]
+            if 0 not in (octet_0, octet_1, octet_2, octet_3):
+                charset = 'utf-8'
+            elif (octet_1 == octet_3 == 0) and octet_2 != 0:
+                charset = 'utf-16le'
+            elif (octet_0 == octet_2 == 0) and octet_1 != 0:
+                charset = 'utf-16be'
+            elif (octet_1 == octet_2 == octet_3 == 0):
+                charset = 'utf-32le'
+            elif (octet_0 == octet_1 == octet_2 == 0):
+                charset = 'utf-32be'
+        return json.loads(payload.decode(charset))

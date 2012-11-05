@@ -21,6 +21,7 @@ __all__ = [
     ]
 
 
+import time
 import logging
 
 from datetime import datetime, timedelta
@@ -264,7 +265,23 @@ class Facebook(Base):
         """Upload local or remote image or video to album"""
         url = '{}/photos?access_token={}'.format(
             ME_URL, self._get_access_token())
-        Uploader(url, picture_uri).send()
+        response = Uploader(url, picture_uri).get_json()
+        post_id = response.get('post_id')
+        if post_id is not None:
+            self._publish(
+                from_me=True,
+                stream='images',
+                message_id=post_id,
+                message=description,
+                sender=self._account.user_name,
+                sender_id=self._account.user_id,
+                sender_nick=self._account.user_name,
+                timestamp=iso8601utc(time.time()),
+                url=PERMALINK.format(id=post_id),
+                icon_uri=Avatar.get_image(
+                    API_BASE.format(
+                        id=self._account.user_id + '/picture?type=large')),
+                )
 
     def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""
