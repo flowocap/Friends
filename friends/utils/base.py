@@ -155,6 +155,11 @@ class _OperationThread(threading.Thread):
         if self._barrier is not None:
             self._barrier.wait()
 
+        # If this is the last thread to exit, then the refresh is
+        # completed and we should save the model.
+        if threading.activeCount() < 3:
+            persist_model()
+
 
 class Base:
     # This number serves a guideline (not a hard limit) for the protocol
