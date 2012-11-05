@@ -235,21 +235,6 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(self.log_mock.empty(),
                          'http://localhost:9180/auth: 401 Unauthorized\n')
 
-    def test_bad_authorization(self):
-        # Test a URL that requires authorization, but doesn't have the correct
-        # username or password.
-        Downloader('http://localhost:9180/auth',
-                   username='bob', password='wrong').get_string()
-        self.assertEqual(self.log_mock.empty(),
-                         'http://localhost:9180/auth: 401 Unauthorized\n')
-
-    def test_authorized(self):
-        # Test a URL that requires authorization, and has the proper
-        # credentials.
-        downloader = Downloader('http://localhost:9180/auth',
-                                username='bob', password='good')
-        self.assertEqual(downloader.get_string(), '')
-
     def test_headers(self):
         # Provide some additional headers.
         self.assertEqual(get_json('http://localhost:9180/headers',
