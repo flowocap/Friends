@@ -81,12 +81,9 @@ class Downloader:
     """Convenient downloading wrapper."""
 
     def __init__(self, url, params=None, method='GET',
-                 username=None, password=None,
                  headers=None, rate_limiter=None):
         self.url = url
         self.method = method
-        self.username = username
-        self.password = password
         self.params = ({} if params is None else params)
         self.headers = ({} if headers is None else headers)
         self._rate_limiter = (RateLimiter() if rate_limiter is None
@@ -119,14 +116,6 @@ class Downloader:
             message.set_request(
                 'application/x-www-form-urlencoded; charset=utf-8',
                 Soup.MemoryUse.COPY, data, len(data))
-
-        if self.username is not None and self.password is not None:
-            auth = '{}:{}'.format(self.username, self.password).encode('utf-8')
-            # encodebytes() includes a bogus trailing newline, which we must
-            # strip off.
-            value = encodebytes(auth)[:-1].decode('utf-8')
-            basic = 'Basic {}'.format(value)
-            message.request_headers.append('Authorization', basic)
 
         # Possibly do some rate limiting.
         self._rate_limiter.wait(message)
