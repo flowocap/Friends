@@ -132,9 +132,7 @@ def initialize_caches():
 class _OperationThread(threading.Thread):
     """Catch, log, and swallow all exceptions in the sub-thread."""
 
-    def __init__(self, barrier, *args, identifier=None, **kws):
-        # The barrier will only be provided when the system is under test.
-        self._barrier = barrier
+    def __init__(self, *args, identifier=None, **kws):
         self._id = identifier
         super().__init__(*args, **kws)
 
@@ -149,11 +147,6 @@ class _OperationThread(threading.Thread):
         except Exception:
             log.exception('Friends operation exception:\n')
         log.debug('{} has completed, thread exiting.'.format(self._id))
-        # If the system is under test, indicate that we've reached the
-        # barrier, so that the main thread, i.e. the test thread waiting for
-        # the results, can then proceed.
-        if self._barrier is not None:
-            self._barrier.wait()
 
         # If this is the last thread to exit, then the refresh is
         # completed and we should save the model.
@@ -165,12 +158,6 @@ class Base:
     # This number serves a guideline (not a hard limit) for the protocol
     # subclasses to download in each refresh.
     _DOWNLOAD_LIMIT = 50
-    # When the system is under test, set this value to True to enable
-    # synchronizing the operations threads with the main thread.  In this way,
-    # you can ensure that the results of calling an operation on a protocol
-    # will complete before the assertions testing the results of that
-    # operation.
-    _SYNCHRONIZE = False
 
     def __init__(self, account):
         self._source_registry = EDataServer.SourceRegistry.new_sync(None)
@@ -186,23 +173,9 @@ class Base:
         if operation.startswith('_') or not hasattr(self, operation):
             raise NotImplementedError(operation)
         method = getattr(self, operation)
-        # When the system is under test, or at least tests which assert the
-        # results of operations in a sub-thread, then this flag will be set to
-        # true, in which case we want to pass a barrier to the sub-thread.
-        # The sub-thread will complete, either successfully or unsuccessfully,
-        # but in either case, it will always indicate that it's reached the
-        # barrier before exiting.  The main thread, i.e. this one, will not
-        # proceed until that barrier has been reached, thus allowing the main
-        # thread to assert the results of the sub-thread.
-        barrier = (threading.Barrier(parties=2) if Base._SYNCHRONIZE else None)
-        _OperationThread(barrier,
-                         identifier='{}.{}'.format(self.__class__.__name__,
-                                                   operation),
-                         target=method, args=args, kwargs=kwargs).start()
-        # When under synchronous testing, wait until the sub-thread completes
-        # before returning.
-        if barrier is not None:
-            barrier.wait()
+        _OperationThread(
+            identifier='{}.{}'.format(self.__class__.__name__, operation),
+            target=method, args=args, kwargs=kwargs).start()
 
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.

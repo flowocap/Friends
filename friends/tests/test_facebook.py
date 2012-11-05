@@ -46,13 +46,8 @@ class TestFacebook(unittest.TestCase):
         self.account = FakeAccount()
         self.protocol = Facebook(self.account)
         self.protocol.source_registry = EDSRegistry()
-        # Enable sub-thread synchronization, and mock out the loggers.
-        Base._SYNCHRONIZE = True
 
     def tearDown(self):
-        # Stop log mocking, and return sub-thread operation to asynchronous.
-        Base._SYNCHRONIZE = False
-        # Reset the database.
         TestModel.clear()
 
     @mock.patch('friends.utils.authentication.Authentication.login',

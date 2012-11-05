@@ -24,6 +24,7 @@ import unittest
 
 from gi.repository import Dee
 
+from friends.errors import AuthorizationError
 from friends.protocols.flickr import Flickr
 from friends.testing.helpers import FakeAccount
 from friends.testing.mocks import FakeSoupMessage, LogMock, mock
@@ -45,15 +46,11 @@ class TestFlickr(unittest.TestCase):
         self.maxDiff = None
         self.account = FakeAccount()
         self.protocol = Flickr(self.account)
-        # Enable sub-thread synchronization, and mock out the loggers.
-        Base._SYNCHRONIZE = True
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.flickr')
 
     def tearDown(self):
-        # Stop log mocking, and return sub-thread operation to asynchronous.
         self.log_mock.stop()
-        Base._SYNCHRONIZE = False
         # Reset the database.
         TestModel.clear()
 
@@ -65,16 +62,7 @@ class TestFlickr(unittest.TestCase):
         # Force the Flickr login to fail.
         with mock.patch.object(self.protocol, '_login',
                                return_value=False):
-            self.protocol('receive')
-        self.assertEqual(self.log_mock.empty(), """\
-Flickr.receive is starting in a new thread.
-Friends operation exception:
- Traceback (most recent call last):
- ...
-friends.errors.AuthorizationError:\
- No Flickr authentication results received. (account: faker/than fake)
-Flickr.receive has completed, thread exiting.
-""")
+            self.assertRaises(AuthorizationError, self.protocol.receive)
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -85,12 +73,9 @@ Flickr.receive has completed, thread exiting.
         # There's no data, and no way to test that the user_nsid was actually
         # used, except for the side effect of not getting an
         # AuthorizationError.
-        self.protocol('receive')
+        self.protocol.receive()
         # No error messages.
-        self.assertEqual(self.log_mock.empty(), """\
-Flickr.receive is starting in a new thread.
-Flickr.receive has completed, thread exiting.
-""")
+        self.assertEqual(self.log_mock.empty(), '')
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
@@ -106,16 +91,7 @@ Flickr.receive has completed, thread exiting.
             return False
         with mock.patch.object(self.protocol, '_login',
                                side_effect=side_effect):
-            self.protocol('receive')
-        self.assertEqual(self.log_mock.empty(), """\
-Flickr.receive is starting in a new thread.
-Friends operation exception:
- Traceback (most recent call last):
- ...
-friends.errors.AuthorizationError:\
- No Flickr authentication results received. (account: faker/than fake)
-Flickr.receive has completed, thread exiting.
-""")
+            self.assertRaises(AuthorizationError, self.protocol.receive)
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -129,12 +105,9 @@ Flickr.receive has completed, thread exiting.
             return True
         with mock.patch.object(self.protocol, '_login',
                                side_effect=side_effect):
-            self.protocol('receive')
+            self.protocol.receive()
         # No error message.
-        self.assertEqual(self.log_mock.empty(), """\
-Flickr.receive is starting in a new thread.
-Flickr.receive has completed, thread exiting.
-""")
+        self.assertEqual(self.log_mock.empty(), '')
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
@@ -148,12 +121,7 @@ Flickr.receive has completed, thread exiting.
     def test_login_unsuccessful_authentication(self, mock):
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
-        self.protocol('receive')
-        log_lines = self.log_mock.empty().splitlines()
-        log_message = log_lines[-2]
-        self.assertEqual(log_message, """\
-friends.errors.AuthorizationError:\
- No Flickr authentication results received. (account: faker/than fake)""")
+        self.assertRaises(AuthorizationError, self.protocol.receive)
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -163,18 +131,7 @@ friends.errors.AuthorizationError:\
     def test_login_unsuccessful_authentication_no_callback(self, mock):
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
-        self.protocol('receive')
-        self.assertEqual(self.log_mock.empty(), """\
-Flickr.receive is starting in a new thread.
-Logging in to Flickr
-No Flickr authentication results received.
-Friends operation exception:
- Traceback (most recent call last):
- ...
-friends.errors.AuthorizationError:\
- No Flickr authentication results received. (account: faker/than fake)
-Flickr.receive has completed, thread exiting.
-""")
+        self.assertRaises(AuthorizationError, self.protocol.receive)
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -186,7 +143,7 @@ Flickr.receive has completed, thread exiting.
     def test_login_successful_authentication(self, mock):
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
-        self.protocol('receive')
+        self.protocol.receive()
         # Make sure our account data got properly updated.
         self.assertEqual(self.account.user_name, 'Bob Dobbs')
         self.assertEqual(self.account.user_id, 'bob')
@@ -199,7 +156,7 @@ Flickr.receive has completed, thread exiting.
                                return_value='token'):
             with mock.patch('friends.protocols.flickr.get_json',
                             return_value={}) as cm:
-                self.protocol('receive')
+                self.protocol.receive()
         # Unpack the arguments that the mock was called with and test that the
         # arguments, especially to the GET are what we expected.
         all_call_args = cm.call_args_list
@@ -224,7 +181,7 @@ Flickr.receive has completed, thread exiting.
         with mock.patch.object(
             self.protocol, '_get_access_token', return_value='token'):
             # No photos are returned in the JSON data.
-            self.protocol('receive')
+            self.protocol.receive()
         self.assertEqual(TestModel.get_n_rows(), 0)
 
     @mock.patch('friends.utils.download.Soup.Message',

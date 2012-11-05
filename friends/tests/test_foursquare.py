@@ -38,15 +38,12 @@ TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.download._soup', mock.Mock())
-@mock.patch.dict('friends.utils.base.__dict__', {'_SYNCHRONIZE': True})
 class TestFourSquare(unittest.TestCase):
     """Test the FourSquare API."""
 
     def setUp(self):
         self.account = FakeAccount()
         self.protocol = FourSquare(self.account)
-        # Enable sub-thread synchronization, and mock out the loggers.
-        Base._SYNCHRONIZE = True
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.foursquare')
 
@@ -54,7 +51,6 @@ class TestFourSquare(unittest.TestCase):
         # Ensure that any log entries we haven't tested just get consumed so
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
-        Base._SYNCHRONIZE = False
         # Reset the database.
         TestModel.clear()
 
