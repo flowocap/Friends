@@ -25,11 +25,11 @@ import logging
 
 from datetime import datetime, timedelta
 from gi.repository import EBook
-from gi.repository import Gio, GLib, GdkPixbuf
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
+from friends.utils.upload import Uploader
 from friends.utils.time import parsetime, iso8601utc
 
 
@@ -258,38 +258,13 @@ class Facebook(Base):
         else:
             self._unpublish(obj_id)
 
-    def _upload(self, obj_id, picture_url, message, endpoint):
-        url = API_BASE.format(id=obj_id) + endpoint
-        token = self._get_access_token()
-        max_width = 50
-        max_height = 50
-        if False: # FIXME consider sensible maximum size
-            picture_source = GdkPixbuf.Pixbuf.new_from_file (picture_url).get_pixels ()
-        else:
-            picture_source = GdkPixbuf.Pixbuf.new_from_file_at_size (picture_url, max_width, max_height)
-        success, buffer = picture_source.save_to_bufferv ("jpeg", [], [])
-        if not success:
-            log.error('Failed uploading to Facebook: Invalid image')
-            return
-
-        result = get_json(
-            url,
-            method='POST',
-            params=dict(access_token=token, source=buffer, message=message))
-        log.debug(result)
-        new_id = result.get('id')
-        if new_id is None:
-            log.error('Failed sending to Facebook: {!r}'.format(result))
-            return
-        print (picture_url + " uploaded as " + new_id + " to " + API_BASE.format(id=new_id))
-
     @feature
-    def upload(self, picture_url, message='', obj_id='me'):
-        # http://www.banubanu.de/images/produkte/i41/4167-Crocs-rainfloe-boot-canary-jpg2.jpg
+    def upload(self, picture_uri, description=''):
         # http://developers.facebook.com/docs/reference/api/photo/
         """Upload local or remote image or video to album"""
-        # HTTP POST to USER_ID/photos (ALBUM_ID/photos), source=multipart/form-data, message=string (optional), return id=string
-        self._upload(obj_id, picture_url, message, '/photos')
+        url = '{}/photos?access_token={}'.format(
+            ME_URL, self._get_access_token())
+        Uploader(url, picture_uri).send()
 
     def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""
