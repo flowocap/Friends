@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 # Global libsoup session instance.
 _soup = Soup.SessionSync()
 # Enable this for full requests and responses dumped to STDOUT.
-#_soup.add_feature(Soup.Logger.new(Soup.LoggerLogLevel.BODY, -1))
+_soup.add_feature(Soup.Logger.new(Soup.LoggerLogLevel.BODY, -1))
 _soup.add_feature(SoupGNOME.ProxyResolverGNOME())
 
 
@@ -101,6 +101,8 @@ class Downloader:
         data = None
         url = self.url
 
+        params_raw = self.params
+
         # urlencode() does not have an option to use quote() instead of
         # quote_plus(), but Twitter requires percent-encoded spaces, and
         # this is harmless to any other protocol.
@@ -112,15 +114,31 @@ class Downloader:
             else:
                 data = params
 
+        if params_raw is not None and params_raw.get ('source'):
+            url = '{}?{}'.format(self.url, urlencode(dict(access_token=params_raw.get('access_token'))).replace ('+', '%20'))
+
         message = Soup.Message.new(self.method, url)
         for header, value in self.headers.items():
             message.request_headers.append(header, value)
 
-        if True and data is not None:
-            message.set_request('multipart/form-data',
+        if params_raw is not None and params_raw.get ('source'):
+            encoded = encodebytes(params_raw.get('source')).decode('utf-8')
+            boundary = '----WebKitFormBoundaryMPjeEayuFylGg1YD'
+            data = """{boundary}
+Content-Type: {mime_type}
+Content-Disposition: form-data; name="source"; filename="{filename}"
+Content-Transfer-Encoding: base64
+
+{encoded}
+{boundary}
+Content-Disposition: form-data; name="message"
+{message}
+{boundary}--""".format (encoded=encoded, filename='canary.jpg', mime_type='image/jpeg', boundary=boundary, message=params_raw.get('message'))
+            # FIXME: don't hard-code filename, MIME type
+            message.set_request('multipart/form-data; boundary=' + boundary,
                 Soup.MemoryUse.COPY, data, len(data))
-            data = None
-        if data is not None:
+            message.request_headers.append('Content-Length', str(len(data)))
+        elif data is not None:
             message.set_request(
                 'application/x-www-form-urlencoded; charset=utf-8',
                 Soup.MemoryUse.COPY, data, len(data))

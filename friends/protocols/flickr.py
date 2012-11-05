@@ -37,6 +37,7 @@ API_KEY = '36f660117e6555a9cbda4309cfaf72d0'
 
 # http://www.flickr.com/services/api/request.rest.html
 REST_SERVER = 'http://api.flickr.com/services/rest'
+UPLOAD_SERVER = 'http://api.flickr.com/services/upload'
 
 # http://www.flickr.com/services/api/misc.buddyicons.html
 FARM = 'http://farm{farm}.static.flickr.com/{server}/'
@@ -64,6 +65,10 @@ class Flickr(Base):
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('user_nsid')
         self._account.user_name = authdata.get('username')
+
+    @feature
+    def upload(self, picture_url, message='', obj_id='me'):
+        pass
 
 # http://www.flickr.com/services/api/flickr.photos.getContactsPublicPhotos.html
     @feature
