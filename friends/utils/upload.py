@@ -23,9 +23,10 @@ __all__ = [
 
 import json
 import logging
+import sys
 
 from base64 import encodebytes
-from gi.repository import Soup, GdkPixbuf
+from gi.repository import GLib, Gio, Soup, GdkPixbuf
 from urllib.parse import urlencode
 
 from friends.utils.download import _soup, _get_charset
@@ -43,8 +44,13 @@ class Uploader:
         self.description = description
 
     def send(self):
-        data = GdkPixbuf.Pixbuf.new_from_file(self.filename)
-        jpeg = data.save_to_bufferv('jpeg', [], [])[1]
+        try:
+            file = Gio.File.new_for_uri(self.filename)
+            jpeg = file.load_contents (None)[1]
+        except GLib.GError:
+            jpeg = ''
+            msg = sys.exc_info()[1]
+            log.error('Failed to read image {}: {}'.format(self.filename, msg))
         body = Soup.Buffer.new([byte for byte in jpeg])
 
         multipart = Soup.Multipart.new('multipart/form-data')
