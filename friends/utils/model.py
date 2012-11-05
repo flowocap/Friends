@@ -136,7 +136,7 @@ def persist_model():
 # we'll need to make a new, empty Model.
 if first_run or stale_schema:
     log.debug('Starting a new, empty Dee.SharedModel.')
-    Model = Dee.SharedModel.new(MODEL_DBUS_NAME)
+    Model = Dee.SequenceModel()
     Model.set_schema_full(COLUMN_TYPES)
 
     # Calling this from here ensures that schema changes are persisted
@@ -144,6 +144,7 @@ if first_run or stale_schema:
     # order to ensure data is saved often in case of power loss.
     persist_model()
 
+shared_model = Dee.SharedModel.new_with_back_end(MODEL_DBUS_NAME, Model)
 
 def prune_model(maximum):
     """If there are more than maximum rows, remove the oldest ones."""
