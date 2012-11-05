@@ -22,7 +22,7 @@ __all__ = [
 
 import logging
 
-from friends.errors import AuthorizationError
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
 from friends.utils.time import iso8601utc
@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 # code and you don't see any bugs with foursquare then feel free to update the
 # date here.
 API_BASE = 'https://api.foursquare.com/v2/'
-TOKEN ='?oauth_token={access_token}&v=20120917'
+TOKEN ='?oauth_token={access_token}&v=20121104'
 SELF_URL = API_BASE + 'users/self' + TOKEN
 CHECKIN_URL = API_BASE + 'checkins/{checkin_id}' + TOKEN
 RECENT_URL = API_BASE + 'checkins/recent' + TOKEN
@@ -52,7 +52,7 @@ SPACE = ' '
 
 def _full_name(user):
     names = (user.get('firstName'), user.get('lastName'))
-    return SPACE.join(name for name in names if name)
+    return SPACE.join([name for name in names if name])
 
 
 class FourSquare(Base):
@@ -69,10 +69,7 @@ class FourSquare(Base):
     def receive(self):
         """Gets a list of each friend's most recent check-ins."""
         token = self._get_access_token()
-        if token is None:
-            raise AuthorizationError(
-                self._account, 'No FourSquare user id available')
-        # We are successfully logged in.
+
         result = get_json(RECENT_URL.format(access_token=token))
 
         response_code = result.get('meta', {}).get('code')
@@ -96,7 +93,7 @@ class FourSquare(Base):
                 timestamp=iso8601utc(epoch, tz_offset),
                 message=checkin.get('shout', ''),
                 likes=checkin.get('likes', {}).get('count', 0),
-                icon_uri=avatar_url,
+                icon_uri=Avatar.get_image(avatar_url),
                 url=CHECKIN_URL.format(access_token=token,
                                        checkin_id=checkin_id),
                 )

@@ -63,6 +63,7 @@ SCHEMA = (
     ('message_ids',    'aas'),
     ('stream',         's'),
     ('sender',         's'),
+    ('sender_id',      's'),
     ('sender_nick',    's'),
     ('from_me',        'b'),
     ('timestamp',      's'),

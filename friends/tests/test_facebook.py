@@ -22,7 +22,7 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee, EBook, EDataServer, Gio, GLib
+from gi.repository import Dee
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
@@ -115,15 +115,16 @@ Facebook.receive has completed, thread exiting.
         self.account.access_token = 'abc'
         self.protocol.receive()
         self.assertEqual(TestModel.get_n_rows(), 4)
-        self.assertEqual(list(TestModel.get_row(0)), [
+        self.assertEqual(list(TestModel.get_row(2)), [
             [['facebook',
               'faker/than fake',
               '117402931676347_386054134801436_3235476']],
             'reply_to/109',
             'Bruce Peart',
+            '809',
             'Bruce Peart',
             False,
-            '2012-09-26T17:16:00',
+            '2012-09-26T17:16:00Z',
             'OK Don...10) Headlong Flight',
             '',
             '',
@@ -154,13 +155,14 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             ''])
-        self.assertEqual(list(TestModel.get_row(1)), [
+        self.assertEqual(list(TestModel.get_row(0)), [
             [['facebook', 'faker/than fake', '108']],
             'messages',
             'Rush is a Band',
+            '117402931676347',
             'Rush is a Band',
             False,
-            '2012-09-26T17:34:00',
+            '2012-09-26T17:34:00Z',
             'Rush takes off to the Great White North',
             '',
             '',
@@ -191,13 +193,14 @@ Facebook.receive has completed, thread exiting.
             '',
             '',
             ''])
-        self.assertEqual(list(TestModel.get_row(3)), [
+        self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '109']],
             'messages',
             'Rush is a Band',
+            '117402931676347',
             'Rush is a Band',
             False,
-            '2012-09-26T17:49:06',
+            '2012-09-26T17:49:06Z',
             'http://www2.gibson.com/Alex-Lifeson-0225-2011.aspx',
             '',
             '',
@@ -365,27 +368,38 @@ Facebook.receive has completed, thread exiting.
                 return_value=True)
     def test_fetch_contacts(self, *mocks):
         # Receive the users friends.
-        results = self.protocol.fetch_contacts()
+        results = self.protocol._fetch_contacts()
         self.assertEqual(len(results), 8)
         self.assertEqual(results[7]['name'], 'John Smith')
         self.assertEqual(results[7]['id'], '444444')
 
     def test_create_contact(self, *mocks):
         # Receive the users friends.
-        bare_contact = {'name': 'Lucy Baron', 'id': '555555555'}
-        eds_contact = self.protocol.create_contact(bare_contact)
+        bare_contact = {'name': 'Lucy Baron',
+                        'id': '555555555',
+                        'username': 'lucy.baron5',
+                        'link': 'http:www.facebook.com/lucy.baron5'}
+        eds_contact = self.protocol._create_contact(bare_contact)
         facebook_id_attr = eds_contact.get_attribute('facebook-id')
         self.assertEqual(facebook_id_attr.get_value(), '555555555')
         facebook_name_attr = eds_contact.get_attribute('facebook-name')
         self.assertEqual(facebook_name_attr.get_value(), 'Lucy Baron')
+        web_service_addrs = eds_contact.get_attribute('X-FOLKS-WEB-SERVICES-IDS')
+        self.assertEqual(len(web_service_addrs.get_params()), 1)
+        self.assertEqual(web_service_addrs.get_params()[0].get_name(), 'jabber')
+        self.assertEqual(len(web_service_addrs.get_params()[0].get_values()), 1)
+        self.assertEqual(web_service_addrs.get_params()[0].get_values()[0], '-555555555@chat.facebook.com')
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=True)
     @mock.patch('gi.repository.EBook.BookClient.new',
                 return_value=EDSBookClientMock())
     def test_successfull_push_to_eds(self, *mocks):
-        bare_contact = {'name': 'Lucy Baron', 'id': '555555555'}
-        eds_contact = self.protocol.create_contact(bare_contact)
+        bare_contact = {'name': 'Lucy Baron',
+                        'id': '555555555',
+                        'username': 'lucy.baron5',
+                        'link': 'http:www.facebook.com/lucy.baron5'}
+        eds_contact = self.protocol._create_contact(bare_contact)
         result = self.protocol._push_to_eds('test-address-book', eds_contact)
         self.assertEqual(result, True)
 
@@ -394,22 +408,27 @@ Facebook.receive has completed, thread exiting.
     @mock.patch('friends.utils.base.Base._create_eds_source',
                 return_value=None)
     def test_unsuccessfull_push_to_eds(self, *mocks):
-        bare_contact = {'name': 'Lucy Baron', 'id': '555555555'}
-        eds_contact = self.protocol.create_contact(bare_contact)
+        bare_contact = {'name': 'Lucy Baron',
+                        'id': '555555555',
+                        'username': 'lucy.baron5',
+                        'link': 'http:www.facebook.com/lucy.baron5'}
+        eds_contact = self.protocol._create_contact(bare_contact)
         result = self.protocol._push_to_eds('test-address-book', eds_contact)
         self.assertEqual(result, False)
 
     @mock.patch('gi.repository.EDataServer.Source.new',
                 return_value=EDSSource('foo', 'bar'))
     def test_create_eds_source(self, *mocks):
-        self.protocol._source_registry = mock.Mock()
+        regmock = self.protocol._source_registry = mock.Mock()
+        regmock.ref_source = lambda x: x
+
         result = self.protocol._create_eds_source('facebook-test-address')
         self.assertEqual(result, 'test-source-uid')
 
     @mock.patch('gi.repository.EBook.BookClient.new',
                 return_value=EDSBookClientMock())
     def test_successful_previously_stored_contact(self, *mocks):
-        result = Facebook.previously_stored_contact(
+        result = self.protocol._previously_stored_contact(
             True, 'facebook-id', '11111')
         self.assertEqual(result, True)
 

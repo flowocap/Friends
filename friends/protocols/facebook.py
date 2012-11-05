@@ -15,6 +15,7 @@
 
 """The Facebook protocol plugin."""
 
+
 __all__ = [
     'Facebook',
     ]
@@ -23,7 +24,6 @@ __all__ = [
 import logging
 
 from datetime import datetime, timedelta
-
 from gi.repository import EBook
 from gi.repository import Gio, GLib, GdkPixbuf
 
@@ -89,7 +89,7 @@ class Facebook(Base):
         from_record = entry.get('from')
         if from_record is not None:
             args['sender'] = from_record.get('name', '')
-            sender_id = from_record.get('id', '')
+            args['sender_id'] = sender_id = from_record.get('id', '')
             args['icon_uri'] = Avatar.get_image(
                 API_BASE.format(id=sender_id) + '/picture?type=large')
             args['sender_nick'] = from_record.get('name', '')
@@ -291,48 +291,92 @@ class Facebook(Base):
         # HTTP POST to USER_ID/photos (ALBUM_ID/photos), source=multipart/form-data, message=string (optional), return id=string
         self._upload(obj_id, picture_url, message, '/photos')
 
-    def fetch_contacts(self):
-        """Retrieve a list of up to 100 Facebook friends."""
-        limit = self._DOWNLOAD_LIMIT * 2
+    def _fetch_contacts(self):
+        """Retrieve a list of up to 1,000 Facebook friends."""
+        limit = 1000
         access_token = self._get_access_token()
-        contacts = []
         url = ME_URL + '/friends'
         params = dict(
             access_token=access_token,
             limit=limit)
-
         return self._follow_pagination(url, params, limit)
 
-    # This method can take the minimal contact information or full
-    # contact info For now we only cache ID and the name in the
-    # addressbook. Using custom field for name because I can't figure
-    # out how econtact name works.
-    def create_contact(self, contact_json):
+    def _fetch_contact(self, contact_id):
+        """Fetch the full, individual contact info."""
+        access_token = self._get_access_token()
+        url = API_BASE.format(id=contact_id)
+        params = dict(access_token=access_token)
+        return get_json(url, params)
+
+    def _create_contact(self, contact_json):
+        """Build a VCard based on a dict representation of a contact."""
+        user_id = contact_json.get('id')
+        user_fullname = contact_json.get('name')
+        user_nickname = contact_json.get('username')
+        user_link = contact_json.get('link')
+        gender = contact_json.get('gender')
+
+        vcard = EBook.VCard.new()
+
         vcafid = EBook.VCardAttribute.new(
             'social-networking-attributes', 'facebook-id')
-        vcafid.add_value(contact_json['id'])
+        vcafid.add_value(user_id)
         vcafn = EBook.VCardAttribute.new(
             'social-networking-attributes', 'facebook-name')
-        vcafn.add_value(contact_json['name'])
-        vcard = EBook.VCard.new()
-        vcard.add_attribute(vcafid)
-        vcard.add_attribute(vcafn)
-        c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
-        log.debug('Creating new contact for {}'.format(contact_json['name']))
-        return c
+        vcafn.add_value(user_fullname)
+        vcauri = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-URIS')
+        vcauri.add_value(user_link)
 
+        vcaws = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-FOLKS-WEB-SERVICES-IDS')
+        vcaws_param = EBook.VCardAttributeParam.new('jabber')
+        vcaws_param.add_value('-{}@chat.facebook.com'.format(user_id))
+        vcaws.add_param(vcaws_param)
+        vcard.add_attribute(vcaws)
+
+        if gender is not None:
+            vcag = EBook.VCardAttribute.new(
+                'social-networking-attributes', 'X-GENDER')
+            vcag.add_value(gender)
+            vcard.add_attribute(vcag)
+
+        vcard.add_attribute(vcafn)
+        vcard.add_attribute(vcauri)
+        vcard.add_attribute(vcafid)
+
+        contact = EBook.Contact.new_from_vcard(
+            vcard.to_string(EBook.VCardFormat(1)))
+        contact.set_property('full-name', user_fullname)
+
+        if user_nickname is not None:
+            contact.set_property('nickname', user_nickname)
+
+        log.debug('Creating new contact for {}'.format(user_fullname))
+        return contact
+
+    @feature
     def contacts(self):
-        contacts = self.fetch_contacts()
+        contacts = self._fetch_contacts()
+        log.debug('Size of the contacts returned {}'.format(len(contacts)))
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        if source is None:
+            source = self._create_eds_source(FACEBOOK_ADDRESS_BOOK)
+
         for contact in contacts:
-            if source is not None:
-                if (Base.previously_stored_contact(
-                        source, 'facebook-id', contact['id'])):
-                    continue
-            # Let's not query the full contact info for now Show some
-            # respect for facebook and the chances are we won't be
-            # blocked.
-            eds_contact = self.create_contact(contact)
+            if self._previously_stored_contact(
+                    source, 'facebook-id', contact['id']):
+                continue
+            log.debug(
+                'Fetch full contact info for {} and id {}'.format(
+                    contact['name'], contact['id']))
+            full_contact = self._fetch_contact(contact['id'])
+            eds_contact = self._create_contact(full_contact)
             if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
                 log.error(
-                    'Unable to save facebook contact {}'.format(contact['name']))
+                    'Unable to save facebook contact {}'.format(
+                        contact['name']))
+
+    def delete_contacts(self):
+        source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        return self._delete_service_contacts(source)

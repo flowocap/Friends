@@ -83,7 +83,7 @@ class install_service_files(Command):
             if (filename.endswith('.service.in')
                 and 'Test' not in filename.split('.'))
             ]
-        _do_basic_install(destdir, service_files, '')
+        _do_basic_install(destdir, service_files, '-o')
 
 
 def for_tests(destdir):

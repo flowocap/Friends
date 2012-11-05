@@ -89,6 +89,8 @@ class TestFourSquare(unittest.TestCase):
                 FakeSoupMessage('friends.tests.data', 'foursquare-full.dat'))
     @mock.patch('friends.protocols.foursquare.FourSquare._login',
                 return_value=True)
+    @mock.patch('friends.protocols.foursquare.Avatar.get_image',
+                return_value='~/.cache/friends/avatar/hash')
     def test_receive(self, *mocks):
         self.account.access_token = 'tokeny goodness'
         self.assertEqual(0, TestModel.get_n_rows())
@@ -96,11 +98,11 @@ class TestFourSquare(unittest.TestCase):
         self.assertEqual(1, TestModel.get_n_rows())
         expected = [
             [['foursquare', 'faker/than fake', '50574c9ce4b0a9a6e84433a0']],
-            'messages', 'Jimbob Smith', '', True, '2012-09-17T19:15:24',
+            'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.", '',
-            'https://irs0.4sqi.net/img/user/100x100/5IEW3VIX55BBEXAO.jpg',
+            '~/.cache/friends/avatar/hash',
             'https://api.foursquare.com/v2/checkins/50574c9ce4b0a9a6e84433a0' +
-            '?oauth_token=tokeny goodness&v=20120917', '', '', '', '', 0.0,
+            '?oauth_token=tokeny goodness&v=20121104', '', '', '', '', 0.0,
             False, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
             '', '', '', '', '', '',
             ]

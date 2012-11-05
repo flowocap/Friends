@@ -63,16 +63,16 @@ class TestFlickr(unittest.TestCase):
 
     def test_failed_login(self):
         # Force the Flickr login to fail.
-        with mock.patch.object(self.protocol, '_get_nsid', return_value=None):
+        with mock.patch.object(self.protocol, '_login',
+                               return_value=False):
             self.protocol('receive')
         self.assertEqual(self.log_mock.empty(), """\
 Flickr.receive is starting in a new thread.
-Flickr: No NSID available
 Friends operation exception:
  Traceback (most recent call last):
  ...
 friends.errors.AuthorizationError:\
- No Flickr user id available (account: faker/than fake)
+ No Flickr authentication results received. (account: faker/than fake)
 Flickr.receive has completed, thread exiting.
 """)
 
@@ -81,7 +81,7 @@ Flickr.receive has completed, thread exiting.
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_already_logged_in(self):
         # Try to get the data when already logged in.
-        self.account.user_id = 'anne'
+        self.account.access_token = 'original token'
         # There's no data, and no way to test that the user_nsid was actually
         # used, except for the side effect of not getting an
         # AuthorizationError.
@@ -113,7 +113,7 @@ Friends operation exception:
  Traceback (most recent call last):
  ...
 friends.errors.AuthorizationError:\
- No Flickr user id available (account: faker/than fake)
+ No Flickr authentication results received. (account: faker/than fake)
 Flickr.receive has completed, thread exiting.
 """)
 
@@ -153,7 +153,7 @@ Flickr.receive has completed, thread exiting.
         log_message = log_lines[-2]
         self.assertEqual(log_message, """\
 friends.errors.AuthorizationError:\
- No Flickr user id available (account: faker/than fake)""")
+ No Flickr authentication results received. (account: faker/than fake)""")
 
     @mock.patch('friends.utils.download.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -168,12 +168,11 @@ friends.errors.AuthorizationError:\
 Flickr.receive is starting in a new thread.
 Logging in to Flickr
 No Flickr authentication results received.
-Flickr: No NSID available
 Friends operation exception:
  Traceback (most recent call last):
  ...
 friends.errors.AuthorizationError:\
- No Flickr user id available (account: faker/than fake)
+ No Flickr authentication results received. (account: faker/than fake)
 Flickr.receive has completed, thread exiting.
 """)
 
@@ -196,7 +195,8 @@ Flickr.receive has completed, thread exiting.
 
     def test_get(self):
         # Make sure that the REST GET url looks right.
-        with mock.patch.object(self.protocol, '_get_nsid', return_value='jim'):
+        with mock.patch.object(self.protocol, '_get_access_token',
+                               return_value='token'):
             with mock.patch('friends.protocols.flickr.get_json',
                             return_value={}) as cm:
                 self.protocol('receive')
@@ -209,7 +209,7 @@ Flickr.receive has completed, thread exiting.
         self.assertEqual(url, 'http://api.flickr.com/services/rest')
         self.assertEqual(GET_args, dict(
             extras='date_upload,owner_name,icon_server',
-            user_id='jim',
+            user_id=None,
             format='json',
             nojsoncallback='1',
             api_key='36f660117e6555a9cbda4309cfaf72d0',
@@ -221,7 +221,8 @@ Flickr.receive has completed, thread exiting.
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_no_photos(self):
         # The JSON data in response to the GET request returned no photos.
-        with mock.patch.object(self.protocol, '_get_nsid', return_value='jim'):
+        with mock.patch.object(
+            self.protocol, '_get_access_token', return_value='token'):
             # No photos are returned in the JSON data.
             self.protocol('receive')
         self.assertEqual(TestModel.get_n_rows(), 0)
@@ -230,13 +231,11 @@ Flickr.receive has completed, thread exiting.
                 FakeSoupMessage('friends.tests.data', 'flickr-full.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_flickr_data(self):
-        # Test the undocumented and apparently crufty reformatting of the raw
-        # JSON Flickr data into the format expected internally.
-        #
         # Start by setting up a fake account id.
         self.account.id = 'lerxst'
-        with mock.patch.object(self.protocol, '_get_nsid', return_value='jim'):
-            self.protocol('receive')
+        with mock.patch.object(self.protocol, '_get_access_token',
+                               return_value='token'):
+            self.protocol.receive()
         self.assertEqual(TestModel.get_n_rows(), 3)
         # Image 1 data in the first row.
         row = list(TestModel.get_row(0))
@@ -244,24 +243,21 @@ Flickr.receive has completed, thread exiting.
         def col(name):
             return row[COLUMN_INDICES[name]]
         self.assertEqual(col('message'), 'ant')
-        self.assertEqual(col('html'), 'ant')
         self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '801']])
-        self.assertEqual(col('sender'), '123')
-        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45')
+        self.assertEqual(col('sender_id'), '123')
+        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45Z')
         self.assertFalse(col('from_me'))
-        row = list(TestModel.get_row(2))
+        row = list(TestModel.get_row(1))
         # Image 2 data.  The image is from the account owner.
         self.assertEqual(col('message'), 'bee')
-        self.assertEqual(col('html'), 'bee')
         self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '802']])
-        self.assertEqual(col('sender'), '456')
+        self.assertEqual(col('sender_id'), '456')
         self.assertEqual(col('sender_nick'), 'Alex Lifeson')
         self.assertTrue(col('from_me'))
         # Image 3 data.  This data set has some additional entries that allow
         # various image urls and other keys to be added.
-        row = list(TestModel.get_row(1))
+        row = list(TestModel.get_row(2))
         self.assertEqual(col('message'), 'cat')
-        self.assertEqual(col('html'), 'cat')
         self.assertEqual(
             col('img_url'),
             'http://farmanimalz.static.flickr.com/1/789_ghi_b.jpg')
@@ -271,11 +267,9 @@ Flickr.receive has completed, thread exiting.
         self.assertEqual(
             col('img_thumb'),
             'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg')
-        self.assertEqual(col('sender'), '789')
-        self.assertEqual(
-            col('icon_uri'),
-            'http://farmiconz.static.flickr.com/9/buddyicons/789.jpg')
+        self.assertEqual(col('icon_uri'), '')
         self.assertFalse(col('from_me'))
-        self.assertEqual(col('sender'), '789')
+        self.assertEqual(col('sender'), 'Bob Dobbs')
+        self.assertEqual(col('sender_id'), '789')
         self.assertEqual(col('sender_nick'), 'Bob Dobbs')
         self.assertEqual(col('url'), 'http://www.flickr.com/people/789')

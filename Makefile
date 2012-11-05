@@ -19,6 +19,9 @@ check:
 install:
 	python3 setup.py install
 
+flakes:
+	pyflakes friends
+
 venv:
 	virtualenv --clear --system-site-packages -p python3 /tmp/friends
 	/tmp/friends/bin/python3 setup.py install

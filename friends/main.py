@@ -18,11 +18,13 @@
 This gets turned into a script by `python3 setup.py install`.
 """
 
+
 __all__ = [
     'main',
     ]
 
 
+import sys
 import logging
 
 from dbus.mainloop.glib import DBusGMainLoop
@@ -41,6 +43,10 @@ from friends.utils.model import prune_model
 from friends.utils.options import Options
 
 
+# Optional performance profiling module.
+yappi = None
+
+
 # Logger must be initialized before it can be used.
 log = None
 
@@ -49,6 +55,7 @@ def main():
     global log
     # Initialize command line options.
     args = Options().parser.parse_args()
+
     if args.list_protocols:
         from friends.utils.manager import protocol_manager
         for name in sorted(protocol_manager.protocols):
@@ -56,6 +63,14 @@ def main():
             package, dot, class_name = cls.__name__.rpartition('.')
             print(class_name)
         return
+
+    if args.performance:
+        try:
+            import yappi
+        except ImportError:
+            pass
+        else:
+            yappi.start()
 
     # Initialize the logging subsystem.
     gsettings = Gio.Settings.new('com.canonical.friends')
@@ -107,6 +122,9 @@ def main():
         loop.run()
     except KeyboardInterrupt:
         log.info('Stopped friends-service main loop')
+
+    if args.performance and yappi is not None:
+        yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
 
 
 if __name__ == '__main__':

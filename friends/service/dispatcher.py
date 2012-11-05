@@ -30,7 +30,6 @@ import dbus.service
 from gi.repository import GLib
 
 from friends.utils.account import AccountManager
-from friends.utils.avatar import Avatar
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
 from friends.utils.model import persist_model
@@ -208,24 +207,6 @@ class Dispatcher(dbus.service.Object):
         """
         protocol = protocol_manager.protocols.get(protocol_name)
         return json.dumps(protocol.get_features())
-
-    @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
-    def GetAvatarPath(self, url):
-        """Returns the path to the cached avatar image as a string.
-
-        example:
-            import dbus
-            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
-            service = dbus.Interface(obj, DBUS_INTERFACE)
-            avatar = service.GetAvatar(url)
-        """
-        if self.online:
-            # Download the image to the cache, if necessary.
-            return Avatar.get_image(url)
-        else:
-            # Report the cache location without attempting download.
-            return Avatar.get_path(url)
 
     @dbus.service.method(DBUS_INTERFACE)
     def Quit(self):
