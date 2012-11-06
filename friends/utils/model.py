@@ -144,7 +144,12 @@ if first_run or stale_schema:
     # order to ensure data is saved often in case of power loss.
     persist_model()
 
-shared_model = Dee.SharedModel.new_with_back_end(MODEL_DBUS_NAME, Model)
+
+_shared_model = Dee.SharedModel(
+    access_mode=Dee.SharedModelAccessMode.LEADER_WRITABLE,
+    peer=Dee.Peer(swarm_name=MODEL_DBUS_NAME, swarm_owner=True),
+    back_end=Model)
+
 
 def prune_model(maximum):
     """If there are more than maximum rows, remove the oldest ones."""
