@@ -44,9 +44,6 @@ class _SilentHandler(WSGIRequestHandler):
 
 def _app(environ, start_response):
     """WSGI application for responding to test queries."""
-    ## import sys
-    ## from pprint import pprint
-    ## pprint(environ, stream=sys.stderr)
     setup_testing_defaults(environ)
     status = '200 OK'
     results = []
@@ -76,27 +73,6 @@ def _app(environ, start_response):
             converted = {key: int(value[0])
                          for key, value in payload.items()}
         results = [json.dumps(converted).encode('utf-8')]
-    elif path == '/auth':
-        # Check the username and password.
-        source = '{}:{}'.format('bob', 'good').encode('utf-8')
-        # We have to strip off the trailing newline.
-        expected = encodebytes(source)[:-1]
-        value = environ.get('HTTP_AUTHORIZATION')
-        if value is not None:
-            # Strip off and validate the 'Basic' prefix, convert the value to
-            # bytes (assuming utf-8 encoding) and then compare.
-            basic, auth = value.split()
-            auth = auth.encode('utf-8')
-        else:
-            auth = None
-        if auth is None:
-            status = '401 Unauthorized'
-            results = [b'no authorization']
-        elif basic.lower() != 'basic' or auth != expected:
-            status = '401 Unauthorized'
-            results = [b'username/password mismatch']
-        else:
-            pass
     elif path == '/headers':
         http_headers = {}
         for key, value in environ.items():
@@ -230,12 +206,6 @@ class TestDownloader(unittest.TestCase):
                        params=dict(one=1, two=2, three=3),
                        method='GET').get_json(),
             dict(one=1, two=2, three=3))
-
-    def test_unauthorized(self):
-        # Test a URL that requires authorization.
-        Downloader('http://localhost:9180/auth').get_string()
-        self.assertEqual(self.log_mock.empty(),
-                         'http://localhost:9180/auth: 401 Unauthorized\n')
 
     def test_headers(self):
         # Provide some additional headers.
