@@ -37,7 +37,7 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestFlickr(unittest.TestCase):
     """Test the Flickr API."""
 
@@ -76,7 +76,7 @@ friends.errors.AuthorizationError:\
 Flickr.receive has completed, thread exiting.
 """)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_already_logged_in(self):
@@ -94,7 +94,7 @@ Flickr.receive has completed, thread exiting.
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     def test_unsuccessful_login(self):
         # The user is not already logged in, but the act of logging in
@@ -117,7 +117,7 @@ friends.errors.AuthorizationError:\
 Flickr.receive has completed, thread exiting.
 """)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_successful_login(self):
@@ -138,7 +138,7 @@ Flickr.receive has completed, thread exiting.
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.authentication.Authentication.login',
                 # No AccessToken, so for all intents-and-purposes; fail!
@@ -155,7 +155,7 @@ Flickr.receive has completed, thread exiting.
 friends.errors.AuthorizationError:\
  No Flickr authentication results received. (account: faker/than fake)""")
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.authentication.Authentication.login',
                 # login() callback never happens.
@@ -176,7 +176,7 @@ friends.errors.AuthorizationError:\
 Flickr.receive has completed, thread exiting.
 """)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(username='Bob Dobbs',
@@ -216,7 +216,7 @@ Flickr.receive has completed, thread exiting.
             method='flickr.photos.getContactsPublicPhotos',
             ))
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_no_photos(self):
@@ -227,7 +227,7 @@ Flickr.receive has completed, thread exiting.
             self.protocol('receive')
         self.assertEqual(TestModel.get_n_rows(), 0)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-full.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_flickr_data(self):

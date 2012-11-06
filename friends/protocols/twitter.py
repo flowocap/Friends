@@ -31,7 +31,7 @@ from urllib.parse import quote
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.download import RateLimiter as BaseRateLimiter, get_json
+from friends.utils.http import BaseRateLimiter, get_json
 from friends.utils.time import parsetime, iso8601utc
 
 

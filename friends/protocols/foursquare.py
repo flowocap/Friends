@@ -24,7 +24,7 @@ import logging
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.download import get_json
+from friends.utils.http import get_json
 from friends.utils.time import iso8601utc
 
 

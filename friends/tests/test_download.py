@@ -34,7 +34,7 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 from wsgiref.util import setup_testing_defaults
 
 from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.utils.download import Downloader, get_json
+from friends.utils.http import Downloader, get_json
 
 
 class _SilentHandler(WSGIRequestHandler):
@@ -118,7 +118,7 @@ class TestDownloader(unittest.TestCase):
     """Test the downloading utilities."""
 
     def setUp(self):
-        self.log_mock = LogMock('friends.utils.download')
+        self.log_mock = LogMock('friends.utils.http')
 
     def tearDown(self):
         self.log_mock.stop()
@@ -151,8 +151,8 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(get_json('http://localhost:9180/json'),
                          dict(answer='hello'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-8.dat', 'utf-8'))
     def test_json_explicit_utf_8(self):
@@ -160,16 +160,16 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(get_json('http://example.com'),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'json-utf-8.dat', None))
     def test_json_implicit_utf_8(self):
         # RFC 4627 $3 with implicit charset=utf-8.
         self.assertEqual(get_json('http://example.com'),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-16le.dat', None))
     def test_json_implicit_utf_16le(self):
@@ -177,8 +177,8 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(get_json('http://example.com'),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-16be.dat', None))
     def test_json_implicit_utf_16be(self):
@@ -186,8 +186,8 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(get_json('http://example.com'),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-32le.dat', None))
     def test_json_implicit_utf_32le(self):
@@ -195,8 +195,8 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(get_json('http://example.com'),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-32be.dat', None))
     def test_json_implicit_utf_32be(self):

@@ -22,7 +22,7 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
+from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
@@ -39,7 +39,7 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
@@ -63,7 +63,7 @@ class TestFacebook(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-login.dat'))
     def test_successful_login(self, mock):
         # Test that a successful response from graph.facebook.com returning
@@ -110,7 +110,7 @@ Facebook error (190 OAuthException): Bad access token
 Facebook.receive has completed, thread exiting.
 """)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-full.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.protocols.facebook.Facebook._login',
@@ -336,7 +336,8 @@ Facebook.receive has completed, thread exiting.
             message_id='234125',
             sender=None)
 
-    @mock.patch('friends.protocols.facebook.Uploader.send',
+    @mock.patch('friends.utils.http._soup')
+    @mock.patch('friends.protocols.facebook.Uploader._build_request',
                 return_value=None)
     @mock.patch('friends.protocols.facebook.time.time',
                 return_value=1352209748.1254)
@@ -346,22 +347,21 @@ Facebook.receive has completed, thread exiting.
         publish = self.protocol._publish = mock.Mock()
 
         src = 'file:///tmp/a/non-existant/path'
-        self.protocol.upload(src, 'There is no spoon')
+        self.assertRaises(
+            ValueError, self.protocol.upload, src, 'There is no spoon')
         token.assert_called_once_with()
 
         self.assertFalse(publish.called)
 
-    @mock.patch('friends.protocols.facebook.Uploader.send',
-                return_value=None)
-    @mock.patch('friends.protocols.facebook.time.time',
-                return_value=1352209748.1254)
+    @mock.patch('friends.utils.http._soup')
     def test_upload_not_uri(self, *mocks):
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
         publish = self.protocol._publish = mock.Mock()
 
         src = resource_filename('friends.tests.data', 'ubuntu.png')
-        self.protocol.upload(src, 'There is no spoon')
+        self.assertRaises(
+            GLib.GError, self.protocol.upload, src, 'There is no spoon')
         token.assert_called_once_with()
 
         self.assertFalse(publish.called)
@@ -423,7 +423,7 @@ Facebook.receive has completed, thread exiting.
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-contacts.dat'))
     @mock.patch('friends.protocols.facebook.Facebook._login',
                 return_value=True)

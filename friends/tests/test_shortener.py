@@ -34,7 +34,7 @@ from friends.shorteners import zima
 from friends.testing.mocks import FakeOpen, FakeSoupMessage, mock
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestShorteners(unittest.TestCase):
     """Test the various shorteners, albeit via mocks."""
 
@@ -127,7 +127,7 @@ class TestShorteners(unittest.TestCase):
         self.assertRaises(AttributeError,
                           getattr, tinyurlcom.PROTOCOL_INFO, 'bogus')
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'ur1ca.html'))
     def test_ur1ca(self):
         # Test the shortener.

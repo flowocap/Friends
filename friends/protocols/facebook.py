@@ -29,8 +29,7 @@ from gi.repository import EBook
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.download import get_json
-from friends.utils.upload import Uploader
+from friends.utils.http import get_json, Uploader
 from friends.utils.time import parsetime, iso8601utc
 
 
@@ -267,7 +266,7 @@ class Facebook(Base):
             ME_URL, self._get_access_token())
         response = Uploader(
             url, picture_uri, description,
-            picture_key='source', description_key='message').get_json()
+            picture_key='source', desc_key='message').get_json()
         if response is None:
             log.error('No response from upload server.')
             return

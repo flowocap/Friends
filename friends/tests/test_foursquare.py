@@ -37,7 +37,7 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 @mock.patch.dict('friends.utils.base.__dict__', {'_SYNCHRONIZE': True})
 class TestFourSquare(unittest.TestCase):
     """Test the FourSquare API."""
@@ -64,7 +64,7 @@ class TestFourSquare(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=None)
-    @mock.patch('friends.utils.download.get_json',
+    @mock.patch('friends.utils.http.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
         self.assertFalse(self.protocol._login())
@@ -85,7 +85,7 @@ class TestFourSquare(unittest.TestCase):
         self.assertEqual(self.account.user_id, '1234567')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'foursquare-full.dat'))
     @mock.patch('friends.protocols.foursquare.FourSquare._login',
                 return_value=True)

@@ -38,7 +38,7 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestTwitter(unittest.TestCase):
     """Test the Twitter API."""
 
@@ -56,7 +56,7 @@ class TestTwitter(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=None)
-    @mock.patch('friends.utils.download.get_json',
+    @mock.patch('friends.utils.http.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
         self.assertFalse(self.protocol._login())
@@ -102,7 +102,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             dict(Authorization=result))
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-home.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
@@ -149,7 +149,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                 self.assertEqual(got, want)
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-send.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
@@ -530,7 +530,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
     @mock.patch(
-        'friends.utils.download.Soup.Message',
+        'friends.utils.http.Soup.Message',
         FakeSoupMessage(
             'friends.tests.data', 'twitter-home.dat',
             headers={
