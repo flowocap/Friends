@@ -95,14 +95,12 @@ class TestFacebook(unittest.TestCase):
     def test_error_response(self, *mocks):
         with LogMock('friends.utils.base',
                      'friends.protocols.facebook') as log_mock:
-            self.protocol('receive')
+            self.protocol.receive()
             contents = log_mock.empty(trim=False)
         self.assertEqual(contents, """\
-Facebook.receive is starting in a new thread.
 Logging in to Facebook
 Facebook UID: None
 Facebook error (190 OAuthException): Bad access token
-Facebook.receive has completed, thread exiting.
 """)
 
     @mock.patch('friends.utils.http.Soup.Message',
