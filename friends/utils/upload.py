@@ -38,10 +38,13 @@ log = logging.getLogger(__name__)
 class Uploader:
     """Convenient uploading wrapper."""
 
-    def __init__(self, url, filename, description=''):
+    def __init__(self, url, filename, description, picture_key, description_key, extra_keys=[]):
         self.url = url
         self.filename = filename
         self.description = description
+        self.picture_key = picture_key
+        self.description_key = description_key
+        self.extra_keys = extra_keys
 
     def send(self):
         try:
@@ -54,9 +57,11 @@ class Uploader:
         body = Soup.Buffer.new([byte for byte in jpeg])
 
         multipart = Soup.Multipart.new('multipart/form-data')
-        multipart.append_form_string('message', self.description)
+        multipart.append_form_string(self.description_key, self.description)
         multipart.append_form_file(
-            'source', self.filename, 'image/jpeg', body)
+           self.picture_key, self.filename, 'application/octet-stream', body)
+        for key in self.extra_keys:
+            multipart.append_form_string(key, self.extra_keys[key])
         message = Soup.form_request_new_from_multipart(self.url, multipart)
         _soup.send_message(message)
         if message.status_code != 200:

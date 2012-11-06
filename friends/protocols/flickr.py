@@ -25,6 +25,7 @@ import logging
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.download import get_json
+from friends.utils.upload import Uploader
 from friends.utils.time import iso8601utc, parsetime
 
 
@@ -55,8 +56,16 @@ class Flickr(Base):
         self._account.user_name = authdata.get('username')
 
     @feature
-    def upload(self, picture_url, message='', obj_id='me'):
-        pass
+    def upload(self, picture_uri, description=''):
+        """Upload local or remote image or video to album"""
+        # This triggers logging in, if necessary.
+        self._get_access_token()
+        # http://www.flickr.com/services/api/upload.api.html
+        # http://www.flickr.com/services/api/upload.example.html
+        url = 'http://api.flickr.com/services/upload/'
+        Uploader(url, picture_uri, description, picture_key='photo', description_key='description',
+            extra_keys=dict(api_key=API_KEY)).send()
+        # FIXME 99: Insufficient permissions. Method requires write privileges; none granted.
 
 # http://www.flickr.com/services/api/flickr.photos.getContactsPublicPhotos.html
     @feature

@@ -265,7 +265,7 @@ class Facebook(Base):
         """Upload local or remote image or video to album"""
         url = '{}/photos?access_token={}'.format(
             ME_URL, self._get_access_token())
-        response = Uploader(url, picture_uri).get_json()
+        response = Uploader(url, picture_uri, description, picture_key='source', description_key='message').get_json()
         post_id = response.get('post_id')
         if post_id is not None:
             self._publish(
