@@ -187,6 +187,7 @@ class Uploader(HTTP):
         self.picture_key = picture_key
         self.description_key = desc_key
         self.extra_keys = kwargs
+        self._rate_limiter = BaseRateLimiter()
 
     def _build_request(self):
         gfile = Gio.File.new_for_uri(self.filename)
