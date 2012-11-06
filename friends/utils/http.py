@@ -129,7 +129,11 @@ class HTTP:
         """Return the results as a string, decoded as per the response."""
         with self._transfer() as message:
             payload = message.response_body.flatten().get_data()
-            return payload.decode(_get_charset(message))
+            charset = _get_charset(message)
+            if charset:
+                return payload.decode(charset)
+            else:
+                return payload.decode()
 
 
 class Downloader(HTTP):

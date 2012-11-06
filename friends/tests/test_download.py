@@ -32,9 +32,10 @@ from urllib.parse import parse_qs
 from urllib.request import urlopen
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 from wsgiref.util import setup_testing_defaults
+from pkg_resources import resource_filename
 
 from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.utils.http import Downloader
+from friends.utils.http import Downloader, Uploader
 
 
 class _SilentHandler(WSGIRequestHandler):
@@ -51,6 +52,9 @@ def _app(environ, start_response):
     path = environ['PATH_INFO']
     if path == '/ping':
         pass
+    elif path == '/mirror':
+        size = int(environ['CONTENT_LENGTH'])
+        results = [environ['wsgi.input'].read(size)]
     elif path == '/json':
         results = [json.dumps(dict(answer='hello')).encode('utf-8')]
     elif path == '/post':
@@ -214,3 +218,32 @@ class TestDownloader(unittest.TestCase):
                        headers={'X-Foo': 'baz',
                                 'X-Bar': 'foo'}).get_json(),
             dict(foo='baz', bar='foo'))
+
+    def test_mirror(self):
+        self.assertEqual(
+            Downloader('http://localhost:9180/mirror',
+                       method='POST',
+                       params=dict(foo='bar')).get_string(),
+            'foo=bar')
+
+    def test_uploads(self):
+        filename = resource_filename('friends.tests.data', 'ubuntu.png')
+        raw_sent = Uploader('http://localhost:9180/mirror',
+                            'file://' + filename,
+                            'Great logo!',
+                            picture_key='source',
+                            desc_key='message',
+                            foo='bar').get_bytes()
+        delimiter = raw_sent[2:66]
+        self.assertTrue(
+            raw_sent.startswith(
+                b'--' + delimiter + b'\r\nContent-Disposition: form-data; '
+                b'name="foo"\r\n\r\nbar\r\n--' + delimiter +
+                b'\r\nContent-Disposition: form-data; name="message"\r\n\r\n'
+                b'Great logo!\r\n--' + delimiter + b'\r\nContent-Disposition: '
+                b'form-data; name="source"; filename="file://' +
+                filename.encode() + b'"\r\nContent-Type: '
+                b'application/octet-stream\r\n\r\n\x89PNG'))
+        self.assertTrue(
+            raw_sent.endswith(
+                b'\r\n--' + delimiter + b'--\r\n'))
