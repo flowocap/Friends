@@ -30,7 +30,7 @@ from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
 from friends.testing.helpers import FakeAccount
 from friends.testing.mocks import LogMock, mock
-from friends.utils.base import Base, feature, TIME_IDX
+from friends.utils.base import Base, feature
 from friends.utils.manager import ProtocolManager
 from friends.utils.model import (
     COLUMN_INDICES, COLUMN_NAMES, COLUMN_TYPES, Model)

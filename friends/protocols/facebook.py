@@ -15,20 +15,21 @@
 
 """The Facebook protocol plugin."""
 
+
 __all__ = [
     'Facebook',
     ]
 
 
+import time
 import logging
 
 from datetime import datetime, timedelta
-
 from gi.repository import EBook
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.download import get_json
+from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
 
 
@@ -47,8 +48,8 @@ log = logging.getLogger(__name__)
 class Facebook(Base):
     def _whoami(self, authdata):
         """Identify the authenticating user."""
-        me_data = get_json(
-            ME_URL, dict(access_token=self._account.access_token))
+        me_data = Downloader(
+            ME_URL, dict(access_token=self._account.access_token)).get_json()
         self._account.user_id = me_data.get('id')
         self._account.user_name = me_data.get('name')
 
@@ -115,7 +116,7 @@ class Facebook(Base):
         entries = []
 
         while True:
-            response = get_json(url, params)
+            response = Downloader(url, params).get_json()
             if self._is_error(response):
                 break
 
@@ -190,7 +191,8 @@ class Facebook(Base):
         url = API_BASE.format(id=obj_id) + '/likes'
         token = self._get_access_token()
 
-        if not get_json(url, method=method, params=dict(access_token=token)):
+        if not Downloader(url, method=method,
+                          params=dict(access_token=token)).get_json():
             log.error('Failed to {} like {} on Facebook'.format(
                 method, obj_id))
 
@@ -214,17 +216,17 @@ class Facebook(Base):
         url = API_BASE.format(id=obj_id) + endpoint
         token = self._get_access_token()
 
-        result = get_json(
+        result = Downloader(
             url,
             method='POST',
-            params=dict(access_token=token, message=message))
+            params=dict(access_token=token, message=message)).get_json()
         new_id = result.get('id')
         if new_id is None:
             log.error('Failed sending to Facebook: {!r}'.format(result))
             return
 
         url = API_BASE.format(id=new_id)
-        entry = get_json(url, params=dict(access_token=token))
+        entry = Downloader(url, params=dict(access_token=token)).get_json()
         self._publish_entry(entry)
 
     @feature
@@ -252,53 +254,126 @@ class Facebook(Base):
         url = API_BASE.format(id=obj_id)
         token = self._get_access_token()
 
-        if not get_json(url, method='DELETE', params=dict(access_token=token)):
+        if not Downloader(url, method='DELETE',
+                          params=dict(access_token=token)).get_json():
             log.error('Failed to delete {} on Facebook'.format(obj_id))
         else:
             self._unpublish(obj_id)
 
-    def fetch_contacts(self):
-        """Retrieve a list of up to 100 Facebook friends."""
-        limit = self._DOWNLOAD_LIMIT * 2
+    @feature
+    def upload(self, picture_uri, description=''):
+        # http://developers.facebook.com/docs/reference/api/photo/
+        """Upload local or remote image or video to album"""
+        url = '{}/photos?access_token={}'.format(
+            ME_URL, self._get_access_token())
+        response = Uploader(
+            url, picture_uri, description,
+            picture_key='source', desc_key='message').get_json()
+        if response is None:
+            log.error('No response from upload server.')
+            return
+        post_id = response.get('post_id')
+        if post_id is not None:
+            self._publish(
+                from_me=True,
+                stream='images',
+                message_id=post_id,
+                message=description,
+                sender=self._account.user_name,
+                sender_id=self._account.user_id,
+                sender_nick=self._account.user_name,
+                timestamp=iso8601utc(int(time.time())),
+                url=PERMALINK.format(id=post_id),
+                icon_uri=Avatar.get_image(
+                    API_BASE.format(id=self._account.user_id) +
+                    '/picture?type=large'))
+
+    def _fetch_contacts(self):
+        """Retrieve a list of up to 1,000 Facebook friends."""
+        limit = 1000
         access_token = self._get_access_token()
-        contacts = []
         url = ME_URL + '/friends'
         params = dict(
             access_token=access_token,
             limit=limit)
-
         return self._follow_pagination(url, params, limit)
 
-    # This method can take the minimal contact information or full
-    # contact info For now we only cache ID and the name in the
-    # addressbook. Using custom field for name because I can't figure
-    # out how econtact name works.
-    def create_contact(self, contact_json):
+    def _fetch_contact(self, contact_id):
+        """Fetch the full, individual contact info."""
+        access_token = self._get_access_token()
+        url = API_BASE.format(id=contact_id)
+        params = dict(access_token=access_token)
+        return Downloader(url, params).get_json()
+
+    def _create_contact(self, contact_json):
+        """Build a VCard based on a dict representation of a contact."""
+        user_id = contact_json.get('id')
+        user_fullname = contact_json.get('name')
+        user_nickname = contact_json.get('username')
+        user_link = contact_json.get('link')
+        gender = contact_json.get('gender')
+
+        vcard = EBook.VCard.new()
+
         vcafid = EBook.VCardAttribute.new(
             'social-networking-attributes', 'facebook-id')
-        vcafid.add_value(contact_json['id'])
+        vcafid.add_value(user_id)
         vcafn = EBook.VCardAttribute.new(
             'social-networking-attributes', 'facebook-name')
-        vcafn.add_value(contact_json['name'])
-        vcard = EBook.VCard.new()
-        vcard.add_attribute(vcafid)
-        vcard.add_attribute(vcafn)
-        c = EBook.Contact.new_from_vcard(vcard.to_string(EBook.VCardFormat(1)))
-        log.debug('Creating new contact for {}'.format(contact_json['name']))
-        return c
+        vcafn.add_value(user_fullname)
+        vcauri = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-URIS')
+        vcauri.add_value(user_link)
 
+        vcaws = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-FOLKS-WEB-SERVICES-IDS')
+        vcaws_param = EBook.VCardAttributeParam.new('jabber')
+        vcaws_param.add_value('-{}@chat.facebook.com'.format(user_id))
+        vcaws.add_param(vcaws_param)
+        vcard.add_attribute(vcaws)
+
+        if gender is not None:
+            vcag = EBook.VCardAttribute.new(
+                'social-networking-attributes', 'X-GENDER')
+            vcag.add_value(gender)
+            vcard.add_attribute(vcag)
+
+        vcard.add_attribute(vcafn)
+        vcard.add_attribute(vcauri)
+        vcard.add_attribute(vcafid)
+
+        contact = EBook.Contact.new_from_vcard(
+            vcard.to_string(EBook.VCardFormat(1)))
+        contact.set_property('full-name', user_fullname)
+
+        if user_nickname is not None:
+            contact.set_property('nickname', user_nickname)
+
+        log.debug('Creating new contact for {}'.format(user_fullname))
+        return contact
+
+    @feature
     def contacts(self):
-        contacts = self.fetch_contacts()
+        contacts = self._fetch_contacts()
+        log.debug('Size of the contacts returned {}'.format(len(contacts)))
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        if source is None:
+            source = self._create_eds_source(FACEBOOK_ADDRESS_BOOK)
+
         for contact in contacts:
-            if source is not None:
-                if (Base.previously_stored_contact(
-                        source, 'facebook-id', contact['id'])):
-                    continue
-            # Let's not query the full contact info for now Show some
-            # respect for facebook and the chances are we won't be
-            # blocked.
-            eds_contact = self.create_contact(contact)
+            if self._previously_stored_contact(
+                    source, 'facebook-id', contact['id']):
+                continue
+            log.debug(
+                'Fetch full contact info for {} and id {}'.format(
+                    contact['name'], contact['id']))
+            full_contact = self._fetch_contact(contact['id'])
+            eds_contact = self._create_contact(full_contact)
             if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
                 log.error(
-                    'Unable to save facebook contact {}'.format(contact['name']))
+                    'Unable to save facebook contact {}'.format(
+                        contact['name']))
+
+    def delete_contacts(self):
+        source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        return self._delete_service_contacts(source)

@@ -22,9 +22,9 @@ __all__ = [
 
 import logging
 
-from friends.errors import AuthorizationError
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.download import get_json
+from friends.utils.http import Downloader, Uploader
 from friends.utils.time import iso8601utc, parsetime
 
 
@@ -47,18 +47,6 @@ PEOPLE_URL = 'http://www.flickr.com/people/{owner}'
 
 
 class Flickr(Base):
-    def _get_nsid(self):
-        """Get the user's Flickr id.
-
-        :return: The id, called NSID by the Flickr service.
-        :rtype: str
-        """
-        if self._account.user_id is None:
-            # Try to log in.
-            if not self._login():
-                return None
-        return self._account.user_id
-
     def _whoami(self, authdata):
         """Identify the authenticating user."""
         self._account.secret_token = authdata.get('TokenSecret')
@@ -69,27 +57,24 @@ class Flickr(Base):
     @feature
     def receive(self):
         """Download all of a user's public photos."""
-        user_id = self._get_nsid()
-        if user_id is None:
-            if self._account.user_id is None:
-                # It's possible the login gave us a user_id but still failed.
-                log.error('Flickr: No NSID available')
-            raise AuthorizationError(
-                self._account.id, 'No Flickr user id available')
-        # The user is logged into Flickr.
+        # This triggers logging in, if necessary.
+        self._get_access_token()
+
         GET_arguments = dict(
             api_key         = API_KEY,
-            user_id         = user_id,
+            user_id         = self._account.user_id,
             method          = 'flickr.photos.getContactsPublicPhotos',
             format          = 'json',
             nojsoncallback  = '1',
             extras          = 'date_upload,owner_name,icon_server',
             )
-        response = get_json(REST_SERVER, GET_arguments)
+
+        response = Downloader(REST_SERVER, GET_arguments).get_json()
         for data in response.get('photos', {}).get('photo', []):
             # Pre-calculate some values to publish.
             username = data.get('username', '')
             ownername = data.get('ownername', '')
+
             # Icons.
             icon_farm = data.get('iconfarm')
             icon_server = data.get('iconserver')
@@ -97,21 +82,17 @@ class Flickr(Base):
             icon_uri = ''
             url = ''
             from_me = (ownername == username)
-            if (icon_farm is not None and
-                icon_server is not None and
-                owner is not None):
-                # Then...
-                icon_uri = BUDDY_ICON_URL.format(
-                    farm=icon_farm, server=icon_server, nsid=owner)
+            if None not in (icon_farm, icon_server, owner):
+                icon_uri = Avatar.get_image(BUDDY_ICON_URL.format(
+                    farm=icon_farm, server=icon_server, nsid=owner))
                 url = PEOPLE_URL.format(owner=owner)
+
             # Calculate the ISO 8601 UTC time string.
-            raw_time = data.get('dateupload')
-            timestamp = ''
-            if raw_time is not None:
-                try:
-                    timestamp = iso8601utc(parsetime(raw_time))
-                except ValueError:
-                    pass
+            try:
+                timestamp = iso8601utc(parsetime(data.get('dateupload', '')))
+            except ValueError:
+                timestamp = ''
+
             # Images.
             farm = data.get('farm')
             server = data.get('server')
@@ -120,23 +101,21 @@ class Flickr(Base):
             img_src = ''
             img_thumb = ''
             if None not in (farm, server, secret):
-                img_url = IMAGE_URL.format(farm=farm, server=server,
-                                           nsid=owner, secret=secret, type='b')
-                img_src = IMAGE_URL.format(farm=farm, server=server,
-                                           nsid=owner, secret=secret, type='m')
-                img_thumb = IMAGE_URL.format(farm=farm, server=server,
-                                             nsid=owner, secret=secret,
-                                             type='t')
+                args = dict(farm=farm, server=server, nsid=owner, secret=secret)
+                img_url = IMAGE_URL.format(type='b', **args)
+                img_src = IMAGE_URL.format(type='m', **args)
+                img_thumb = IMAGE_URL.format(type='t', **args)
+
             self._publish(
                 message_id=data.get('id', ''),
                 stream='images',
-                sender=owner,
+                sender=ownername,
+                sender_id=owner,
                 sender_nick=ownername,
                 icon_uri=icon_uri,
                 url=url,
                 from_me=from_me,
                 message=data.get('title', ''),
-                html=data.get('title', ''),
                 timestamp=timestamp,
                 img_url=img_url,
                 img_src=img_src,

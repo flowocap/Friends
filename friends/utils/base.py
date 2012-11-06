@@ -31,8 +31,9 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import EDataServer, EBook, Gio
+from gi.repository import EDataServer, EBook
 
+from friends.errors import AuthorizationError
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
@@ -94,16 +95,16 @@ def _make_key(row):
     punctuation for the sake of comparing the strings.  For example:
 
     Fred uses Friends to post identical messages on Twitter and Google+
-    (pretend that we support G+ for a moment).  Fred writes "Hey jimbob, been
-    to http://example.com lately?", and this message might show up on Twitter
-    like "Hey @jimbob, been to example.com lately?", but it might show up on
-    G+ like "Hey +jimbob, been to http://example.com lately?".  So we need to
+    (pretend that we support G+ for a moment).  Fred writes 'Hey jimbob, been
+    to http://example.com lately?', and this message might show up on Twitter
+    like 'Hey @jimbob, been to example.com lately?', but it might show up on
+    G+ like 'Hey +jimbob, been to http://example.com lately?'.  So we need to
     strip out all the possibly different bits in order to identify that these
     messages are the same for our purposes.  In both of these cases, the
-    string is converted into "Heyjimbobbeentoexamplecomlately" and then they
+    string is converted into 'Heyjimbobbeentoexamplecomlately' and then they
     compare equally, so we've identified a duplicate message.
     """
-    # Given a "row" of data, the sender and message fields are concatenated
+    # Given a 'row' of data, the sender and message fields are concatenated
     # together to form the raw key.  Then we strip out details such as url
     # schemes, punctuation, and whitespace, that allow for the fuzzy matching.
     key = SCHEME_RE.sub('', row[SENDER_IDX] + row[MESSAGE_IDX])
@@ -131,9 +132,7 @@ def initialize_caches():
 class _OperationThread(threading.Thread):
     """Catch, log, and swallow all exceptions in the sub-thread."""
 
-    def __init__(self, barrier, *args, identifier=None, **kws):
-        # The barrier will only be provided when the system is under test.
-        self._barrier = barrier
+    def __init__(self, *args, identifier=None, **kws):
         self._id = identifier
         super().__init__(*args, **kws)
 
@@ -148,23 +147,17 @@ class _OperationThread(threading.Thread):
         except Exception:
             log.exception('Friends operation exception:\n')
         log.debug('{} has completed, thread exiting.'.format(self._id))
-        # If the system is under test, indicate that we've reached the
-        # barrier, so that the main thread, i.e. the test thread waiting for
-        # the results, can then proceed.
-        if self._barrier is not None:
-            self._barrier.wait()
+
+        # If this is the last thread to exit, then the refresh is
+        # completed and we should save the model.
+        if threading.activeCount() < 3:
+            persist_model()
 
 
 class Base:
     # This number serves a guideline (not a hard limit) for the protocol
     # subclasses to download in each refresh.
     _DOWNLOAD_LIMIT = 50
-    # When the system is under test, set this value to True to enable
-    # synchronizing the operations threads with the main thread.  In this way,
-    # you can ensure that the results of calling an operation on a protocol
-    # will complete before the assertions testing the results of that
-    # operation.
-    _SYNCHRONIZE = False
 
     def __init__(self, account):
         self._source_registry = EDataServer.SourceRegistry.new_sync(None)
@@ -180,23 +173,9 @@ class Base:
         if operation.startswith('_') or not hasattr(self, operation):
             raise NotImplementedError(operation)
         method = getattr(self, operation)
-        # When the system is under test, or at least tests which assert the
-        # results of operations in a sub-thread, then this flag will be set to
-        # true, in which case we want to pass a barrier to the sub-thread.
-        # The sub-thread will complete, either successfully or unsuccessfully,
-        # but in either case, it will always indicate that it's reached the
-        # barrier before exiting.  The main thread, i.e. this one, will not
-        # proceed until that barrier has been reached, thus allowing the main
-        # thread to assert the results of the sub-thread.
-        barrier = (threading.Barrier(parties=2) if Base._SYNCHRONIZE else None)
-        _OperationThread(barrier,
-                         identifier='{}.{}'.format(self.__class__.__name__,
-                                                   operation),
-                         target=method, args=args, kwargs=kwargs).start()
-        # When under synchronous testing, wait until the sub-thread completes
-        # before returning.
-        if barrier is not None:
-            barrier.wait()
+        _OperationThread(
+            identifier='{}.{}'.format(self.__class__.__name__, operation),
+            target=method, args=args, kwargs=kwargs).start()
 
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
@@ -296,10 +275,11 @@ class Base:
         """Return an access token, logging in if necessary."""
         if self._account.access_token is None:
             if not self._login():
-                log.error(
+                raise AuthorizationError(
+                    self._account.id,
                     'No {} authentication results received.'.format(
                         self.__class__.__name__))
-                return None
+
         return self._account.access_token
 
     def _login(self):
@@ -357,23 +337,14 @@ class Base:
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
         if source_match is None:
-            new_source_uid = self._create_eds_source(online_service)
-            if new_source_uid is None:
-                log.error(
-                    'Could not create a new source for {}'.format(
-                        online_service))
-                return False
-            else:
-                # https://bugzilla.gnome.org/show_bug.cgi?id=685986
-                # Potential race condition - need to sleep for a
-                # couple of cycles to ensure the registry will return
-                # a valid source object after commiting Evolution fix
-                # on the way but for now we need this.
-                time.sleep(1)
-                source_match = self._source_registry.ref_source(new_source_uid)
+            log.error(
+                'Push to EDS failed because we have been handed an online' +
+                'service ({}) which does not have an address book'.format(
+                    online_service))
+            return False
         client = EBook.BookClient.new(source_match)
         client.open_sync(False, None)
-        return client.add_contact_sync(contact, Gio.Cancellable())
+        return client.add_contact_sync(contact, None)
 
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
@@ -382,8 +353,14 @@ class Base:
         extension = source.get_extension(
             EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
         extension.set_backend_name('local')
-        if self._source_registry.commit_source_sync(source, Gio.Cancellable()):
-            return source.get_uid()
+        if self._source_registry.commit_source_sync(source, None):
+            # https://bugzilla.gnome.org/show_bug.cgi?id=685986
+            # Potential race condition - need to sleep for a
+            # couple of cycles to ensure the registry will return
+            # a valid source object after commiting. Evolution fix
+            # on the way but for now we need this.
+            time.sleep(2)
+            return self._source_registry.ref_source(source.get_uid())
 
     def _get_eds_source(self, online_service):
         for previous_source in self._source_registry.list_sources(None):
@@ -391,17 +368,32 @@ class Base:
                 return self._source_registry.ref_source(
                     previous_source.get_uid())
 
-    @classmethod
-    def previously_stored_contact(cls, source, field, search_term):
+    def _previously_stored_contact(self, source, field, search_term):
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)
         query = EBook.book_query_vcard_field_test(
             field, EBook.BookQueryTest(0), search_term)
-        cs = client.get_contacts_sync(query.to_string(), Gio.Cancellable())
-        log.debug('Search string: {}'.format(query.to_string()))
-        if not cs[0]:
-           return False # is this right ...
-        return len(cs[1]) > 0
+        success, result = client.get_contacts_sync(query.to_string(), None)
+        if not success:
+            log.error('EDS Search failed on field {}'.format(field))
+            return False
+        return len(result) > 0
+
+    def _delete_service_contacts(self, source):
+        client = EBook.BookClient.new(source)
+        client.open_sync(False, None)
+        query = EBook.book_query_any_field_contains('')
+        success, results = client.get_contacts_sync(query.to_string(), None)
+        if not success:
+            log.error('EDS search for delete all contacts failed')
+            return False
+        log.debug('Found {} contacts to delete'.format(len(results)))
+        for contact in results:
+            log.debug(
+                'Deleting contact {}'.format(
+                    contact.get_property('full-name')))
+            client.remove_contact_sync(contact, None)
+        return True
 
     @classmethod
     def get_features(cls):

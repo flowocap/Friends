@@ -42,7 +42,7 @@ class TestModel(unittest.TestCase):
         self.log_mock.stop()
 
     def test_basic_properties(self):
-        self.assertIsInstance(Model, Dee.SharedModel)
+        self.assertIsInstance(Model, Dee.SequenceModel)
         self.assertEqual(Model.get_n_columns(), 37)
         self.assertEqual(Model.get_schema(),
                          ['aas', 's', 's', 's', 's', 'b', 's', 's', 's',

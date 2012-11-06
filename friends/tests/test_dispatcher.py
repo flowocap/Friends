@@ -20,13 +20,10 @@ __all__ = [
     ]
 
 
-import json
-import dbus
 import dbus.service
 import unittest
 
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import GObject
 
 from friends.service.dispatcher import Dispatcher
 from friends.testing.mocks import LogMock, mock

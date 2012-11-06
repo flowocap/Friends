@@ -37,16 +37,13 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
-@mock.patch.dict('friends.utils.base.__dict__', {'_SYNCHRONIZE': True})
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestFourSquare(unittest.TestCase):
     """Test the FourSquare API."""
 
     def setUp(self):
         self.account = FakeAccount()
         self.protocol = FourSquare(self.account)
-        # Enable sub-thread synchronization, and mock out the loggers.
-        Base._SYNCHRONIZE = True
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.foursquare')
 
@@ -54,7 +51,6 @@ class TestFourSquare(unittest.TestCase):
         # Ensure that any log entries we haven't tested just get consumed so
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
-        Base._SYNCHRONIZE = False
         # Reset the database.
         TestModel.clear()
 
@@ -64,7 +60,7 @@ class TestFourSquare(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=None)
-    @mock.patch('friends.utils.download.get_json',
+    @mock.patch('friends.utils.http.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
         self.assertFalse(self.protocol._login())
@@ -73,7 +69,7 @@ class TestFourSquare(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='tokeny goodness'))
-    @mock.patch('friends.protocols.foursquare.get_json',
+    @mock.patch('friends.protocols.foursquare.Downloader.get_json',
                 return_value=dict(
                     response=dict(
                         user=dict(firstName='Bob',
@@ -85,10 +81,12 @@ class TestFourSquare(unittest.TestCase):
         self.assertEqual(self.account.user_id, '1234567')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'foursquare-full.dat'))
     @mock.patch('friends.protocols.foursquare.FourSquare._login',
                 return_value=True)
+    @mock.patch('friends.protocols.foursquare.Avatar.get_image',
+                return_value='~/.cache/friends/avatar/hash')
     def test_receive(self, *mocks):
         self.account.access_token = 'tokeny goodness'
         self.assertEqual(0, TestModel.get_n_rows())
@@ -98,9 +96,9 @@ class TestFourSquare(unittest.TestCase):
             [['foursquare', 'faker/than fake', '50574c9ce4b0a9a6e84433a0']],
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.", '',
-            'https://irs0.4sqi.net/img/user/100x100/5IEW3VIX55BBEXAO.jpg',
+            '~/.cache/friends/avatar/hash',
             'https://api.foursquare.com/v2/checkins/50574c9ce4b0a9a6e84433a0' +
-            '?oauth_token=tokeny goodness&v=20120917', '', '', '', '', 0.0,
+            '?oauth_token=tokeny goodness&v=20121104', '', '', '', '', 0.0,
             False, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
             '', '', '', '', '', '',
             ]

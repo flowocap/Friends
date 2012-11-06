@@ -31,6 +31,7 @@ from friends.utils.logging import initialize
 initialize(debug=True, console=True)
 
 from friends.utils.account import AccountManager
+from friends.utils.base import initialize_caches
 from friends.utils.model import Model
 
 
@@ -47,6 +48,8 @@ def row_added(model, itr):
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         sys.exit(__doc__)
+
+    initialize_caches()
 
     protocol = sys.argv[1]
     args = sys.argv[2:]

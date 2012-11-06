@@ -38,7 +38,7 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestTwitter(unittest.TestCase):
     """Test the Twitter API."""
 
@@ -56,9 +56,9 @@ class TestTwitter(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=None)
-    @mock.patch('friends.utils.download.get_json',
+    @mock.patch('friends.protocols.twitter.Downloader.get_json',
                 return_value=None)
-    def test_unsuccessful_authentication(self, *mocks):
+    def test_unsuccessful_authentication(self, dload, login):
         self.assertFalse(self.protocol._login())
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
@@ -75,12 +75,12 @@ class TestTwitter(unittest.TestCase):
         self.assertEqual(self.account.access_token, 'some clever fake data')
         self.assertEqual(self.account.secret_token, 'sssssshhh!')
 
-    @mock.patch('friends.protocols.twitter.get_json', lambda *x, **y: y)
+    @mock.patch('friends.protocols.twitter.Downloader')
     @mock.patch('oauthlib.oauth1.rfc5849.generate_nonce',
                 lambda: 'once upon a nonce')
     @mock.patch('oauthlib.oauth1.rfc5849.generate_timestamp',
                 lambda: '1348690628')
-    def test_signatures(self, *mocks):
+    def test_signatures(self, dload):
         self.account.secret_token = 'alpha'
         self.account.access_token = 'omega'
         self.account.auth.id = 6
@@ -97,12 +97,19 @@ oauth_consumer_key="consume", \
 oauth_token="omega", \
 oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
+        self.protocol._rate_limiter = 'limits'
+        self.protocol._get_url('http://example.com')
         self.assertEqual(
-            self.protocol._get_url('http://example.com')['headers'],
-            dict(Authorization=result))
+            dload.mock_calls,
+            [mock.call('http://example.com',
+                       headers=dict(Authorization=result),
+                       rate_limiter='limits',
+                       params=None,
+                       method='GET'),
+             mock.call().get_json()])
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-home.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
@@ -149,7 +156,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                 self.assertEqual(got, want)
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-send.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
@@ -236,6 +243,38 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         self.protocol.private()
 
         publish.assert_called_with('tweet', stream='private')
+        self.assertEqual(
+            get_url.mock_calls,
+            [mock.call('https://api.twitter.com/1.1/direct_messages.json'),
+             mock.call('https://api.twitter.com/1.1/direct_messages/sent.json')
+             ])
+
+    @mock.patch('friends.protocols.twitter.Avatar.get_image',
+                return_value='~/.cache/friends/avatars/hash')
+    def test_private_avatars(self, image_mock):
+        get_url = self.protocol._get_url = mock.Mock(
+            return_value=[
+                dict(
+                    created_at='Sun Nov 04 17:14:52 2012',
+                    text='Does my avatar show up?',
+                    id_str='1452456',
+                    sender=dict(
+                        screen_name='some_guy',
+                        name='Bob',
+                        profile_image_url_https='https://example.com/bob.jpg',
+                        ),
+                    )])
+        publish = self.protocol._publish = mock.Mock()
+
+        self.protocol.private()
+
+        publish.assert_called_with(
+            liked=False, sender='Bob', stream='private',
+            url='https://twitter.com/some_guy/status/1452456',
+            icon_uri='~/.cache/friends/avatars/hash',
+            sender_nick='some_guy', sender_id='', from_me=False,
+            timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
+            message_id='1452456')
         self.assertEqual(
             get_url.mock_calls,
             [mock.call('https://api.twitter.com/1.1/direct_messages.json'),
@@ -498,7 +537,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
     @mock.patch(
-        'friends.utils.download.Soup.Message',
+        'friends.utils.http.Soup.Message',
         FakeSoupMessage(
             'friends.tests.data', 'twitter-home.dat',
             headers={

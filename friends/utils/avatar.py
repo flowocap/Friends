@@ -28,7 +28,7 @@ from datetime import date, timedelta
 from gi.repository import Gio, GLib, GdkPixbuf
 from hashlib import sha1
 
-from friends.utils.download import Downloader
+from friends.utils.http import Downloader
 
 
 CACHE_DIR = os.path.realpath(os.path.join(
