@@ -136,13 +136,19 @@ def persist_model():
 # we'll need to make a new, empty Model.
 if first_run or stale_schema:
     log.debug('Starting a new, empty Dee.SharedModel.')
-    Model = Dee.SharedModel.new(MODEL_DBUS_NAME)
+    Model = Dee.SequenceModel()
     Model.set_schema_full(COLUMN_TYPES)
 
     # Calling this from here ensures that schema changes are persisted
     # ASAP, but we also call it periodically in the dispatcher in
     # order to ensure data is saved often in case of power loss.
     persist_model()
+
+
+_shared_model = Dee.SharedModel(
+    access_mode=Dee.SharedModelAccessMode.LEADER_WRITABLE,
+    peer=Dee.Peer(swarm_name=MODEL_DBUS_NAME, swarm_owner=True),
+    back_end=Model)
 
 
 def prune_model(maximum):
