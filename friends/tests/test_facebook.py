@@ -23,6 +23,7 @@ __all__ = [
 import unittest
 
 from gi.repository import Dee
+from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
@@ -54,6 +55,11 @@ class TestFacebook(unittest.TestCase):
         Base._SYNCHRONIZE = False
         # Reset the database.
         TestModel.clear()
+
+    def test_features(self):
+        # The set of public features.
+        self.assertEqual(Facebook.get_features(),
+            ['contacts', 'delete', 'like', 'receive', 'search', 'send', 'send_thread', 'unlike', 'upload'])
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
@@ -304,6 +310,42 @@ Facebook.receive has completed, thread exiting.
              mock.call('https://graph.facebook.com/comment_id',
                        params=dict(access_token='face'))
              ])
+
+    @mock.patch('friends.protocols.facebook.Uploader.get_json',
+                return_value=dict(id='post_id'))
+    @mock.patch('friends.protocols.facebook.get_json',
+                return_value=dict(id='post_id'))
+    def test_upload(self, Uploader, get_json):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish_entry = mock.Mock()
+        upload = self.protocol.upload = mock.Mock()
+
+        # Local file
+        src = 'file://' + resource_filename('friends.tests.data', 'ubuntu.png')
+        self.protocol.upload(src, 'This is Ubuntu!')
+        token.assert_called_once_with()
+
+        upload.assert_called_with({'id': 'post_id'})
+        self.assertEqual(
+            Uploader.mock_calls,
+            [mock.call('https://graph.facebook.com/me/photos',
+                       method='POST',
+                       params=dict(
+                           access_token='face',
+                           source=src,
+                           message='This is Ubuntu!')),
+             mock.call('https://graph.facebook.com/post_id',
+                       params=dict(access_token='face'))
+            ])
+
+        # Missing file
+        src = 'file:///tmp/a/non-existant/path'
+        self.protocol.upload(src, 'There is no spoon')
+
+        # Not a URI
+        src = resource_filename('friends.tests.data', 'ubuntu.png')
+        self.protocol.upload(src, 'There is no spoon')
 
     def test_search(self):
         self.protocol._get_access_token = lambda: '12345'
