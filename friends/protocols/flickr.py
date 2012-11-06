@@ -37,7 +37,6 @@ API_KEY = '36f660117e6555a9cbda4309cfaf72d0'
 
 # http://www.flickr.com/services/api/request.rest.html
 REST_SERVER = 'http://api.flickr.com/services/rest'
-UPLOAD_SERVER = 'http://api.flickr.com/services/upload'
 
 # http://www.flickr.com/services/api/misc.buddyicons.html
 FARM = 'http://farm{farm}.static.flickr.com/{server}/'
@@ -53,18 +52,6 @@ class Flickr(Base):
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('user_nsid')
         self._account.user_name = authdata.get('username')
-
-    @feature
-    def upload(self, picture_uri, description=''):
-        """Upload local or remote image or video to album"""
-        # This triggers logging in, if necessary.
-        self._get_access_token()
-        # http://www.flickr.com/services/api/upload.api.html
-        # http://www.flickr.com/services/api/upload.example.html
-        url = 'http://api.flickr.com/services/upload/'
-        Uploader(url, picture_uri, description, picture_key='photo', description_key='description',
-            extra_keys=dict(api_key=API_KEY)).send()
-        # FIXME 99: Insufficient permissions. Method requires write privileges; none granted.
 
 # http://www.flickr.com/services/api/flickr.photos.getContactsPublicPhotos.html
     @feature

@@ -56,7 +56,7 @@ class TestFlickr(unittest.TestCase):
 
     def test_features(self):
         # The set of public features.
-        self.assertEqual(Flickr.get_features(), ['receive', 'upload'])
+        self.assertEqual(Flickr.get_features(), ['receive'])
 
     def test_failed_login(self):
         # Force the Flickr login to fail.
