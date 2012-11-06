@@ -34,7 +34,7 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 from wsgiref.util import setup_testing_defaults
 
 from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.utils.http import Downloader, get_json
+from friends.utils.http import Downloader
 
 
 class _SilentHandler(WSGIRequestHandler):
@@ -148,7 +148,7 @@ class TestDownloader(unittest.TestCase):
 
     def test_simple_json_download(self):
         # Test simple downloading of JSON data.
-        self.assertEqual(get_json('http://localhost:9180/json'),
+        self.assertEqual(Downloader('http://localhost:9180/json').get_json(),
                          dict(answer='hello'))
 
     @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -157,7 +157,7 @@ class TestDownloader(unittest.TestCase):
                                 'json-utf-8.dat', 'utf-8'))
     def test_json_explicit_utf_8(self):
         # RFC 4627 $3 with explicit charset=utf-8.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
     @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -165,7 +165,7 @@ class TestDownloader(unittest.TestCase):
                 FakeSoupMessage('friends.tests.data', 'json-utf-8.dat', None))
     def test_json_implicit_utf_8(self):
         # RFC 4627 $3 with implicit charset=utf-8.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
     @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -174,7 +174,7 @@ class TestDownloader(unittest.TestCase):
                                 'json-utf-16le.dat', None))
     def test_json_implicit_utf_16le(self):
         # RFC 4627 $3 with implicit charset=utf-16le.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
     @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -183,7 +183,7 @@ class TestDownloader(unittest.TestCase):
                                 'json-utf-16be.dat', None))
     def test_json_implicit_utf_16be(self):
         # RFC 4627 $3 with implicit charset=utf-16be.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
     @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -192,7 +192,7 @@ class TestDownloader(unittest.TestCase):
                                 'json-utf-32le.dat', None))
     def test_json_implicit_utf_32le(self):
         # RFC 4627 $3 with implicit charset=utf-32le.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
     @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -201,7 +201,7 @@ class TestDownloader(unittest.TestCase):
                                 'json-utf-32be.dat', None))
     def test_json_implicit_utf_32be(self):
         # RFC 4627 $3 with implicit charset=utf-32be.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
     def test_simple_text_download(self):
@@ -217,17 +217,19 @@ class TestDownloader(unittest.TestCase):
 
     def test_params_post(self):
         # Test posting data.
-        self.assertEqual(get_json('http://localhost:9180/post',
-                                  params=dict(one=1, two=2, three=3),
-                                  method='POST'),
-                        dict(one=1, two=2, three=3))
+        self.assertEqual(
+            Downloader('http://localhost:9180/post',
+                       params=dict(one=1, two=2, three=3),
+                       method='POST').get_json(),
+            dict(one=1, two=2, three=3))
 
     def test_params_get(self):
         # Test getting with query string URL.
-        self.assertEqual(get_json('http://localhost:9180/post',
-                                  params=dict(one=1, two=2, three=3),
-                                  method='GET'),
-                        dict(one=1, two=2, three=3))
+        self.assertEqual(
+            Downloader('http://localhost:9180/post',
+                       params=dict(one=1, two=2, three=3),
+                       method='GET').get_json(),
+            dict(one=1, two=2, three=3))
 
     def test_unauthorized(self):
         # Test a URL that requires authorization.
@@ -237,7 +239,8 @@ class TestDownloader(unittest.TestCase):
 
     def test_headers(self):
         # Provide some additional headers.
-        self.assertEqual(get_json('http://localhost:9180/headers',
-                                  headers={'X-Foo': 'baz',
-                                           'X-Bar': 'foo'}),
-                         dict(foo='baz', bar='foo'))
+        self.assertEqual(
+            Downloader('http://localhost:9180/headers',
+                       headers={'X-Foo': 'baz',
+                                'X-Bar': 'foo'}).get_json(),
+            dict(foo='baz', bar='foo'))

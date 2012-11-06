@@ -24,7 +24,7 @@ import logging
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.http import get_json
+from friends.utils.http import Downloader
 from friends.utils.time import iso8601utc
 
 
@@ -58,8 +58,8 @@ def _full_name(user):
 class FourSquare(Base):
     def _whoami(self, authdata):
         """Identify the authenticating user."""
-        data = get_json(
-            SELF_URL.format(access_token=self._account.access_token))
+        data = Downloader(
+            SELF_URL.format(access_token=self._account.access_token)).get_json()
         user = data.get('response', {}).get('user', {})
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_name = _full_name(user)
@@ -70,7 +70,7 @@ class FourSquare(Base):
         """Gets a list of each friend's most recent check-ins."""
         token = self._get_access_token()
 
-        result = get_json(RECENT_URL.format(access_token=token))
+        result = Downloader(RECENT_URL.format(access_token=token)).get_json()
 
         response_code = result.get('meta', {}).get('code')
         if response_code != 200:

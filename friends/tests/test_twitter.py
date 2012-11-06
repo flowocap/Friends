@@ -56,9 +56,9 @@ class TestTwitter(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=None)
-    @mock.patch('friends.utils.http.get_json',
+    @mock.patch('friends.protocols.twitter.Downloader.get_json',
                 return_value=None)
-    def test_unsuccessful_authentication(self, *mocks):
+    def test_unsuccessful_authentication(self, dload, login):
         self.assertFalse(self.protocol._login())
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
@@ -75,12 +75,12 @@ class TestTwitter(unittest.TestCase):
         self.assertEqual(self.account.access_token, 'some clever fake data')
         self.assertEqual(self.account.secret_token, 'sssssshhh!')
 
-    @mock.patch('friends.protocols.twitter.get_json', lambda *x, **y: y)
+    @mock.patch('friends.protocols.twitter.Downloader')
     @mock.patch('oauthlib.oauth1.rfc5849.generate_nonce',
                 lambda: 'once upon a nonce')
     @mock.patch('oauthlib.oauth1.rfc5849.generate_timestamp',
                 lambda: '1348690628')
-    def test_signatures(self, *mocks):
+    def test_signatures(self, dload):
         self.account.secret_token = 'alpha'
         self.account.access_token = 'omega'
         self.account.auth.id = 6
@@ -97,9 +97,16 @@ oauth_consumer_key="consume", \
 oauth_token="omega", \
 oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
+        self.protocol._rate_limiter = 'limits'
+        self.protocol._get_url('http://example.com')
         self.assertEqual(
-            self.protocol._get_url('http://example.com')['headers'],
-            dict(Authorization=result))
+            dload.mock_calls,
+            [mock.call('http://example.com',
+                       headers=dict(Authorization=result),
+                       rate_limiter='limits',
+                       params=None,
+                       method='GET'),
+             mock.call().get_json()])
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',

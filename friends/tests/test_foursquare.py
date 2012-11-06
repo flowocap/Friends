@@ -64,7 +64,7 @@ class TestFourSquare(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=None)
-    @mock.patch('friends.utils.http.get_json',
+    @mock.patch('friends.utils.http.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
         self.assertFalse(self.protocol._login())
@@ -73,7 +73,7 @@ class TestFourSquare(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='tokeny goodness'))
-    @mock.patch('friends.protocols.foursquare.get_json',
+    @mock.patch('friends.protocols.foursquare.Downloader.get_json',
                 return_value=dict(
                     response=dict(
                         user=dict(firstName='Bob',

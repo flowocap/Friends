@@ -195,11 +195,10 @@ Flickr.receive has completed, thread exiting.
 
     def test_get(self):
         # Make sure that the REST GET url looks right.
-        with mock.patch.object(self.protocol, '_get_access_token',
-                               return_value='token'):
-            with mock.patch('friends.protocols.flickr.get_json',
-                            return_value={}) as cm:
-                self.protocol('receive')
+        token = self.protocol._get_access_token = mock.Mock()
+        with mock.patch('friends.protocols.flickr.Downloader') as cm:
+            cm.get_json.return_value = {}
+            self.protocol('receive')
         # Unpack the arguments that the mock was called with and test that the
         # arguments, especially to the GET are what we expected.
         all_call_args = cm.call_args_list

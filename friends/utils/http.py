@@ -19,7 +19,6 @@ __all__ = [
     'Downloader',
     'Uploader',
     'BaseRateLimiter',
-    'get_json',
     ]
 
 
@@ -176,11 +175,6 @@ class Downloader(HTTP):
         # Possibly do some rate limiting.
         self._rate_limiter.wait(message)
         return message
-
-
-def get_json(*args, **kws):
-    """Convenience method for most common use case."""
-    return Downloader(*args, **kws).get_json()
 
 
 class Uploader(HTTP):

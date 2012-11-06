@@ -29,7 +29,7 @@ from gi.repository import EBook
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.http import get_json, Uploader
+from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
 
 
@@ -48,8 +48,8 @@ log = logging.getLogger(__name__)
 class Facebook(Base):
     def _whoami(self, authdata):
         """Identify the authenticating user."""
-        me_data = get_json(
-            ME_URL, dict(access_token=self._account.access_token))
+        me_data = Downloader(
+            ME_URL, dict(access_token=self._account.access_token)).get_json()
         self._account.user_id = me_data.get('id')
         self._account.user_name = me_data.get('name')
 
@@ -116,7 +116,7 @@ class Facebook(Base):
         entries = []
 
         while True:
-            response = get_json(url, params)
+            response = Downloader(url, params).get_json()
             if self._is_error(response):
                 break
 
@@ -191,7 +191,8 @@ class Facebook(Base):
         url = API_BASE.format(id=obj_id) + '/likes'
         token = self._get_access_token()
 
-        if not get_json(url, method=method, params=dict(access_token=token)):
+        if not Downloader(url, method=method,
+                          params=dict(access_token=token)).get_json():
             log.error('Failed to {} like {} on Facebook'.format(
                 method, obj_id))
 
@@ -215,17 +216,17 @@ class Facebook(Base):
         url = API_BASE.format(id=obj_id) + endpoint
         token = self._get_access_token()
 
-        result = get_json(
+        result = Downloader(
             url,
             method='POST',
-            params=dict(access_token=token, message=message))
+            params=dict(access_token=token, message=message)).get_json()
         new_id = result.get('id')
         if new_id is None:
             log.error('Failed sending to Facebook: {!r}'.format(result))
             return
 
         url = API_BASE.format(id=new_id)
-        entry = get_json(url, params=dict(access_token=token))
+        entry = Downloader(url, params=dict(access_token=token)).get_json()
         self._publish_entry(entry)
 
     @feature
@@ -253,7 +254,8 @@ class Facebook(Base):
         url = API_BASE.format(id=obj_id)
         token = self._get_access_token()
 
-        if not get_json(url, method='DELETE', params=dict(access_token=token)):
+        if not Downloader(url, method='DELETE',
+                          params=dict(access_token=token)).get_json():
             log.error('Failed to delete {} on Facebook'.format(obj_id))
         else:
             self._unpublish(obj_id)
@@ -301,7 +303,7 @@ class Facebook(Base):
         access_token = self._get_access_token()
         url = API_BASE.format(id=contact_id)
         params = dict(access_token=access_token)
-        return get_json(url, params)
+        return Downloader(url, params).get_json()
 
     def _create_contact(self, contact_json):
         """Build a VCard based on a dict representation of a contact."""

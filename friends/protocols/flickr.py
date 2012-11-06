@@ -24,7 +24,7 @@ import logging
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.http import get_json, Uploader
+from friends.utils.http import Downloader, Uploader
 from friends.utils.time import iso8601utc, parsetime
 
 
@@ -82,7 +82,7 @@ class Flickr(Base):
             extras          = 'date_upload,owner_name,icon_server',
             )
 
-        response = get_json(REST_SERVER, GET_arguments)
+        response = Downloader(REST_SERVER, GET_arguments).get_json()
         for data in response.get('photos', {}).get('photo', []):
             # Pre-calculate some values to publish.
             username = data.get('username', '')
