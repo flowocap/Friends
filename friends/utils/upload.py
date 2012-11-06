@@ -48,13 +48,13 @@ class Uploader:
 
     def send(self):
         try:
-            file = Gio.File.new_for_uri(self.filename)
-            jpeg = file.load_contents (None)[1]
+            gfile = Gio.File.new_for_uri(self.filename)
+            data = gfile.load_contents(None)[1]
         except GLib.GError:
-            jpeg = ''
             msg = sys.exc_info()[1]
             log.error('Failed to read image {}: {}'.format(self.filename, msg))
-        body = Soup.Buffer.new([byte for byte in jpeg])
+            return None
+        body = Soup.Buffer.new([byte for byte in data])
 
         multipart = Soup.Multipart.new('multipart/form-data')
         multipart.append_form_string(self.description_key, self.description)
@@ -76,6 +76,8 @@ class Uploader:
         # TODO this is very similar to Downloader.get_json, need to
         # generalize these.
         message = self.send()
+        if message is None:
+            return None
         payload = message.response_body.flatten().get_data()
         charset = _get_charset(message)
         # RFC 4627 $3.  JSON text SHALL be encoded in Unicode.  The default

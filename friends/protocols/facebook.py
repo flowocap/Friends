@@ -265,7 +265,12 @@ class Facebook(Base):
         """Upload local or remote image or video to album"""
         url = '{}/photos?access_token={}'.format(
             ME_URL, self._get_access_token())
-        response = Uploader(url, picture_uri, description, picture_key='source', description_key='message').get_json()
+        response = Uploader(
+            url, picture_uri, description,
+            picture_key='source', description_key='message').get_json()
+        if response is None:
+            log.error('No response from upload server.')
+            return
         post_id = response.get('post_id')
         if post_id is not None:
             self._publish(
@@ -276,12 +281,11 @@ class Facebook(Base):
                 sender=self._account.user_name,
                 sender_id=self._account.user_id,
                 sender_nick=self._account.user_name,
-                timestamp=iso8601utc(time.time()),
+                timestamp=iso8601utc(int(time.time())),
                 url=PERMALINK.format(id=post_id),
                 icon_uri=Avatar.get_image(
-                    API_BASE.format(
-                        id=self._account.user_id + '/picture?type=large')),
-                )
+                    API_BASE.format(id=self._account.user_id) +
+                    '/picture?type=large'))
 
     def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""

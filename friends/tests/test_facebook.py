@@ -312,40 +312,59 @@ Facebook.receive has completed, thread exiting.
              ])
 
     @mock.patch('friends.protocols.facebook.Uploader.get_json',
-                return_value=dict(id='post_id'))
-    @mock.patch('friends.protocols.facebook.get_json',
-                return_value=dict(id='post_id'))
-    def test_upload(self, Uploader, get_json):
+                return_value=dict(post_id='234125'))
+    @mock.patch('friends.protocols.facebook.time.time',
+                return_value=1352209748.1254)
+    def test_upload_local(self, *mocks):
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
-        publish = self.protocol._publish_entry = mock.Mock()
-        upload = self.protocol.upload = mock.Mock()
+        publish = self.protocol._publish = mock.Mock()
 
-        # Local file
         src = 'file://' + resource_filename('friends.tests.data', 'ubuntu.png')
         self.protocol.upload(src, 'This is Ubuntu!')
         token.assert_called_once_with()
 
-        upload.assert_called_with({'id': 'post_id'})
-        self.assertEqual(
-            Uploader.mock_calls,
-            [mock.call('https://graph.facebook.com/me/photos',
-                       method='POST',
-                       params=dict(
-                           access_token='face',
-                           source=src,
-                           message='This is Ubuntu!')),
-             mock.call('https://graph.facebook.com/post_id',
-                       params=dict(access_token='face'))
-            ])
+        publish.assert_called_once_with(
+            sender_nick=None,
+            stream='images',
+            url='https://www.facebook.com/234125',
+            timestamp='2012-11-06T13:49:08Z',
+            sender_id=None,
+            from_me=True,
+            icon_uri='',
+            message='This is Ubuntu!',
+            message_id='234125',
+            sender=None)
 
-        # Missing file
+    @mock.patch('friends.protocols.facebook.Uploader.send',
+                return_value=None)
+    @mock.patch('friends.protocols.facebook.time.time',
+                return_value=1352209748.1254)
+    def test_upload_missing(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+
         src = 'file:///tmp/a/non-existant/path'
         self.protocol.upload(src, 'There is no spoon')
+        token.assert_called_once_with()
 
-        # Not a URI
+        self.assertFalse(publish.called)
+
+    @mock.patch('friends.protocols.facebook.Uploader.send',
+                return_value=None)
+    @mock.patch('friends.protocols.facebook.time.time',
+                return_value=1352209748.1254)
+    def test_upload_not_uri(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+
         src = resource_filename('friends.tests.data', 'ubuntu.png')
         self.protocol.upload(src, 'There is no spoon')
+        token.assert_called_once_with()
+
+        self.assertFalse(publish.called)
 
     def test_search(self):
         self.protocol._get_access_token = lambda: '12345'
