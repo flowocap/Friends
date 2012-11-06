@@ -27,7 +27,7 @@ __all__ = [
 from xml.etree.ElementTree import fromstring
 
 from friends.shorteners.base import ProtocolBase
-from friends.utils.download import Downloader
+from friends.utils.http import Downloader
 
 
 class _PROTOCOL_INFO(ProtocolBase):

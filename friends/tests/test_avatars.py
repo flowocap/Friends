@@ -34,7 +34,7 @@ from friends.testing.mocks import FakeSoupMessage, mock
 from friends.utils.avatar import Avatar
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestAvatars(unittest.TestCase):
     """Test Avatar logic."""
 
@@ -65,7 +65,7 @@ class TestAvatars(unittest.TestCase):
              # hashlib.sha1('fake_url'.encode('utf-8')).hexdigest()
              '4f37e5dc9d38391db1728048344c3ab5ff8cecb2'])
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'ubuntu.png'))
     def test_cache_filled_on_miss(self):
         # When the cache is empty, downloading an avatar from a given url
@@ -77,7 +77,7 @@ class TestAvatars(unittest.TestCase):
             self.assertFalse(os.path.isdir(cache_dir))
             Avatar.get_image('http://example.com')
             # Soup.Message() was called once.  Get the mock and check it.
-            from friends.utils.download import Soup
+            from friends.utils.http import Soup
             self.assertEqual(Soup.Message.call_count, 1)
             # Now the file is there.
             self.assertEqual(os.listdir(cache_dir),
@@ -85,7 +85,7 @@ class TestAvatars(unittest.TestCase):
                             # .encode('utf-8')).hexdigest()
                             ['89dce6a446a69d6b9bdc01ac75251e4c322bcdff'])
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'ubuntu.png'))
     def test_cache_used_on_hit(self):
         # When the cache already contains the file, it is not downloaded.
@@ -99,7 +99,7 @@ class TestAvatars(unittest.TestCase):
             # Get the image, resulting in a cache hit.
             path = Avatar.get_image('http://example.com')
             # No download occurred.  Check the mock.
-            from friends.utils.download import Soup
+            from friends.utils.http import Soup
             self.assertEqual(Soup.Message.call_count, 0)
         # Confirm that the resulting cache image is actually a PNG.
         with open(path, 'rb') as raw:
@@ -107,7 +107,7 @@ class TestAvatars(unittest.TestCase):
             # bytes of the file.
             self.assertEqual(raw.read(8), bytes.fromhex('89504E470D0A1A0A'))
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'ubuntu.png'))
     def test_cache_file_contains_image(self):
         # The image is preserved in the cache file.

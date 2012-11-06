@@ -22,7 +22,8 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
+from gi.repository import Dee, GLib
+from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
 from friends.testing.helpers import FakeAccount
@@ -38,7 +39,7 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
@@ -50,9 +51,14 @@ class TestFacebook(unittest.TestCase):
     def tearDown(self):
         TestModel.clear()
 
+    def test_features(self):
+        # The set of public features.
+        self.assertEqual(Facebook.get_features(),
+            ['contacts', 'delete', 'like', 'receive', 'search', 'send', 'send_thread', 'unlike', 'upload'])
+
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-login.dat'))
     def test_successful_login(self, mock):
         # Test that a successful response from graph.facebook.com returning
@@ -81,7 +87,7 @@ class TestFacebook(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
-    @mock.patch('friends.protocols.facebook.get_json',
+    @mock.patch('friends.protocols.facebook.Downloader.get_json',
                 return_value=dict(
                     error=dict(message='Bad access token',
                                type='OAuthException',
@@ -99,7 +105,7 @@ Facebook error (190 OAuthException): Bad access token
 Facebook.receive has completed, thread exiting.
 """)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-full.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.protocols.facebook.Facebook._login',
@@ -231,9 +237,9 @@ Facebook.receive has completed, thread exiting.
     # cases where some data is missing, or can't be converted
     # (e.g. timestamps), and paginations.
 
-    @mock.patch('friends.protocols.facebook.get_json',
-                return_value=dict(id='post_id'))
-    def test_send_to_my_wall(self, get_json):
+    @mock.patch('friends.protocols.facebook.Downloader')
+    def test_send_to_my_wall(self, dload):
+        dload().get_json.return_value = dict(id='post_id')
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
         publish = self.protocol._publish_entry = mock.Mock()
@@ -243,19 +249,22 @@ Facebook.receive has completed, thread exiting.
         token.assert_called_once_with()
         publish.assert_called_with({'id': 'post_id'})
         self.assertEqual(
-            get_json.mock_calls,
-            [mock.call('https://graph.facebook.com/me/feed',
+            dload.mock_calls,
+            [mock.call(),
+             mock.call('https://graph.facebook.com/me/feed',
                        method='POST',
                        params=dict(
                            access_token='face',
                            message='I can see the writing on my wall.')),
+             mock.call().get_json(),
              mock.call('https://graph.facebook.com/post_id',
-                       params=dict(access_token='face'))
+                       params=dict(access_token='face')),
+             mock.call().get_json()
             ])
 
-    @mock.patch('friends.protocols.facebook.get_json',
-                return_value=dict(id='post_id'))
-    def test_send_to_my_friends_wall(self, get_json):
+    @mock.patch('friends.protocols.facebook.Downloader')
+    def test_send_to_my_friends_wall(self, dload):
+        dload().get_json.return_value = dict(id='post_id')
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
         publish = self.protocol._publish_entry = mock.Mock()
@@ -266,20 +275,23 @@ Facebook.receive has completed, thread exiting.
         token.assert_called_once_with()
         publish.assert_called_with({'id': 'post_id'})
         self.assertEqual(
-            get_json.mock_calls,
-            [mock.call(
+            dload.mock_calls,
+            [mock.call(),
+             mock.call(
                     'https://graph.facebook.com/friend_id/feed',
                     method='POST',
                     params=dict(
                        access_token='face',
                        message='I can see the writing on my friend\'s wall.')),
+             mock.call().get_json(),
              mock.call('https://graph.facebook.com/post_id',
-                       params=dict(access_token='face'))
+                       params=dict(access_token='face')),
+             mock.call().get_json(),
              ])
 
-    @mock.patch('friends.protocols.facebook.get_json',
-                return_value=dict(id='comment_id'))
-    def test_send_thread(self, get_json):
+    @mock.patch('friends.protocols.facebook.Downloader')
+    def test_send_thread(self, dload):
+        dload().get_json.return_value = dict(id='comment_id')
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
         publish = self.protocol._publish_entry = mock.Mock()
@@ -289,16 +301,74 @@ Facebook.receive has completed, thread exiting.
         token.assert_called_once_with()
         publish.assert_called_with({'id': 'comment_id'})
         self.assertEqual(
-            get_json.mock_calls,
-            [mock.call(
+            dload.mock_calls,
+            [mock.call(),
+             mock.call(
                     'https://graph.facebook.com/post_id/comments',
                     method='POST',
                     params=dict(
                         access_token='face',
                         message='Some witty response!')),
+             mock.call().get_json(),
              mock.call('https://graph.facebook.com/comment_id',
-                       params=dict(access_token='face'))
+                       params=dict(access_token='face')),
+             mock.call().get_json(),
              ])
+
+    @mock.patch('friends.protocols.facebook.Uploader.get_json',
+                return_value=dict(post_id='234125'))
+    @mock.patch('friends.protocols.facebook.time.time',
+                return_value=1352209748.1254)
+    def test_upload_local(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+
+        src = 'file://' + resource_filename('friends.tests.data', 'ubuntu.png')
+        self.protocol.upload(src, 'This is Ubuntu!')
+        token.assert_called_once_with()
+
+        publish.assert_called_once_with(
+            sender_nick=None,
+            stream='images',
+            url='https://www.facebook.com/234125',
+            timestamp='2012-11-06T13:49:08Z',
+            sender_id=None,
+            from_me=True,
+            icon_uri='',
+            message='This is Ubuntu!',
+            message_id='234125',
+            sender=None)
+
+    @mock.patch('friends.utils.http._soup')
+    @mock.patch('friends.protocols.facebook.Uploader._build_request',
+                return_value=None)
+    @mock.patch('friends.protocols.facebook.time.time',
+                return_value=1352209748.1254)
+    def test_upload_missing(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+
+        src = 'file:///tmp/a/non-existant/path'
+        self.assertRaises(
+            ValueError, self.protocol.upload, src, 'There is no spoon')
+        token.assert_called_once_with()
+
+        self.assertFalse(publish.called)
+
+    @mock.patch('friends.utils.http._soup')
+    def test_upload_not_uri(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+
+        src = resource_filename('friends.tests.data', 'ubuntu.png')
+        self.assertRaises(
+            GLib.GError, self.protocol.upload, src, 'There is no spoon')
+        token.assert_called_once_with()
+
+        self.assertFalse(publish.called)
 
     def test_search(self):
         self.protocol._get_access_token = lambda: '12345'
@@ -313,37 +383,37 @@ Facebook.receive has completed, thread exiting.
             'https://graph.facebook.com/search',
             dict(q='hello', access_token='12345'))
 
-    @mock.patch('friends.protocols.facebook.get_json',
-                return_value=True)
-    def test_like(self, get_json):
+    @mock.patch('friends.protocols.facebook.Downloader')
+    def test_like(self, dload):
+        dload().get_json.return_value = True
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
 
         self.protocol.like('post_id')
 
         token.assert_called_once_with()
-        get_json.assert_called_once_with(
+        dload.assert_called_with(
             'https://graph.facebook.com/post_id/likes',
             method='POST',
             params=dict(access_token='face'))
 
-    @mock.patch('friends.protocols.facebook.get_json',
-                return_value=True)
-    def test_unlike(self, get_json):
+    @mock.patch('friends.protocols.facebook.Downloader')
+    def test_unlike(self, dload):
+        dload.get_json.return_value = True
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
 
         self.protocol.unlike('post_id')
 
         token.assert_called_once_with()
-        get_json.assert_called_once_with(
+        dload.assert_called_once_with(
             'https://graph.facebook.com/post_id/likes',
             method='DELETE',
             params=dict(access_token='face'))
 
-    @mock.patch('friends.protocols.facebook.get_json',
-                return_value=True)
-    def test_delete(self, get_json):
+    @mock.patch('friends.protocols.facebook.Downloader')
+    def test_delete(self, dload):
+        dload().get_json.return_value = True
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
         unpublish = self.protocol._unpublish = mock.Mock()
@@ -351,13 +421,13 @@ Facebook.receive has completed, thread exiting.
         self.protocol.delete('post_id')
 
         token.assert_called_once_with()
-        get_json.assert_called_once_with(
+        dload.assert_called_with(
             'https://graph.facebook.com/post_id',
             method='DELETE',
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-contacts.dat'))
     @mock.patch('friends.protocols.facebook.Facebook._login',
                 return_value=True)

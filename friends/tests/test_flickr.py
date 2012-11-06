@@ -38,7 +38,7 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
-@mock.patch('friends.utils.download._soup', mock.Mock())
+@mock.patch('friends.utils.http._soup', mock.Mock())
 class TestFlickr(unittest.TestCase):
     """Test the Flickr API."""
 
@@ -64,7 +64,7 @@ class TestFlickr(unittest.TestCase):
                                return_value=False):
             self.assertRaises(AuthorizationError, self.protocol.receive)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_already_logged_in(self):
@@ -79,7 +79,7 @@ class TestFlickr(unittest.TestCase):
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     def test_unsuccessful_login(self):
         # The user is not already logged in, but the act of logging in
@@ -93,7 +93,7 @@ class TestFlickr(unittest.TestCase):
                                side_effect=side_effect):
             self.assertRaises(AuthorizationError, self.protocol.receive)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_successful_login(self):
@@ -111,7 +111,7 @@ class TestFlickr(unittest.TestCase):
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.authentication.Authentication.login',
                 # No AccessToken, so for all intents-and-purposes; fail!
@@ -123,7 +123,7 @@ class TestFlickr(unittest.TestCase):
         # AccessToken, but this fails.
         self.assertRaises(AuthorizationError, self.protocol.receive)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.authentication.Authentication.login',
                 # login() callback never happens.
@@ -133,7 +133,7 @@ class TestFlickr(unittest.TestCase):
         # AccessToken, but this fails.
         self.assertRaises(AuthorizationError, self.protocol.receive)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(username='Bob Dobbs',
@@ -152,11 +152,10 @@ class TestFlickr(unittest.TestCase):
 
     def test_get(self):
         # Make sure that the REST GET url looks right.
-        with mock.patch.object(self.protocol, '_get_access_token',
-                               return_value='token'):
-            with mock.patch('friends.protocols.flickr.get_json',
-                            return_value={}) as cm:
-                self.protocol.receive()
+        token = self.protocol._get_access_token = mock.Mock()
+        with mock.patch('friends.protocols.flickr.Downloader') as cm:
+            cm.get_json.return_value = {}
+            self.protocol.receive()
         # Unpack the arguments that the mock was called with and test that the
         # arguments, especially to the GET are what we expected.
         all_call_args = cm.call_args_list
@@ -173,7 +172,7 @@ class TestFlickr(unittest.TestCase):
             method='flickr.photos.getContactsPublicPhotos',
             ))
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_no_photos(self):
@@ -184,7 +183,7 @@ class TestFlickr(unittest.TestCase):
             self.protocol.receive()
         self.assertEqual(TestModel.get_n_rows(), 0)
 
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-full.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_flickr_data(self):

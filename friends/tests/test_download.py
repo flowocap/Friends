@@ -32,9 +32,10 @@ from urllib.parse import parse_qs
 from urllib.request import urlopen
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 from wsgiref.util import setup_testing_defaults
+from pkg_resources import resource_filename
 
 from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.utils.download import Downloader, get_json
+from friends.utils.http import Downloader, Uploader
 
 
 class _SilentHandler(WSGIRequestHandler):
@@ -44,9 +45,6 @@ class _SilentHandler(WSGIRequestHandler):
 
 def _app(environ, start_response):
     """WSGI application for responding to test queries."""
-    ## import sys
-    ## from pprint import pprint
-    ## pprint(environ, stream=sys.stderr)
     setup_testing_defaults(environ)
     status = '200 OK'
     results = []
@@ -54,6 +52,9 @@ def _app(environ, start_response):
     path = environ['PATH_INFO']
     if path == '/ping':
         pass
+    elif path == '/mirror':
+        size = int(environ['CONTENT_LENGTH'])
+        results = [environ['wsgi.input'].read(size)]
     elif path == '/json':
         results = [json.dumps(dict(answer='hello')).encode('utf-8')]
     elif path == '/post':
@@ -76,27 +77,6 @@ def _app(environ, start_response):
             converted = {key: int(value[0])
                          for key, value in payload.items()}
         results = [json.dumps(converted).encode('utf-8')]
-    elif path == '/auth':
-        # Check the username and password.
-        source = '{}:{}'.format('bob', 'good').encode('utf-8')
-        # We have to strip off the trailing newline.
-        expected = encodebytes(source)[:-1]
-        value = environ.get('HTTP_AUTHORIZATION')
-        if value is not None:
-            # Strip off and validate the 'Basic' prefix, convert the value to
-            # bytes (assuming utf-8 encoding) and then compare.
-            basic, auth = value.split()
-            auth = auth.encode('utf-8')
-        else:
-            auth = None
-        if auth is None:
-            status = '401 Unauthorized'
-            results = [b'no authorization']
-        elif basic.lower() != 'basic' or auth != expected:
-            status = '401 Unauthorized'
-            results = [b'username/password mismatch']
-        else:
-            pass
     elif path == '/headers':
         http_headers = {}
         for key, value in environ.items():
@@ -118,7 +98,7 @@ class TestDownloader(unittest.TestCase):
     """Test the downloading utilities."""
 
     def setUp(self):
-        self.log_mock = LogMock('friends.utils.download')
+        self.log_mock = LogMock('friends.utils.http')
 
     def tearDown(self):
         self.log_mock.stop()
@@ -148,60 +128,60 @@ class TestDownloader(unittest.TestCase):
 
     def test_simple_json_download(self):
         # Test simple downloading of JSON data.
-        self.assertEqual(get_json('http://localhost:9180/json'),
+        self.assertEqual(Downloader('http://localhost:9180/json').get_json(),
                          dict(answer='hello'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-8.dat', 'utf-8'))
     def test_json_explicit_utf_8(self):
         # RFC 4627 $3 with explicit charset=utf-8.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'json-utf-8.dat', None))
     def test_json_implicit_utf_8(self):
         # RFC 4627 $3 with implicit charset=utf-8.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-16le.dat', None))
     def test_json_implicit_utf_16le(self):
         # RFC 4627 $3 with implicit charset=utf-16le.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-16be.dat', None))
     def test_json_implicit_utf_16be(self):
         # RFC 4627 $3 with implicit charset=utf-16be.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-32le.dat', None))
     def test_json_implicit_utf_32le(self):
         # RFC 4627 $3 with implicit charset=utf-32le.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
-    @mock.patch('friends.utils.download._soup', mock.Mock())
-    @mock.patch('friends.utils.download.Soup.Message',
+    @mock.patch('friends.utils.http._soup', mock.Mock())
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data',
                                 'json-utf-32be.dat', None))
     def test_json_implicit_utf_32be(self):
         # RFC 4627 $3 with implicit charset=utf-32be.
-        self.assertEqual(get_json('http://example.com'),
+        self.assertEqual(Downloader('http://example.com').get_json(),
                          dict(yes='ÑØ'))
 
     def test_simple_text_download(self):
@@ -217,21 +197,53 @@ class TestDownloader(unittest.TestCase):
 
     def test_params_post(self):
         # Test posting data.
-        self.assertEqual(get_json('http://localhost:9180/post',
-                                  params=dict(one=1, two=2, three=3),
-                                  method='POST'),
-                        dict(one=1, two=2, three=3))
+        self.assertEqual(
+            Downloader('http://localhost:9180/post',
+                       params=dict(one=1, two=2, three=3),
+                       method='POST').get_json(),
+            dict(one=1, two=2, three=3))
 
     def test_params_get(self):
         # Test getting with query string URL.
-        self.assertEqual(get_json('http://localhost:9180/post',
-                                  params=dict(one=1, two=2, three=3),
-                                  method='GET'),
-                        dict(one=1, two=2, three=3))
+        self.assertEqual(
+            Downloader('http://localhost:9180/post',
+                       params=dict(one=1, two=2, three=3),
+                       method='GET').get_json(),
+            dict(one=1, two=2, three=3))
 
     def test_headers(self):
         # Provide some additional headers.
-        self.assertEqual(get_json('http://localhost:9180/headers',
-                                  headers={'X-Foo': 'baz',
-                                           'X-Bar': 'foo'}),
-                         dict(foo='baz', bar='foo'))
+        self.assertEqual(
+            Downloader('http://localhost:9180/headers',
+                       headers={'X-Foo': 'baz',
+                                'X-Bar': 'foo'}).get_json(),
+            dict(foo='baz', bar='foo'))
+
+    def test_mirror(self):
+        self.assertEqual(
+            Downloader('http://localhost:9180/mirror',
+                       method='POST',
+                       params=dict(foo='bar')).get_string(),
+            'foo=bar')
+
+    def test_uploads(self):
+        filename = resource_filename('friends.tests.data', 'ubuntu.png')
+        raw_sent = Uploader('http://localhost:9180/mirror',
+                            'file://' + filename,
+                            'Great logo!',
+                            picture_key='source',
+                            desc_key='message',
+                            foo='bar').get_bytes()
+        delimiter = raw_sent[2:66]
+        self.assertTrue(
+            raw_sent.startswith(
+                b'--' + delimiter + b'\r\nContent-Disposition: form-data; '
+                b'name="foo"\r\n\r\nbar\r\n--' + delimiter +
+                b'\r\nContent-Disposition: form-data; name="message"\r\n\r\n'
+                b'Great logo!\r\n--' + delimiter + b'\r\nContent-Disposition: '
+                b'form-data; name="source"; filename="file://' +
+                filename.encode() + b'"\r\nContent-Type: '
+                b'application/octet-stream\r\n\r\n\x89PNG'))
+        self.assertTrue(
+            raw_sent.endswith(
+                b'\r\n--' + delimiter + b'--\r\n'))

@@ -31,7 +31,7 @@ from urllib.parse import quote
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.download import RateLimiter as BaseRateLimiter, get_json
+from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
 
 
@@ -95,8 +95,9 @@ class Twitter(Base):
         uri, headers, body = oauth_client.sign(
             url, body=data, headers=headers, http_method=method)
 
-        return get_json(url, params=data, headers=headers, method=method,
-                        rate_limiter=self._rate_limiter)
+        return Downloader(
+            url, params=data, headers=headers, method=method,
+            rate_limiter=self._rate_limiter).get_json()
 
     def _publish_tweet(self, tweet, stream='messages'):
         """Publish a single tweet into the Dee.SharedModel."""
