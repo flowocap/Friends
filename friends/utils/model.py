@@ -119,7 +119,6 @@ MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'
 _resource_manager = Dee.ResourceManager.get_default()
 Model = _resource_manager.load(MODEL_DBUS_NAME)
 
-
 first_run = Model is None
 if not first_run:
     stale_schema = Model.get_schema() != list(COLUMN_TYPES)
@@ -147,11 +146,10 @@ if first_run or stale_schema:
     # order to ensure data is saved often in case of power loss.
     persist_model()
 
-
 _shared_model = Dee.SharedModel(
+    access_mode=Dee.SharedModelAccessMode.LEADER_WRITABLE,
     peer=Dee.Peer(swarm_name=MODEL_DBUS_NAME, swarm_owner=True),
     back_end=Model)
-
 
 def prune_model(maximum):
     """If there are more than maximum rows, remove the oldest ones."""
