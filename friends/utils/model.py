@@ -114,6 +114,7 @@ DEFAULTS = {
     }
 
 
+_shared_model = None
 MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'
 _resource_manager = Dee.ResourceManager.get_default()
 Model = _resource_manager.load(MODEL_DBUS_NAME)
@@ -129,10 +130,8 @@ else:
 def persist_model():
     """Write our Dee.SharedModel instance to disk."""
     log.debug('Saving Dee.SharedModel with {} rows.'.format(len(Model)))
-    try:
+    if _shared_model is not None:
         _shared_model.flush_revision_queue()
-    except:
-        pass
     _resource_manager.store(Model, MODEL_DBUS_NAME)
 
 
@@ -148,9 +147,11 @@ if first_run or stale_schema:
     # order to ensure data is saved often in case of power loss.
     persist_model()
 
+
 _shared_model = Dee.SharedModel(
     peer=Dee.Peer(swarm_name=MODEL_DBUS_NAME, swarm_owner=True),
     back_end=Model)
+
 
 def prune_model(maximum):
     """If there are more than maximum rows, remove the oldest ones."""
