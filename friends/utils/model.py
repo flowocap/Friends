@@ -114,10 +114,10 @@ DEFAULTS = {
     }
 
 
+_shared_model = None
 MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'
 _resource_manager = Dee.ResourceManager.get_default()
 Model = _resource_manager.load(MODEL_DBUS_NAME)
-
 
 first_run = Model is None
 if not first_run:
@@ -129,10 +129,8 @@ else:
 def persist_model():
     """Write our Dee.SharedModel instance to disk."""
     log.debug('Saving Dee.SharedModel with {} rows.'.format(len(Model)))
-    try:
+    if _shared_model is not None:
         _shared_model.flush_revision_queue()
-    except:
-        pass
     _resource_manager.store(Model, MODEL_DBUS_NAME)
 
 
@@ -149,6 +147,7 @@ if first_run or stale_schema:
     persist_model()
 
 _shared_model = Dee.SharedModel(
+    access_mode=Dee.SharedModelAccessMode.LEADER_WRITABLE,
     peer=Dee.Peer(swarm_name=MODEL_DBUS_NAME, swarm_owner=True),
     back_end=Model)
 
