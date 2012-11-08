@@ -68,16 +68,20 @@ class MenuManager:
 
     def init_messaging_menu(self):
         self.messaging = MessagingMenu.App(desktop_id='gwibber.desktop')
-        self.messaging.append_source(
-            'unread',
-            Gio.Icon.new_for_string(''),
-            'Unread')
         self.messaging.register()
-        # TODO add shortcuts for refresh and quit into this menu?
 
     def update_unread_count(self, count):
         """Update the unread count. If zero, make it invisible."""
         if not self.messaging:
             return
 
-        self.messaging.set_source_count('unread', count)
+        if self.messaging.has_source('unread') and count > 0:
+            self.messaging.set_source_count('unread', count)
+        elif count > 0:
+            self.messaging.append_source_with_count(
+                'unread',
+                None,
+                'Unread',
+                count)
+        elif self.messaging.has_source('unread') and count < 1:
+            self.messaging.remove_source('unread')

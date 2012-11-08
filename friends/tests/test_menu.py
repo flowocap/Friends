@@ -48,5 +48,5 @@ class TestMenu(unittest.TestCase):
         # Calling update_unread_count() with a zero value will make the count
         # invisible.
         self.menu.update_unread_count(0)
-        self.menu.messaging.set_source_count.assert_called_once_with(
-            'unread', 0)
+        self.menu.messaging.remove_source.assert_called_once_with(
+            'unread')
