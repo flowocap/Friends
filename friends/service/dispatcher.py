@@ -32,7 +32,8 @@ from gi.repository import GLib
 from friends.utils.account import AccountManager
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
-from friends.utils.model import persist_model
+from friends.utils.menus import MenuManager
+from friends.utils.model import persist_model, Model
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +51,11 @@ class Dispatcher(dbus.service.Object):
         self.mainloop = mainloop
         self._interval = interval
         self.account_manager = AccountManager()
+
+        self._unread_count = 0
+        self.menu_manager = MenuManager(self.Refresh, self.mainloop.quit)
+        Model.connect('row-added', self._increment_unread_count)
+
         self._timer_id = None
         signaler.add_signal('ConnectionOnline', self._on_connection_online)
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)
@@ -70,8 +76,14 @@ class Dispatcher(dbus.service.Object):
     def online(self):
         return self._timer_id is not None
 
+    def _increment_unread_count(self, model, itr):
+        self._unread_count += 1
+        self.menu_manager.update_unread_count(self._unread_count)
+
     @dbus.service.method(DBUS_INTERFACE)
     def Refresh(self):
+        self._unread_count = 0
+
         log.debug('Refresh requested')
         # Wait for all previous actions to complete before
         # starting a load of new ones.
@@ -97,18 +109,18 @@ class Dispatcher(dbus.service.Object):
         # Always return True, or else GLib mainloop will stop invoking it.
         return True
 
-    @dbus.service.method(DBUS_INTERFACE, in_signature='s')
-    def UpdateIndicators(self, stream):
-        """Update counts in messaging indicators.
+    @dbus.service.method(DBUS_INTERFACE)
+    def ClearIndicators(self):
+        """Indicate that messages have been read.
 
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/Friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.UpdateIndicators('stream')
+            service.ClearIndicators()
         """
-        pass #TODO
+        self.menu_manager.update_unread_count(0)
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
     def Do(self, action, account_id='', arg=''):
