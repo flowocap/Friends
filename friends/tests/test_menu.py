@@ -35,20 +35,18 @@ class TestMenu(unittest.TestCase):
 
     def setUp(self):
         self.menu = MenuManager(callback_stub, callback_stub)
-        self.menu.launcher = mock.Mock()
+        self.menu.messaging = mock.Mock()
 
     def test_unread_count_visible(self):
         # Calling update_unread_count() with a non-zero value will make the
         # count visible.
-        expected = [mock.call('count', 42), mock.call('count_visible', True)]
         self.menu.update_unread_count(42)
-        self.assertEqual(self.menu.launcher.set_property.call_args_list,
-                         expected)
+        self.menu.messaging.set_source_count.assert_called_once_with(
+            'unread', 42)
 
     def test_unread_count_invisible(self):
         # Calling update_unread_count() with a zero value will make the count
         # invisible.
-        expected = [mock.call('count', 0), mock.call('count_visible', False)]
         self.menu.update_unread_count(0)
-        self.assertEqual(self.menu.launcher.set_property.call_args_list,
-                         expected)
+        self.menu.messaging.remove_source.assert_called_once_with(
+            'unread')

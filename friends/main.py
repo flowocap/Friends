@@ -38,7 +38,6 @@ from friends.service.shortener import URLShorten
 from friends.utils.avatar import Avatar
 from friends.utils.base import initialize_caches
 from friends.utils.logging import initialize
-from friends.utils.menus import MenuManager
 from friends.utils.model import prune_model
 from friends.utils.options import Options
 
@@ -110,7 +109,6 @@ def main():
     class services:
         connection = ConnectionMonitor()
         dispatcher = Dispatcher(loop, refresh_interval)
-        menus = MenuManager(dispatcher.Refresh, loop.quit)
         shorten = URLShorten(gsettings)
 
     if args.test:

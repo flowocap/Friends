@@ -85,9 +85,10 @@ class TestDispatcher(unittest.TestCase):
 
         self.assertEqual(self.log_mock.empty(), 'Refresh requested\n')
 
-    def test_update_indicators(self):
-        # TODO
-        self.assertIsNone(self.dispatcher.UpdateIndicators('stream'))
+    def test_clear_indicators(self):
+        self.dispatcher.menu_manager = mock.Mock()
+        self.dispatcher.ClearIndicators()
+        self.dispatcher.menu_manager.update_unread_count.assert_called_once_with(0)
 
     def test_do(self):
         account = mock.Mock()
