@@ -36,20 +36,21 @@ CACHE_DIR = os.path.realpath(os.path.join(
 CACHE_AGE = timedelta(weeks=4)
 
 
+try:
+    os.makedirs(CACHE_DIR)
+except OSError as error:
+    # It raises OSError if the dir already existed, which is fine,
+    # but don't ignore other errors.
+    if error.errno != errno.EEXIST:
+        raise
+
+
 log = logging.getLogger(__name__)
 
 
 class Avatar:
     @staticmethod
     def get_path(url):
-        if not os.path.isdir(CACHE_DIR):
-            os.makedirs(CACHE_DIR)
-        # XXX Two considerations for the future.  What if the image data
-        # changes but the url stays the same?  Perhaps the contents of the
-        # image data should contribute to the cache.  Also, there's no API for
-        # invalidating the cache or evicting entries, so eventually there
-        # should be a way to do that, or check the timestamp of the files and
-        # ignore the cache when they age.
         return os.path.join(CACHE_DIR, sha1(url.encode('utf-8')).hexdigest())
 
     @staticmethod
