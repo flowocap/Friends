@@ -1,3 +1,9 @@
+friends (0.0+r70) UNRELEASED; urgency=low
+
+  * Don't crash if avatars dir doesn't exist
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 14 Nov 2012 15:25:44 -0500
+
 friends (0.0+r69) quantal; urgency=low
 
   * rev 69
