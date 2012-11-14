@@ -75,6 +75,7 @@ class TestAvatars(unittest.TestCase):
             # The file has not yet been downloaded because the directory does
             # not yet exist.  It is created on demand.
             self.assertFalse(os.path.isdir(cache_dir))
+            os.makedirs(cache_dir)
             Avatar.get_image('http://example.com')
             # Soup.Message() was called once.  Get the mock and check it.
             from friends.utils.http import Soup
@@ -111,7 +112,9 @@ class TestAvatars(unittest.TestCase):
                 FakeSoupMessage('friends.tests.data', 'ubuntu.png'))
     def test_cache_file_contains_image(self):
         # The image is preserved in the cache file.
-        with mock.patch('friends.utils.avatar.CACHE_DIR', self._avatar_cache):
+        with mock.patch('friends.utils.avatar.CACHE_DIR', 
+                        self._avatar_cache) as cache_dir:
+            os.makedirs(cache_dir)
             path = Avatar.get_image('http://example.com')
         # The image must have been downloaded at least once.
         pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
