@@ -60,7 +60,25 @@ class Dispatcher(dbus.service.Object):
         signaler.add_signal('ConnectionOnline', self._on_connection_online)
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)
         self._on_connection_online()
+
+        # TODO: Everything from this line to the end of this method
+        # will need to be removed from here if we ever move to an
+        # event-based, dbus-invocation style architecture, as opposed
+        # to the current long-running-process architecture.
         self.Refresh()
+
+        # Eventually, this bit will need to be moved into it's own
+        # dbus method, such that some cron-like service can invoke
+        # that method periodically. For now we are just doing it at
+        # startup.
+        for account in self.account_manager.get_all():
+            try:
+                account.protocol('contacts')
+            except NotImplementedError:
+                # Not all protocols are expected to implement this.
+                pass
+            else:
+                log.debug('{}: Fetched contacts.'.format(account.id))
 
     def _on_connection_online(self):
         if self._timer_id is None:
