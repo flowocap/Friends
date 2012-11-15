@@ -330,6 +330,11 @@ class Facebook(Base):
         vcaws_param = EBook.VCardAttributeParam.new('jabber')
         vcaws_param.add_value('-{}@chat.facebook.com'.format(user_id))
         vcaws.add_param(vcaws_param)
+
+        vcaws_param_2 = EBook.VCardAttributeParam.new('alias')
+        vcaws_param_2.add_value(user_fullname)
+        vcaws.add_param(vcaws_param_2)
+
         vcard.add_attribute(vcaws)
 
         if gender is not None:

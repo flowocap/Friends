@@ -71,3 +71,7 @@ class Identica(Twitter):
         useless. Just use search() instead.
         """
         raise NotImplementedError
+
+    def contacts(self):
+        pass
+

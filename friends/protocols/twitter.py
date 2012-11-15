@@ -296,6 +296,11 @@ class Twitter(Base):
         for tweet in response.get(self._search_result_key, []):
             self._publish_tweet(tweet, stream='search/{}'.format(query))
 
+    @feature
+    def contacts(self):
+        pass
+
+
 
 class RateLimiter(BaseRateLimiter):
     """Twitter rate limiter."""
@@ -335,3 +340,4 @@ class RateLimiter(BaseRateLimiter):
             else:
                 wait_secs = rate_delta / rate_count
                 self._limits[url] = wait_secs
+

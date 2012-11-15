@@ -61,6 +61,12 @@ class Dispatcher(dbus.service.Object):
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)
         self._on_connection_online()
         self.Refresh()
+        # This needs to be moved somewhere else if we ever create that
+        # event-based architecture and get away from a single long 
+        # running process.
+        for account in self.account_manager.get_all():
+            account.protocol('contacts')
+        
 
     def _on_connection_online(self):
         if self._timer_id is None:

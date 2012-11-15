@@ -120,3 +120,8 @@ class Flickr(Base):
                 img_url=img_url,
                 img_src=img_src,
                 img_thumb=img_thumb)
+
+    @feature
+    def contacts(self):
+        pass
+

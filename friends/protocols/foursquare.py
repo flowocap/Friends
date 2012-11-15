@@ -97,3 +97,7 @@ class FourSquare(Base):
                 url=CHECKIN_URL.format(access_token=token,
                                        checkin_id=checkin_id),
                 )
+
+    @feature
+    def contacts(self):
+        pass
