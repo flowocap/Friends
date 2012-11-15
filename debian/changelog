@@ -1,3 +1,9 @@
+friends (0.0+r72) quantal; urgency=low
+
+  * Rev 72
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 15 Nov 2012 15:34:43 -0500
+
 friends (0.0+r71) quantal; urgency=low
 
   * Don't crash if avatars dir doesn't exist
