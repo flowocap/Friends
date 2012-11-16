@@ -31,7 +31,7 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import Gio, GObject, GdkPixbuf, EDataServer, EBook
+from gi.repository import GObject, GdkPixbuf, EDataServer, EBook
 
 from friends.errors import AuthorizationError
 from friends.utils.authentication import Authentication
@@ -86,23 +86,6 @@ SENDER_IDX = COLUMN_INDICES['sender']
 MESSAGE_IDX = COLUMN_INDICES['message']
 IDS_IDX = COLUMN_INDICES['message_ids']
 TIME_IDX = COLUMN_INDICES['timestamp']
-
-
-# Decision matrix for what messages should get notified. This consults
-# GSettings for each call to Base._publish and as such it may become a
-# performance bottleneck for users with a high volume of tweets,
-# however I timed this at 8.1 usec per invocation so it shouldn't be
-# that big of a deal for now. TODO: when we transition to that
-# event-based architecture, it will make more sense to just call
-# get_string once at startup, caching it's value over the (short) life
-# of the program's invocation.
-_settings = Gio.Settings.new('com.canonical.friends')
-_notify_level = lambda: _settings.get_string('notifications') or 'mentions-only'
-_notify_matrix = {
-    'all': lambda stream: True,
-    'mentions-only': lambda stream: stream in ('mentions', 'private'),
-    'none': lambda stream: False,
-    }
 
 
 # This is a mapping from Dee.SharedModel row keys to the DeeModelIters
@@ -214,6 +197,10 @@ class Base:
     # subclasses to download in each refresh.
     _DOWNLOAD_LIMIT = 50
 
+    # Default to not notify any messages. This gets overridden from main.py,
+    # which is the only place we can safely access gsettings from.
+    _do_notify = lambda protocol, stream: False
+
     def __init__(self, account):
         self._source_registry = EDataServer.SourceRegistry.new_sync(None)
         self._account = account
@@ -278,15 +265,12 @@ class Base:
                 _seen_messages[key] = Model.append(*args)
                 # I think it's safe not to notify the user about
                 # messages that they sent themselves...
-                if not args[FROM_ME_IDX]:
-                    # Notify only if GSettings says the stream we're
-                    # publishing to is acceptable.
-                    if _notify_matrix[_notify_level()](args[STREAM_IDX]):
-                        notify(
-                            args[SENDER_IDX],
-                            args[MESSAGE_IDX],
-                            args[AVATAR_IDX],
-                            )
+                if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
+                    notify(
+                        args[SENDER_IDX],
+                        args[MESSAGE_IDX],
+                        args[AVATAR_IDX],
+                        )
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.
