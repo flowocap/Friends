@@ -39,6 +39,7 @@ TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
+@mock.patch('friends.utils.base.notify', mock.Mock())
 class TestTwitter(unittest.TestCase):
     """Test the Twitter API."""
 
@@ -201,7 +202,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol.mentions()
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='mentions')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/mentions_timeline.json')
 
@@ -211,7 +212,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol.user()
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='messages')
         get_url.assert_called_with(
         'https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=')
 
@@ -221,7 +222,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol.list('some_list_id')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='list/some_list_id')
         get_url.assert_called_with(
         'https://api.twitter.com/1.1/lists/statuses.json?list_id=some_list_id')
 

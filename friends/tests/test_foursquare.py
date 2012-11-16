@@ -38,6 +38,7 @@ TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
+@mock.patch('friends.utils.base.notify', mock.Mock())
 class TestFourSquare(unittest.TestCase):
     """Test the FourSquare API."""
 

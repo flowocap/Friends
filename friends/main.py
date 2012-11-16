@@ -111,10 +111,6 @@ def main():
         dispatcher = Dispatcher(loop, refresh_interval)
         shorten = URLShorten(gsettings)
 
-    if args.test:
-        # This module is only necessary if we're running the unit tests.
-        from friends.testing.service import TestService
-        services.test = TestService(services.connection)
     try:
         log.info('Starting friends-service main loop')
         loop.run()
