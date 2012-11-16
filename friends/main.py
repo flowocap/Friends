@@ -36,7 +36,7 @@ from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher
 from friends.service.shortener import URLShorten
 from friends.utils.avatar import Avatar
-from friends.utils.base import initialize_caches
+from friends.utils.base import Base, initialize_caches
 from friends.utils.logging import initialize
 from friends.utils.model import prune_model
 from friends.utils.options import Options
@@ -77,6 +77,18 @@ def main():
                debug=args.debug or gsettings.get_boolean('debug'))
     log = logging.getLogger(__name__)
     log.info('Friends backend service starting')
+
+    # Determine which messages to notify for.
+    notify_level = gsettings.get_string('notifications')
+    if notify_level == 'all':
+        Base._do_notify = lambda protocol, stream: True
+    elif notify_level == 'none':
+        Base._do_notify = lambda protocol, stream: False
+    else:
+        Base._do_notify = lambda protocol, stream: stream in (
+            'mentions',
+            'private',
+            )
 
     # Expire old Avatars. Without this we would never notice when
     # somebody changes their avatar, we would just keep the stale old
