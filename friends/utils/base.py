@@ -81,8 +81,8 @@ TIME_IDX = COLUMN_INDICES['timestamp']
 # event-based architecture, it will make more sense to just call
 # get_string once at startup, caching it's value over the (short) life
 # of the program's invocation.
-_gsettings = Gio.Settings.new('com.canonical.friends')
-_get = _gsettings.get_string
+_settings = Gio.Settings.new('com.canonical.friends')
+_notify_level = lambda: _settings.get_string('notifications') or 'mentions-only'
 _notify_matrix = {
     'all': lambda stream: True,
     'mentions-only': lambda stream: stream in ('mentions', 'private'),
@@ -266,7 +266,7 @@ class Base:
                 if not args[FROM_ME_IDX]:
                     # Notify only if GSettings says the stream we're
                     # publishing to is acceptable.
-                    if _notify_matrix[_get('notifications')](args[STREAM_IDX]):
+                    if _notify_matrix[_notify_level()](args[STREAM_IDX]):
                         notify(args[SENDER_IDX], args[MESSAGE_IDX])
             else:
                 # We have seen this before, so append to the matching column's

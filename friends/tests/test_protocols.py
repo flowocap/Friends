@@ -405,24 +405,24 @@ class TestNotifications(unittest.TestCase):
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base._get', return_value='all')
+    @mock.patch('friends.utils.base._notify_level', return_value='all')
     @mock.patch('friends.utils.base.notify')
-    def test_publish_all(self, notify, _get):
+    def test_publish_all(self, notify, level):
         base = Base(FakeAccount())
         base._publish(
             message='notify!',
             message_id='1234',
             sender='Benjamin',
             )
-        _get.assert_called_once_with('notifications')
+        level.assert_called_once_with()
         notify.assert_called_once_with('Benjamin', 'notify!')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base._get', return_value='mentions-only')
+    @mock.patch('friends.utils.base._notify_level', return_value='mentions-only')
     @mock.patch('friends.utils.base.notify')
-    def test_publish_mentions_private(self, notify, _get):
+    def test_publish_mentions_private(self, notify, level):
         base = Base(FakeAccount())
         base._publish(
             message='This message is private!',
@@ -430,15 +430,15 @@ class TestNotifications(unittest.TestCase):
             sender='Benjamin',
             stream='private',
             )
-        _get.assert_called_once_with('notifications')
+        level.assert_called_once_with()
         notify.assert_called_once_with('Benjamin', 'This message is private!')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base._get', return_value='mentions-only')
+    @mock.patch('friends.utils.base._notify_level', return_value='mentions-only')
     @mock.patch('friends.utils.base.notify')
-    def test_publish_mention_fail(self, notify, _get):
+    def test_publish_mention_fail(self, notify, level):
         base = Base(FakeAccount())
         base._publish(
             message='notify!',
@@ -446,15 +446,15 @@ class TestNotifications(unittest.TestCase):
             sender='Benjamin',
             stream='messages',
             )
-        _get.assert_called_once_with('notifications')
+        level.assert_called_once_with()
         self.assertEqual(notify.call_count, 0)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base._get', return_value='none')
+    @mock.patch('friends.utils.base._notify_level', return_value='none')
     @mock.patch('friends.utils.base.notify')
-    def test_publish_mention_none(self, notify, _get):
+    def test_publish_mention_none(self, notify, level):
         base = Base(FakeAccount())
         base._publish(
             message='Ignore me!',
@@ -462,7 +462,7 @@ class TestNotifications(unittest.TestCase):
             sender='Benjamin',
             stream='messages',
             )
-        _get.assert_called_once_with('notifications')
+        level.assert_called_once_with()
         self.assertEqual(notify.call_count, 0)
 
     @mock.patch('friends.utils.base.Notify')
