@@ -21,10 +21,3 @@ install:
 
 flakes:
 	pyflakes friends
-
-venv:
-	virtualenv --clear --system-site-packages -p python3 /tmp/friends
-	/tmp/friends/bin/python3 setup.py install
-
-check_all: venv
-	/tmp/friends/bin/python3 -m unittest discover -vv
