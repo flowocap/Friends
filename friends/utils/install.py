@@ -15,14 +15,12 @@
 
 """DBus service file installation helper.
 
-This is used both in the test suite (to install the testing service files),
-and in the setup.py (to install the real service files).  This module must be
-cleanly importable with no requirements on non-stdlib available packages
-(pkg_resources is okay though).
+This is used in setup.py to install the real service files. This
+module must be cleanly importable with no requirements on non-stdlib
+available packages (pkg_resources is okay though).
 """
 
 __all__ = [
-    'for_tests',
     'install_service_files',
     ]
 
@@ -80,16 +78,6 @@ class install_service_files(Command):
         service_files = [
             filename
             for filename in resource_listdir('friends.service', 'templates')
-            if (filename.endswith('.service.in')
-                and 'Test' not in filename.split('.'))
+            if filename.endswith('.service.in')
             ]
         _do_basic_install(destdir, service_files, '-o')
-
-
-def for_tests(destdir):
-    service_files = [
-        filename
-        for filename in resource_listdir('friends.service', 'templates')
-        if filename.endswith('.service.in')
-        ]
-    _do_basic_install(destdir, service_files, '--test')

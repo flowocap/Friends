@@ -22,6 +22,7 @@ __all__ = [
 
 import dbus.service
 import unittest
+import json
 
 from dbus.mainloop.glib import DBusGMainLoop
 
@@ -163,8 +164,23 @@ class TestDispatcher(unittest.TestCase):
                          'Could not find account: 2/facebook\n')
 
     def test_get_features(self):
-        """See test_dbus.py for a thorough test of Dispatcher.GetFeatures."""
-        pass
+        self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),
+                         ['contacts', 'delete', 'home', 'like', 'receive',
+                          'search', 'send', 'send_thread', 'unlike', 'upload',
+                          'wall'])
+        self.assertEqual(json.loads(self.dispatcher.GetFeatures('twitter')),
+                         ['delete', 'follow', 'home', 'like', 'list', 'lists',
+                          'mentions', 'private', 'receive', 'retweet',
+                          'search', 'send', 'send_private', 'send_thread',
+                          'tag', 'unfollow', 'unlike', 'user'])
+        self.assertEqual(json.loads(self.dispatcher.GetFeatures('identica')),
+                         ['delete', 'follow', 'home', 'mentions', 'private',
+                          'receive', 'retweet', 'search', 'send',
+                          'send_private', 'send_thread', 'unfollow', 'user'])
+        self.assertEqual(json.loads(self.dispatcher.GetFeatures('flickr')),
+                         ['receive'])
+        self.assertEqual(json.loads(self.dispatcher.GetFeatures('foursquare')),
+                         ['receive'])
 
     @mock.patch('friends.service.dispatcher.logging')
     def test_quit(self, logging_mock):
