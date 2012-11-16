@@ -334,6 +334,16 @@ class Base:
             self._whoami(result)
             log.debug('{} UID: {}'.format(protocol, self._account.user_id))
 
+    def _new_book_client(self, source):
+        client = EBook.BookClient.new(source)
+        try:
+            client.open_sync(False, None)
+        except GObject.GError:
+            log.error('EDS client failed to open.')
+            return
+        else:
+            return client
+
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
         if source_match is None:
@@ -342,9 +352,9 @@ class Base:
                 'service ({}) which does not have an address book'.format(
                     online_service))
             return False
-        client = EBook.BookClient.new(source_match)
-        client.open_sync(False, None)
-        return client.add_contact_sync(contact, None)
+        client = self._new_book_client(source_match)
+        if client is not None:
+            return client.add_contact_sync(contact, None)
 
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
@@ -369,8 +379,9 @@ class Base:
                     previous_source.get_uid())
 
     def _previously_stored_contact(self, source, field, search_term):
-        client = EBook.BookClient.new(source)
-        client.open_sync(False, None)
+        client = self._new_book_client(source)
+        if client is None:
+            return False
         query = EBook.book_query_vcard_field_test(
             field, EBook.BookQueryTest(0), search_term)
         success, result = client.get_contacts_sync(query.to_string(), None)
@@ -380,8 +391,9 @@ class Base:
         return len(result) > 0
 
     def _delete_service_contacts(self, source):
-        client = EBook.BookClient.new(source)
-        client.open_sync(False, None)
+        client = self._new_book_client(source)
+        if client is None:
+            return False
         query = EBook.book_query_any_field_contains('')
         success, results = client.get_contacts_sync(query.to_string(), None)
         if not success:
