@@ -65,6 +65,7 @@ IGNORED = string.punctuation + string.whitespace
 SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)
 EMPTY_STRING = ''
 COMMA_SPACE = ', '
+FROM_ME_IDX = COLUMN_INDICES['from_me']
 STREAM_IDX = COLUMN_INDICES['stream']
 SENDER_IDX = COLUMN_INDICES['sender']
 MESSAGE_IDX = COLUMN_INDICES['message']
@@ -260,8 +261,13 @@ class Base:
             if row_iter is None:
                 # We haven't seen this message before.
                 _seen_messages[key] = Model.append(*args)
-                if _notify_matrix[_get('notifications')](args[STREAM_IDX]):
-                    notify(args[SENDER_IDX], args[MESSAGE_IDX])
+                # I think it's safe not to notify the user about
+                # messages that they sent themselves...
+                if not args[FROM_ME_IDX]:
+                    # Notify only if GSettings says the stream we're
+                    # publishing to is acceptable.
+                    if _notify_matrix[_get('notifications')](args[STREAM_IDX]):
+                        notify(args[SENDER_IDX], args[MESSAGE_IDX])
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.

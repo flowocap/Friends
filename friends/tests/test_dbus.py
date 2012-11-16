@@ -113,8 +113,9 @@ class TestDBus(unittest.TestCase):
         iface = dbus.Interface(obj, 'com.canonical.Friends.Service')
         # TODO Add more cases as more protocols are added.
         self.assertEqual(json.loads(iface.GetFeatures('facebook')),
-                         ['contacts', 'delete', 'like', 'receive', 'search', 
-                          'send', 'send_thread', 'unlike', 'upload'])
+                         ['contacts', 'delete', 'home', 'like', 'receive',
+                          'search', 'send', 'send_thread', 'unlike', 'upload',
+                          'wall'])
         self.assertEqual(json.loads(iface.GetFeatures('twitter')),
                          ['delete', 'follow', 'home', 'like', 'list', 'lists',
                           'mentions', 'private', 'receive', 'retweet',
