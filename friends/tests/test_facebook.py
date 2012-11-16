@@ -40,6 +40,7 @@ TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
+@mock.patch('friends.utils.base.notify', mock.Mock())
 class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
@@ -54,7 +55,8 @@ class TestFacebook(unittest.TestCase):
     def test_features(self):
         # The set of public features.
         self.assertEqual(Facebook.get_features(),
-            ['contacts', 'delete', 'like', 'receive', 'search', 'send', 'send_thread', 'unlike', 'upload'])
+            ['contacts', 'delete', 'home', 'like', 'receive', 'search', 'send',
+             'send_thread', 'unlike', 'upload', 'wall'])
 
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
@@ -95,7 +97,7 @@ class TestFacebook(unittest.TestCase):
     def test_error_response(self, *mocks):
         with LogMock('friends.utils.base',
                      'friends.protocols.facebook') as log_mock:
-            self.protocol.receive()
+            self.protocol.home()
             contents = log_mock.empty(trim=False)
         self.assertEqual(contents, """\
 Logging in to Facebook
@@ -156,7 +158,7 @@ Facebook error (190 OAuthException): Bad access token
             ''])
         self.assertEqual(list(TestModel.get_row(0)), [
             [['facebook', 'faker/than fake', '108']],
-            'messages',
+            'mentions',
             'Rush is a Band',
             '117402931676347',
             'Rush is a Band',
@@ -194,7 +196,7 @@ Facebook error (190 OAuthException): Bad access token
             ''])
         self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '109']],
-            'messages',
+            'mentions',
             'Rush is a Band',
             '117402931676347',
             'Rush is a Band',

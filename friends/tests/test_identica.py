@@ -37,6 +37,8 @@ TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
 TestModel.set_schema_full(COLUMN_TYPES)
 
 
+@mock.patch('friends.utils.http._soup', mock.Mock())
+@mock.patch('friends.utils.base.notify', mock.Mock())
 class TestIdentica(unittest.TestCase):
     """Test the Identica API."""
 
@@ -79,7 +81,7 @@ class TestIdentica(unittest.TestCase):
 
         self.protocol.mentions()
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='mentions')
         get_url.assert_called_with(
             'http://identi.ca/api/statuses/mentions.json')
 
@@ -89,7 +91,7 @@ class TestIdentica(unittest.TestCase):
 
         self.protocol.user()
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='messages')
         get_url.assert_called_with(
             'http://identi.ca/api/statuses/user_timeline.json?screen_name=')
 

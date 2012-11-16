@@ -165,8 +165,9 @@ class TestDispatcher(unittest.TestCase):
 
     def test_get_features(self):
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),
-                         ['contacts', 'delete', 'like', 'receive', 'search',
-                          'send', 'send_thread', 'unlike', 'upload'])
+                         ['contacts', 'delete', 'home', 'like', 'receive',
+                          'search', 'send', 'send_thread', 'unlike', 'upload',
+                          'wall'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('twitter')),
                          ['delete', 'follow', 'home', 'like', 'list', 'lists',
                           'mentions', 'private', 'receive', 'retweet',

@@ -145,8 +145,7 @@ class Facebook(Base):
         # We've gotten everything Facebook is going to give us.
         return entries
 
-    @feature
-    def receive(self, since=None):
+    def _get(self, url, stream, since=None):
         """Retrieve a list of Facebook objects.
 
         A maximum of 50 objects are requested.
@@ -162,7 +161,6 @@ class Facebook(Base):
         else:
             when = datetime.fromtimestamp(since)
         entries = []
-        url = ME_URL + '/home'
         params = dict(access_token=access_token,
                       since=when.isoformat(),
                       limit=self._DOWNLOAD_LIMIT)
@@ -170,7 +168,22 @@ class Facebook(Base):
         entries = self._follow_pagination(url, params)
         # https://developers.facebook.com/docs/reference/api/post/
         for entry in entries:
-            self._publish_entry(entry)
+            self._publish_entry(entry, stream=stream)
+
+    @feature
+    def home(self, since=None):
+        """Gather and publish public timeline messages."""
+        self._get(ME_URL + '/home', 'messages', since)
+
+    @feature
+    def wall(self, since=None):
+        """Gather and publish messages written on user's wall."""
+        self._get(ME_URL + '/feed', 'mentions', since)
+
+    @feature
+    def receive(self):
+        self.wall()
+        self.home()
 
     @feature
     def search(self, query):
