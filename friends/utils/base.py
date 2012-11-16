@@ -31,7 +31,7 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import Gio, GObject, EDataServer, EBook
+from gi.repository import Gio, GObject, GdkPixbuf, EDataServer, EBook
 
 from friends.errors import AuthorizationError
 from friends.utils.authentication import Authentication
@@ -48,11 +48,25 @@ except ImportError:
     notify = lambda *ignore: None
 else:
     Notify.init('friends')
-    def notify(title, message):
+    _notify_capabilities = Notify.get_server_caps()
+    def notify(title, message, icon_uri='', pixbuf=None):
         if not (title and message):
             return
         notification = Notify.Notification.new(
             title, message, 'friends')
+
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                icon_uri, 48, 48)
+        except GObject.GError:
+            pass
+
+        if pixbuf is not None:
+            notification.set_icon_from_pixbuf(pixbuf)
+
+        if 'x-canonical-append' in _notify_capabilities:
+            notification.set_hint_string('x-canonical-append', 'allowed')
+
         try:
             notification.show()
         except GObject.GError:
@@ -65,6 +79,7 @@ IGNORED = string.punctuation + string.whitespace
 SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)
 EMPTY_STRING = ''
 COMMA_SPACE = ', '
+AVATAR_IDX = COLUMN_INDICES['icon_uri']
 FROM_ME_IDX = COLUMN_INDICES['from_me']
 STREAM_IDX = COLUMN_INDICES['stream']
 SENDER_IDX = COLUMN_INDICES['sender']
@@ -267,7 +282,11 @@ class Base:
                     # Notify only if GSettings says the stream we're
                     # publishing to is acceptable.
                     if _notify_matrix[_notify_level()](args[STREAM_IDX]):
-                        notify(args[SENDER_IDX], args[MESSAGE_IDX])
+                        notify(
+                            args[SENDER_IDX],
+                            args[MESSAGE_IDX],
+                            args[AVATAR_IDX],
+                            )
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.

@@ -415,7 +415,7 @@ class TestNotifications(unittest.TestCase):
             sender='Benjamin',
             )
         level.assert_called_once_with()
-        notify.assert_called_once_with('Benjamin', 'notify!')
+        notify.assert_called_once_with('Benjamin', 'notify!', '')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
@@ -431,7 +431,7 @@ class TestNotifications(unittest.TestCase):
             stream='private',
             )
         level.assert_called_once_with()
-        notify.assert_called_once_with('Benjamin', 'This message is private!')
+        notify.assert_called_once_with('Benjamin', 'This message is private!', '')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
