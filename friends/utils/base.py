@@ -45,7 +45,7 @@ try:
     from gi.repository import Notify
 except ImportError:
     Notify = None
-    notify = lambda *ignore: None
+    notify = lambda *ignore, **kwignore: None
 else:
     Notify.init('friends')
     _notify_capabilities = Notify.get_server_caps()
