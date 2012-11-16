@@ -10,12 +10,19 @@
       </description>
     </key>
 
-    <key name="notifications" type="b">
-      <default>true</default>
-      <summary>Display notifications?</summary>
+    <key name="notifications" type="s">
+      <choices>
+        <choice value='all'/>
+        <choice value='mentions-only'/>
+        <choice value='none'/>
+      </choices>
+      <default>'mentions-only'</default>
+      <summary>What kind of notifications should we display?</summary>
       <description>
-        True if you want to see unread message counts in the messaging
-        menu, false otherwise.
+        Possible values are "all" for all notifications (warning: you
+        will get spammed with a lot of notifications), "mentions-only"
+        which will only notify you of messages that are addressed
+        specifically to you, or "none", which hides all notifications.
       </description>
     </key>
 

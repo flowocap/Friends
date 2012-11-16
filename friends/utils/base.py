@@ -31,7 +31,7 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import EDataServer, EBook
+from gi.repository import Gio, GObject, EDataServer, EBook
 
 from friends.errors import AuthorizationError
 from friends.utils.authentication import Authentication
@@ -40,14 +40,53 @@ from friends.utils.model import Model, persist_model
 from friends.utils.time import ISO8601_FORMAT
 
 
+# Optional dependency on Notify library.
+try:
+    from gi.repository import Notify
+except ImportError:
+    Notify = None
+    notify = lambda *ignore: None
+else:
+    Notify.init('friends')
+    def notify(title, message):
+        if not (title and message):
+            return
+        notification = Notify.Notification.new(
+            title, message, 'friends')
+        try:
+            notification.show()
+        except GObject.GError:
+            # Most likely we've spammed more than 50 notificatons,
+            # not much we can do about that.
+            pass
+
+
 IGNORED = string.punctuation + string.whitespace
 SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)
 EMPTY_STRING = ''
 COMMA_SPACE = ', '
+STREAM_IDX = COLUMN_INDICES['stream']
 SENDER_IDX = COLUMN_INDICES['sender']
 MESSAGE_IDX = COLUMN_INDICES['message']
 IDS_IDX = COLUMN_INDICES['message_ids']
 TIME_IDX = COLUMN_INDICES['timestamp']
+
+
+# Decision matrix for what messages should get notified. This consults
+# GSettings for each call to Base._publish and as such it may become a
+# performance bottleneck for users with a high volume of tweets,
+# however I timed this at 8.1 usec per invocation so it shouldn't be
+# that big of a deal for now. TODO: when we transition to that
+# event-based architecture, it will make more sense to just call
+# get_string once at startup, caching it's value over the (short) life
+# of the program's invocation.
+_gsettings = Gio.Settings.new('com.canonical.friends')
+_get = _gsettings.get_string
+_notify_matrix = {
+    'all': lambda stream: True,
+    'mentions-only': lambda stream: stream in ('mentions', 'private'),
+    'none': lambda stream: False,
+    }
 
 
 # This is a mapping from Dee.SharedModel row keys to the DeeModelIters
@@ -221,6 +260,8 @@ class Base:
             if row_iter is None:
                 # We haven't seen this message before.
                 _seen_messages[key] = Model.append(*args)
+                if _notify_matrix[_get('notifications')](args[STREAM_IDX]):
+                    notify(args[SENDER_IDX], args[MESSAGE_IDX])
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.

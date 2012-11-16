@@ -30,7 +30,7 @@ from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
 from friends.testing.helpers import FakeAccount
 from friends.testing.mocks import LogMock, mock
-from friends.utils.base import Base, feature
+from friends.utils.base import Base, feature, notify
 from friends.utils.manager import ProtocolManager
 from friends.utils.model import (
     COLUMN_INDICES, COLUMN_NAMES, COLUMN_TYPES, Model)
@@ -94,6 +94,7 @@ class MyProtocol(Base):
     def non_feature_2(self): pass
 
 
+@mock.patch('friends.utils.base.notify', mock.Mock())
 class TestProtocols(unittest.TestCase):
     """Test protocol implementations."""
 
@@ -393,3 +394,88 @@ class TestProtocols(unittest.TestCase):
 
     def test_features(self):
         self.assertEqual(MyProtocol.get_features(), ['feature_1', 'feature_2'])
+
+
+class TestNotifications(unittest.TestCase):
+    """Test notification details."""
+
+    def setUp(self):
+        TestModel.clear()
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base._get', return_value='all')
+    @mock.patch('friends.utils.base.notify')
+    def test_publish_all(self, notify, _get):
+        base = Base(FakeAccount())
+        base._publish(
+            message='notify!',
+            message_id='1234',
+            sender='Benjamin',
+            )
+        _get.assert_called_once_with('notifications')
+        notify.assert_called_once_with('Benjamin', 'notify!')
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base._get', return_value='mentions-only')
+    @mock.patch('friends.utils.base.notify')
+    def test_publish_mentions_private(self, notify, _get):
+        base = Base(FakeAccount())
+        base._publish(
+            message='This message is private!',
+            message_id='1234',
+            sender='Benjamin',
+            stream='private',
+            )
+        _get.assert_called_once_with('notifications')
+        notify.assert_called_once_with('Benjamin', 'This message is private!')
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base._get', return_value='mentions-only')
+    @mock.patch('friends.utils.base.notify')
+    def test_publish_mention_fail(self, notify, _get):
+        base = Base(FakeAccount())
+        base._publish(
+            message='notify!',
+            message_id='1234',
+            sender='Benjamin',
+            stream='messages',
+            )
+        _get.assert_called_once_with('notifications')
+        self.assertEqual(notify.call_count, 0)
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base._get', return_value='none')
+    @mock.patch('friends.utils.base.notify')
+    def test_publish_mention_none(self, notify, _get):
+        base = Base(FakeAccount())
+        base._publish(
+            message='Ignore me!',
+            message_id='1234',
+            sender='Benjamin',
+            stream='messages',
+            )
+        _get.assert_called_once_with('notifications')
+        self.assertEqual(notify.call_count, 0)
+
+    @mock.patch('friends.utils.base.Notify')
+    def test_dont_notify(self, Notify):
+        notify('', '')
+        notify('Bob Loblaw', '')
+        notify('', 'hello, friend!')
+        self.assertEqual(Notify.Notification.new.call_count, 0)
+
+    @mock.patch('friends.utils.base.Notify')
+    def test_notify(self, Notify):
+        notify('Bob Loblaw', 'hello, friend!')
+        Notify.Notification.new.assert_called_once_with(
+            'Bob Loblaw', 'hello, friend!', 'friends')
+        notification = Notify.Notification.new()
+        notification.show.assert_called_once_with()

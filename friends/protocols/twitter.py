@@ -144,7 +144,7 @@ class Twitter(Base):
         """Gather the tweets that mention us."""
         url = self._mentions_timeline
         for tweet in self._get_url(url):
-            self._publish_tweet(tweet)
+            self._publish_tweet(tweet, stream='mentions')
 
 # https://dev.twitter.com/docs/api/1.1/get/statuses/user_timeline
     @feature
@@ -155,8 +155,9 @@ class Twitter(Base):
         currently authenticated user.
         """
         url = self._user_timeline.format(screen_name)
+        stream = 'user/{}'.format(screen_name) if screen_name else 'messages'
         for tweet in self._get_url(url):
-            self._publish_tweet(tweet)
+            self._publish_tweet(tweet, stream=stream)
 
 # https://dev.twitter.com/docs/api/1.1/get/lists/statuses
     @feature
@@ -164,7 +165,7 @@ class Twitter(Base):
         """Gather the tweets from the specified list_id."""
         url = self._lists.format(list_id)
         for tweet in self._get_url(url):
-            self._publish_tweet(tweet)
+            self._publish_tweet(tweet, stream='list/{}'.format(list_id))
 
 # https://dev.twitter.com/docs/api/1.1/get/lists/list
     @feature
