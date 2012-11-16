@@ -47,7 +47,3 @@ class Options:
             '--list-protocols',
             action='store_true', default=False,
             help='List all the known protocols and exit.')
-        self.parser.add_argument(
-            '--test',
-            action='store_true', default=False,
-            help='Run the dbus service in testing mode.')
