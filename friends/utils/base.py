@@ -48,7 +48,7 @@ except ImportError:
     notify = lambda *ignore, **kwignore: None
 else:
     Notify.init('friends')
-    _notify_capabilities = Notify.get_server_caps()
+    _notify_can_append = 'x-canonical-append' in Notify.get_server_caps()
     def notify(title, message, icon_uri='', pixbuf=None):
         if not (title and message):
             return
@@ -64,7 +64,7 @@ else:
         if pixbuf is not None:
             notification.set_icon_from_pixbuf(pixbuf)
 
-        if 'x-canonical-append' in _notify_capabilities:
+        if _notify_can_append:
             notification.set_hint_string('x-canonical-append', 'allowed')
 
         try:
