@@ -34,6 +34,9 @@ from friends.utils.base import Base, feature
 from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
 
+from gi.repository import EBook
+
+TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
 
 log = logging.getLogger(__name__)
 
@@ -297,6 +300,88 @@ class Twitter(Base):
         for tweet in response.get(self._search_result_key, []):
             self._publish_tweet(tweet, stream='search/{}'.format(query))
 
+# https://dev.twitter.com/docs/api/1.1/get/friends/ids
+    @feature
+    def getfriendsids(self):
+        """List friend ID."""
+        url = self._api_base.format(endpoint="friends/ids")
+        response = self._get_url(url)
+
+        return response["ids"]
+
+# https://dev.twitter.com/docs/api/1.1/get/users/show
+    @feature
+    def showuser(self, uid):
+        """Show users Data."""
+        url = self._api_base.format(endpoint="users/show") + "?user_id={}".format(uid)
+        response = self._get_url(url)
+        return response
+
+    def _create_contact(self, userdata):
+        """Build a VCard based on a dict representation of a contact."""
+        user_id = userdata['id_str']
+        user_fullname = userdata['name']
+        user_nickname = userdata['screen_name']
+        user_link = 'https://twitter.com/{}'.format(user_nickname)
+        
+        vcard = EBook.VCard.new()
+        
+        vcatid = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'twitter-id')
+        vcatid.add_value(user_id)
+        vcard.add_attribute(vcatid)
+
+        vcatn = EBook.VCardAttribute.new( 
+            'social-networking-attributes', 'twitter-name')
+        vcatn.add_value(user_fullname)
+        vcard.add_attribute(vcatn)
+
+        vcauri = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-URIS')
+        vcauri.add_value(user_link)
+        vcard.add_attribute(vcauri)
+
+        vcaws = EBook.VCardAttribute.new(
+            'social-networking-attributes', 'X-FOLKS-WEB-SERVICES-IDS')
+        vcaws_param = EBook.VCardAttributeParam.new('generic_name')
+        vcaws_param.add_value(user_fullname)
+        vcaws.add_param(vcaws_param)
+        vcaws_param_2 = EBook.VCardAttributeParam.new('alias')
+        vcaws_param_2.add_value(user_fullname)
+        vcaws.add_param(vcaws_param_2)
+        vcard.add_attribute(vcaws)
+
+        contact = EBook.Contact.new_from_vcard(
+            vcard.to_string(EBook.VCardFormat(1)))
+        contact.set_property('full-name', user_fullname)
+        if user_nickname is not None:
+            contact.set_property('nickname', user_nickname)
+
+        log.debug('Creating new contact for {}'.format(user_fullname))
+        return contact
+
+    def contacts(self):
+        contacts = self.getfriendsids()
+        log.debug('Size of the contacts returned {}'.format(len(contacts)))
+        source = self._get_eds_source(TWITTER_ADDRESS_BOOK)
+        if source is None:
+            source = self._create_eds_source(TWITTER_ADDRESS_BOOK)
+        
+        for contact in contacts:
+            twitterid = str(contact)
+            if self._previously_stored_contact(source,
+                                               'twitter-id', twitterid):
+                continue
+            full_contact = self.showuser(twitterid)
+            eds_contact = self._create_contact(full_contact)
+            if not self._push_to_eds(TWITTER_ADDRESS_BOOK, eds_contact):
+                log.error(
+                    'Unable to save twitter contact {}'.format(
+                        contact['name']))
+
+    def delete_contacts(self):
+        source = self._get_eds_source(TWITTER_ADDRESS_BOOK)
+        return self._delete_service_contacts(source)
 
 class RateLimiter(BaseRateLimiter):
     """Twitter rate limiter."""
