@@ -471,7 +471,7 @@ Facebook error (190 OAuthException): Bad access token
                 self.assertEqual(len(p.get_values()), 1)                
                 self.assertEqual(p.get_values()[0], '555555555')
                 test_facebook_id = True
-
+        # Finally test to ensure all key value pairs were tested 
         self.assertTrue(test_jabber and test_remote_name and test_facebook_id)
 
     @mock.patch('friends.utils.base.Base._get_eds_source',

@@ -448,16 +448,21 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         web_service_addrs = eds_contact.get_attribute('X-FOLKS-WEB-SERVICES-IDS')
         params= web_service_addrs.get_params()
         self.assertEqual(len(params), 2)
-        aindex=0
-        if params[0].get_name() == 'generic_name' and params[1].get_name() == 'alias':
-            aindex=1
+        
+        test_remote_name = False
+        test_twitter_id = False
 
-        self.assertEqual(params[aindex].get_name(), 'alias')
-        self.assertEqual(len(params[aindex].get_values()), 1)
-        self.assertEqual(params[aindex].get_values()[0], 'Alice Bob')
-        self.assertEqual(params[1-aindex].get_name(), 'generic_name')
-        self.assertEqual(len(params[1-aindex].get_values()), 1)
-        self.assertEqual(params[1-aindex].get_values()[0], 'Alice Bob')
+        for p in params:
+            if p.get_name() == 'remote-full-name':
+                self.assertEqual(len(p.get_values()), 1)
+                self.assertEqual(p.get_values()[0], 'Alice Bob')
+                test_remote_name = True
+            if p.get_name() == 'twitter-id':
+                self.assertEqual(len(p.get_values()), 1)                
+                self.assertEqual(p.get_values()[0], '13579')
+                test_facebook_id = True
+
+        self.assertTrue(test_remote_name and test_facebook_id)
 
     @mock.patch('friends.protocols.twitter.time.sleep')
     def test_rate_limiter_first_time(self, sleep):
