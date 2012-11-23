@@ -460,9 +460,9 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             if p.get_name() == 'twitter-id':
                 self.assertEqual(len(p.get_values()), 1)                
                 self.assertEqual(p.get_values()[0], '13579')
-                test_facebook_id = True
+                test_twitter_id = True
 
-        self.assertTrue(test_remote_name and test_facebook_id)
+        self.assertTrue(test_remote_name and test_twitter_id)
 
     @mock.patch('friends.protocols.twitter.time.sleep')
     def test_rate_limiter_first_time(self, sleep):
