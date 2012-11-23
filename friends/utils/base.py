@@ -457,6 +457,33 @@ class Base:
             client.remove_contact_sync(contact, None)
         return True
 
+    def _create_contact(self, user_fullname, user_nickname,
+                        social_network_attrs):
+        """Build a VCard based on a dict representation of a contact."""
+
+        vcard = EBook.VCard.new()
+        info = social_network_attrs
+
+        for i in info:
+            attr = EBook.VCardAttribute.new('social-networking-attributes', i)
+            if type(info[i]) == type(dict()):
+                for j in info[i]:
+                    param = EBook.VCardAttributeParam.new(j)
+                    param.add_value(info[i][j])
+                    attr.add_param(param);
+            else:
+                attr.add_value(info[i])
+            vcard.add_attribute(attr)
+
+        contact = EBook.Contact.new_from_vcard(
+            vcard.to_string(EBook.VCardFormat(1)))
+        contact.set_property('full-name', user_fullname)
+        if user_nickname is not None:
+            contact.set_property('nickname', user_nickname)
+
+        log.debug('Creating new contact for {}'.format(user_fullname))
+        return contact
+
     @classmethod
     def get_features(cls):
         """Report what public operations we expose over DBus."""

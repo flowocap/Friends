@@ -169,13 +169,13 @@ class TestDispatcher(unittest.TestCase):
                           'search', 'send', 'send_thread', 'unlike', 'upload',
                           'wall'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('twitter')),
-                         ['delete', 'follow', 'home', 'like', 'list', 'lists',
-                          'mentions', 'private', 'receive', 'retweet',
-                          'search', 'send', 'send_private', 'send_thread',
-                          'tag', 'unfollow', 'unlike', 'user'])
+                         ['contacts', 'delete', 'follow', 'home', 'like',
+                          'list', 'lists', 'mentions', 'private', 'receive',
+                          'retweet', 'search', 'send', 'send_private',
+                          'send_thread', 'tag', 'unfollow', 'unlike', 'user'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('identica')),
-                         ['delete', 'follow', 'home', 'mentions', 'private',
-                          'receive', 'retweet', 'search', 'send',
+                         ['contacts', 'delete', 'follow', 'home', 'mentions',
+                          'private', 'receive', 'retweet', 'search', 'send',
                           'send_private', 'send_thread', 'unfollow', 'user'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('flickr')),
                          ['receive'])

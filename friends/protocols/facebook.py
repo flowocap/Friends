@@ -25,7 +25,6 @@ import time
 import logging
 
 from datetime import datetime, timedelta
-from gi.repository import EBook
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
@@ -320,54 +319,27 @@ class Facebook(Base):
 
     def _create_contact(self, contact_json):
         """Build a VCard based on a dict representation of a contact."""
+
         user_id = contact_json.get('id')
         user_fullname = contact_json.get('name')
         user_nickname = contact_json.get('username')
         user_link = contact_json.get('link')
         gender = contact_json.get('gender')
 
-        vcard = EBook.VCard.new()
-
-        vcafid = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'facebook-id')
-        vcafid.add_value(user_id)
-        vcafn = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'facebook-name')
-        vcafn.add_value(user_fullname)
-        vcauri = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'X-URIS')
-        vcauri.add_value(user_link)
-
-        vcaws = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'X-FOLKS-WEB-SERVICES-IDS')
-        vcaws_param = EBook.VCardAttributeParam.new('jabber')
-        vcaws_param.add_value('-{}@chat.facebook.com'.format(user_id))
-        vcaws.add_param(vcaws_param)
-
-        vcaws_param_2 = EBook.VCardAttributeParam.new('alias')
-        vcaws_param_2.add_value(user_fullname)
-        vcaws.add_param(vcaws_param_2)
-
-        vcard.add_attribute(vcaws)
-
+        attrs = {}
+        attrs['facebook-id'] = user_id
+        attrs['facebook-name'] = user_fullname
+        attrs['X-URIS'] = user_link
+        attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
+            'jabber':'-{}@chat.facebook.com'.format(user_id),
+            'remote-full-name':user_fullname,
+            'facebook-id': user_id}
         if gender is not None:
-            vcag = EBook.VCardAttribute.new(
-                'social-networking-attributes', 'X-GENDER')
-            vcag.add_value(gender)
-            vcard.add_attribute(vcag)
+            attrs['X-GENDER'] = gender
 
-        vcard.add_attribute(vcafn)
-        vcard.add_attribute(vcauri)
-        vcard.add_attribute(vcafid)
+        contact = Base._create_contact(
+            self, user_fullname, user_nickname, attrs)
 
-        contact = EBook.Contact.new_from_vcard(
-            vcard.to_string(EBook.VCardFormat(1)))
-        contact.set_property('full-name', user_fullname)
-
-        if user_nickname is not None:
-            contact.set_property('nickname', user_nickname)
-
-        log.debug('Creating new contact for {}'.format(user_fullname))
         return contact
 
     @feature
