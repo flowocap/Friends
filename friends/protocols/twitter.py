@@ -326,7 +326,7 @@ class Twitter(Base):
         attrs['twiiter-name'] = user_fullname
         attrs['X-URIS'] = 'https://twitter.com/{}'.format(user_nickname)
         attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
-            'generic_name':user_fullname, 'alias':user_fullname }
+            'remote-full-name':user_fullname, 'twitter-id': userdata['id_str'] }
         
         contact = Base._create_contact(self,
                                         user_fullname, user_nickname, attrs)
