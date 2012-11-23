@@ -332,6 +332,7 @@ class Twitter(Base):
         log.debug('Creating new contact for {}'.format(user_fullname))
         return contact
 
+    @feature
     def contacts(self):
         contacts = self.getfriendsids()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
