@@ -299,7 +299,6 @@ class Twitter(Base):
             self._publish_tweet(tweet, stream='search/{}'.format(query))
 
 # https://dev.twitter.com/docs/api/1.1/get/friends/ids
-    @feature
     def getfriendsids(self):
         """List friend ID."""
         url = self._api_base.format(endpoint="friends/ids")
@@ -308,7 +307,6 @@ class Twitter(Base):
         return response["ids"]
 
 # https://dev.twitter.com/docs/api/1.1/get/users/show
-    @feature
     def showuser(self, uid):
         """Show users Data."""
         url = self._api_base.format(endpoint="users/show") + "?user_id={}".format(uid)
@@ -323,7 +321,7 @@ class Twitter(Base):
 
         attrs = {}
         attrs['twitter-id'] = userdata['id_str']
-        attrs['twiiter-name'] = user_fullname
+        attrs['twitter-name'] = user_fullname
         attrs['X-URIS'] = 'https://twitter.com/{}'.format(user_nickname)
         attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
             'remote-full-name':user_fullname, 'twitter-id': userdata['id_str'] }
@@ -334,6 +332,7 @@ class Twitter(Base):
         log.debug('Creating new contact for {}'.format(user_fullname))
         return contact
 
+    @feature
     def contacts(self):
         contacts = self.getfriendsids()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
