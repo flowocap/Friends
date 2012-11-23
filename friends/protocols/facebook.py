@@ -331,8 +331,9 @@ class Facebook(Base):
         attrs['facebook-name'] = user_fullname
         attrs['X-URIS'] = user_link
         attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
-            'jabber':'-{}@chat.facebook.com'.format(user_id),
-            'alias':user_fullname }
+            'alias':user_fullname,
+            'jabber':'-{}@chat.facebook.com'.format(user_id)
+            }
         if gender is not None:
             attrs['X-GENDER'] = gender
 

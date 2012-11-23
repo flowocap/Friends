@@ -452,12 +452,16 @@ Facebook error (190 OAuthException): Bad access token
         web_service_addrs = eds_contact.get_attribute('X-FOLKS-WEB-SERVICES-IDS')
         params= web_service_addrs.get_params()
         self.assertEqual(len(params), 2)
-        self.assertEqual(params[0].get_name(), 'alias')
-        self.assertEqual(len(params[0].get_values()), 1)
-        self.assertEqual(params[0].get_values()[0], 'Lucy Baron')
-        self.assertEqual(params[1].get_name(), 'jabber')
-        self.assertEqual(len(params[1].get_values()), 1)
-        self.assertEqual(params[1].get_values()[0], '-555555555@chat.facebook.com')
+        aindex=0
+        if params[0].get_name() == 'jabber' and params[1].get_name() == 'alias':
+            aindex=1
+
+        self.assertEqual(params[aindex].get_name(), 'alias')
+        self.assertEqual(len(params[aindex].get_values()), 1)
+        self.assertEqual(params[aindex].get_values()[0], 'Lucy Baron')
+        self.assertEqual(params[1-aindex].get_name(), 'jabber')
+        self.assertEqual(len(params[1-aindex].get_values()), 1)
+        self.assertEqual(params[1-aindex].get_values()[0], '-555555555@chat.facebook.com')
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=True)

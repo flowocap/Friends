@@ -417,11 +417,47 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'https://api.twitter.com/1.1/search/tweets.json?q=hello')
 
     def test_getfriendsids(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value=[{"ids":[1,2,3]}])
+        get_url = self.protocol._get_url = mock.Mock(return_value={"ids":[1,2,3]})
         ids = self.protocol.getfriendsids()
+        
         get_url.assert_called_with(
-        'https://api.twitter.com/1.1/friends/ids.json'
-)
+            'https://api.twitter.com/1.1/friends/ids.json'
+            )
+        self.assertEqual(ids, [1,2,3])
+
+    def test_showuser(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value={"name":"Alice"})
+        userdata = self.protocol.showuser(1)
+        
+        get_url.assert_called_with(
+            'https://api.twitter.com/1.1/users/show.json?user_id=1'
+            )
+        self.assertEqual(userdata, {"name":"Alice"})
+
+    def test_create_contact(self, *mocks):
+        # Receive the users friends.
+        bare_contact = {'name': 'Alice Bob',
+                        'screen_name': 'alice_bob',
+                        'id_str': '13579'}
+
+        eds_contact = self.protocol._create_contact(bare_contact)
+        twitter_id_attr = eds_contact.get_attribute('twitter-id')
+        self.assertEqual(twitter_id_attr.get_value(), '13579')
+        twitter_name_attr = eds_contact.get_attribute('twitter-name')
+        self.assertEqual(twitter_name_attr.get_value(), 'Alice Bob')
+        web_service_addrs = eds_contact.get_attribute('X-FOLKS-WEB-SERVICES-IDS')
+        params= web_service_addrs.get_params()
+        self.assertEqual(len(params), 2)
+        aindex=0
+        if params[0].get_name() == 'generic_name' and params[1].get_name() == 'alias':
+            aindex=1
+
+        self.assertEqual(params[aindex].get_name(), 'alias')
+        self.assertEqual(len(params[aindex].get_values()), 1)
+        self.assertEqual(params[aindex].get_values()[0], 'Alice Bob')
+        self.assertEqual(params[1-aindex].get_name(), 'generic_name')
+        self.assertEqual(len(params[1-aindex].get_values()), 1)
+        self.assertEqual(params[1-aindex].get_values()[0], 'Alice Bob')
 
     @mock.patch('friends.protocols.twitter.time.sleep')
     def test_rate_limiter_first_time(self, sleep):
