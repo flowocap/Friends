@@ -34,8 +34,6 @@ from friends.utils.base import Base, feature
 from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
 
-from gi.repository import EBook
-
 TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
 
 log = logging.getLogger(__name__)
@@ -319,43 +317,19 @@ class Twitter(Base):
 
     def _create_contact(self, userdata):
         """Build a VCard based on a dict representation of a contact."""
-        user_id = userdata['id_str']
+
         user_fullname = userdata['name']
         user_nickname = userdata['screen_name']
-        user_link = 'https://twitter.com/{}'.format(user_nickname)
+
+        attrs = {}
+        attrs['twitter-id'] = userdata['id_str']
+        attrs['twiiter-name'] = user_fullname
+        attrs['X-URIS'] = 'https://twitter.com/{}'.format(user_nickname)
+        attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
+            'generic_name':user_fullname, 'alias':user_fullname }
         
-        vcard = EBook.VCard.new()
-        
-        vcatid = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'twitter-id')
-        vcatid.add_value(user_id)
-        vcard.add_attribute(vcatid)
-
-        vcatn = EBook.VCardAttribute.new( 
-            'social-networking-attributes', 'twitter-name')
-        vcatn.add_value(user_fullname)
-        vcard.add_attribute(vcatn)
-
-        vcauri = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'X-URIS')
-        vcauri.add_value(user_link)
-        vcard.add_attribute(vcauri)
-
-        vcaws = EBook.VCardAttribute.new(
-            'social-networking-attributes', 'X-FOLKS-WEB-SERVICES-IDS')
-        vcaws_param = EBook.VCardAttributeParam.new('generic_name')
-        vcaws_param.add_value(user_fullname)
-        vcaws.add_param(vcaws_param)
-        vcaws_param_2 = EBook.VCardAttributeParam.new('alias')
-        vcaws_param_2.add_value(user_fullname)
-        vcaws.add_param(vcaws_param_2)
-        vcard.add_attribute(vcaws)
-
-        contact = EBook.Contact.new_from_vcard(
-            vcard.to_string(EBook.VCardFormat(1)))
-        contact.set_property('full-name', user_fullname)
-        if user_nickname is not None:
-            contact.set_property('nickname', user_nickname)
+        contact = Base._create_contact(self,
+                                        user_fullname, user_nickname, attrs)
 
         log.debug('Creating new contact for {}'.format(user_fullname))
         return contact

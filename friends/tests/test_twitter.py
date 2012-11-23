@@ -416,6 +416,13 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=hello')
 
+    def test_getfriendsids(self):
+        get_url = self.protocol._get_url = mock.Mock(return_value=[{"ids":[1,2,3]}])
+        ids = self.protocol.getfriendsids()
+        get_url.assert_called_with(
+        'https://api.twitter.com/1.1/friends/ids.json'
+)
+
     @mock.patch('friends.protocols.twitter.time.sleep')
     def test_rate_limiter_first_time(self, sleep):
         # The first time we see a URL, there is no rate limiting.
