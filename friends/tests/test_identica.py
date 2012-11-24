@@ -222,7 +222,7 @@ class TestIdentica(unittest.TestCase):
             'http://identi.ca/api/search.json?q=hello')
 
     def test_getfriendsids(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value={"ids":[1,2,3]})
+        get_url = self.protocol._get_url = mock.Mock(return_value=[1,2,3])
         ids = self.protocol._getfriendsids()
 
         get_url.assert_called_with(
