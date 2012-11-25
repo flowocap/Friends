@@ -30,7 +30,7 @@ from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
 from friends.testing.helpers import FakeAccount
 from friends.testing.mocks import LogMock, mock
-from friends.utils.base import Base, feature, notify
+from friends.utils.base import Base, feature
 from friends.utils.manager import ProtocolManager
 from friends.utils.model import (
     COLUMN_INDICES, COLUMN_NAMES, COLUMN_TYPES, Model)
@@ -394,87 +394,3 @@ class TestProtocols(unittest.TestCase):
 
     def test_features(self):
         self.assertEqual(MyProtocol.get_features(), ['feature_1', 'feature_2'])
-
-
-class TestNotifications(unittest.TestCase):
-    """Test notification details."""
-
-    def setUp(self):
-        TestModel.clear()
-
-    @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
-    @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base.notify')
-    def test_publish_all(self, notify):
-        Base._do_notify = lambda protocol, stream: True
-        base = Base(FakeAccount())
-        base._publish(
-            message='notify!',
-            message_id='1234',
-            sender='Benjamin',
-            )
-        notify.assert_called_once_with('Benjamin', 'notify!', '')
-
-    @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
-    @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base.notify')
-    def test_publish_mentions_private(self, notify):
-        Base._do_notify = lambda protocol, stream: stream in (
-            'mentions', 'private')
-        base = Base(FakeAccount())
-        base._publish(
-            message='This message is private!',
-            message_id='1234',
-            sender='Benjamin',
-            stream='private',
-            )
-        notify.assert_called_once_with('Benjamin', 'This message is private!', '')
-
-    @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
-    @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base.notify')
-    def test_publish_mention_fail(self, notify):
-        Base._do_notify = lambda protocol, stream: stream in (
-            'mentions', 'private')
-        base = Base(FakeAccount())
-        base._publish(
-            message='notify!',
-            message_id='1234',
-            sender='Benjamin',
-            stream='messages',
-            )
-        self.assertEqual(notify.call_count, 0)
-
-    @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
-    @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base.notify')
-    def test_publish_mention_none(self, notify):
-        Base._do_notify = lambda protocol, stream: False
-        base = Base(FakeAccount())
-        base._publish(
-            message='Ignore me!',
-            message_id='1234',
-            sender='Benjamin',
-            stream='messages',
-            )
-        self.assertEqual(notify.call_count, 0)
-
-    @mock.patch('friends.utils.base.Notify')
-    def test_dont_notify(self, Notify):
-        notify('', '')
-        notify('Bob Loblaw', '')
-        notify('', 'hello, friend!')
-        self.assertEqual(Notify.Notification.new.call_count, 0)
-
-    @mock.patch('friends.utils.base.Notify')
-    def test_notify(self, Notify):
-        notify('Bob Loblaw', 'hello, friend!', pixbuf='hi!')
-        Notify.Notification.new.assert_called_once_with(
-            'Bob Loblaw', 'hello, friend!', 'friends')
-        notification = Notify.Notification.new()
-        notification.set_icon_from_pixbuf.assert_called_once_with('hi!')
-        notification.show.assert_called_once_with()
