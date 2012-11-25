@@ -26,8 +26,7 @@ import unittest
 from gi.repository import Dee
 
 from friends.protocols.identica import Identica
-from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import LogMock, mock
+from friends.tests.mocks import FakeAccount, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
 
 

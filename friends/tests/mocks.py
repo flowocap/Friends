@@ -17,6 +17,8 @@
 
 
 __all__ = [
+    'FakeAuth',
+    'FakeAccount',
     'FakeOpen',
     'FakeSoupMessage',
     'LogMock',
@@ -28,6 +30,7 @@ __all__ = [
 import os
 import hashlib
 import logging
+import threading
 
 from io import StringIO
 from logging.handlers import QueueHandler
@@ -35,6 +38,7 @@ from pkg_resources import resource_listdir, resource_string
 from queue import Empty, Queue
 from urllib.parse import urlsplit
 
+from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
 
 
@@ -46,6 +50,23 @@ except ImportError:
 
 
 NEWLINE = '\n'
+
+
+class FakeAuth:
+    pass
+
+
+class FakeAccount:
+    """A fake account object for testing purposes."""
+
+    def __init__(self, service=None):
+        self.access_token = None
+        self.user_name = None
+        self.user_id = None
+        self.auth = FakeAuth()
+        self.login_lock = threading.Lock()
+        self.id = 'faker/than fake'
+        self.protocol = Base(self)
 
 
 class FakeSoupMessage:

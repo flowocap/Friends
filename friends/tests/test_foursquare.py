@@ -25,9 +25,7 @@ import unittest
 from gi.repository import Dee
 
 from friends.protocols.foursquare import FourSquare
-from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.utils.base import Base
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
 
 

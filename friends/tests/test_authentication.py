@@ -26,9 +26,8 @@ __all__ = [
 
 import unittest
 
-from friends.testing.helpers import FakeAccount
 from friends.utils.authentication import Authentication
-from friends.testing.mocks import mock
+from friends.tests.mocks import FakeAccount, mock
 
 
 class FakeSignon:

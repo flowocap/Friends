@@ -27,8 +27,7 @@ from gi.repository import Dee
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
-from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock, mock
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
 
 

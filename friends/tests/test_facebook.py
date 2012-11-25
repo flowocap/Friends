@@ -26,10 +26,8 @@ from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
-from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.testing.mocks import EDSBookClientMock, EDSSource, EDSRegistry
-from friends.utils.base import Base
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
+from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.utils.model import COLUMN_TYPES
 
 

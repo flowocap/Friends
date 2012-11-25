@@ -23,7 +23,7 @@ __all__ = [
 import unittest
 
 from friends.utils.menus import MenuManager
-from friends.testing.mocks import mock
+from friends.tests.mocks import mock
 
 
 def callback_stub(*ignore):

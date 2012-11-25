@@ -26,9 +26,7 @@ from gi.repository import Dee
 
 from friends.errors import AuthorizationError
 from friends.protocols.flickr import Flickr
-from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.utils.base import Base
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
 
 
@@ -160,6 +158,7 @@ class TestFlickr(unittest.TestCase):
         # Unpack the arguments that the mock was called with and test that the
         # arguments, especially to the GET are what we expected.
         all_call_args = cm.call_args_list
+        token.assert_called_once_with()
         # GET was called once.
         self.assertEqual(len(all_call_args), 1)
         url, GET_args = all_call_args[0][0]

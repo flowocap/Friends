@@ -30,7 +30,7 @@ from datetime import date, timedelta
 from gi.repository import GdkPixbuf
 from pkg_resources import resource_filename
 
-from friends.testing.mocks import FakeSoupMessage, mock
+from friends.tests.mocks import FakeSoupMessage, mock
 from friends.utils.avatar import Avatar
 
 

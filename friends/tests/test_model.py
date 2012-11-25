@@ -28,7 +28,7 @@ import unittest
 
 from friends.utils.model import Model, first_run, stale_schema
 from friends.utils.model import prune_model, persist_model
-from friends.testing.mocks import LogMock, mock
+from friends.tests.mocks import LogMock, mock
 from gi.repository import Dee
 
 
