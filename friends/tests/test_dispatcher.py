@@ -163,6 +163,21 @@ class TestDispatcher(unittest.TestCase):
                          'Replying to 2/facebook, objid\n' +
                          'Could not find account: 2/facebook\n')
 
+    def test_upload(self):
+        account = mock.Mock()
+        self.dispatcher.account_manager = mock.Mock()
+        self.dispatcher.account_manager.get.return_value = account
+
+        self.dispatcher.Upload('2/facebook',
+                               'file://path/to/image.png',
+                               'A thousand words')
+        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
+        account.protocol.assert_called_once_with(
+            'upload', 'file://path/to/image.png', 'A thousand words')
+
+        self.assertEqual(self.log_mock.empty(),
+                         'Uploading file://path/to/image.png to 2/facebook\n')
+
     def test_get_features(self):
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),
                          ['contacts', 'delete', 'home', 'like', 'receive',
