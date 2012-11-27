@@ -26,7 +26,7 @@ import unittest
 from itertools import product
 
 from friends.utils.options import Options
-from friends.testing.mocks import mock
+from friends.tests.mocks import mock
 
 
 class TestCommandLine(unittest.TestCase):

@@ -26,10 +26,8 @@ from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
-from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import FakeSoupMessage, LogMock, mock
-from friends.testing.mocks import EDSBookClientMock, EDSSource, EDSRegistry
-from friends.utils.base import Base
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
+from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.utils.model import COLUMN_TYPES
 
 
@@ -451,13 +449,28 @@ Facebook error (190 OAuthException): Bad access token
         self.assertEqual(facebook_name_attr.get_value(), 'Lucy Baron')
         web_service_addrs = eds_contact.get_attribute('X-FOLKS-WEB-SERVICES-IDS')
         params= web_service_addrs.get_params()
-        self.assertEqual(len(params), 2)
-        self.assertEqual(params[0].get_name(), 'alias')
-        self.assertEqual(len(params[0].get_values()), 1)
-        self.assertEqual(params[0].get_values()[0], 'Lucy Baron')
-        self.assertEqual(params[1].get_name(), 'jabber')
-        self.assertEqual(len(params[1].get_values()), 1)
-        self.assertEqual(params[1].get_values()[0], '-555555555@chat.facebook.com')
+
+        self.assertEqual(len(params), 3)
+
+        test_jabber = False
+        test_remote_name = False
+        test_facebook_id = False
+
+        for p in params:
+            if p.get_name() == 'jabber':
+                self.assertEqual(len(p.get_values()), 1)
+                self.assertEqual(p.get_values()[0], '-555555555@chat.facebook.com')
+                test_jabber = True
+            if p.get_name() == 'remote-full-name':
+                self.assertEqual(len(p.get_values()), 1)
+                self.assertEqual(p.get_values()[0], 'Lucy Baron')
+                test_remote_name = True
+            if p.get_name() == 'facebook-id':
+                self.assertEqual(len(p.get_values()), 1)
+                self.assertEqual(p.get_values()[0], '555555555')
+                test_facebook_id = True
+        # Finally test to ensure all key value pairs were tested
+        self.assertTrue(test_jabber and test_remote_name and test_facebook_id)
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=True)

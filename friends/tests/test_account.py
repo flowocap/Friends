@@ -27,8 +27,7 @@ from gi.repository import Dee
 
 from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
-from friends.testing.helpers import FakeAccount
-from friends.testing.mocks import LogMock, SettingsIterMock, mock
+from friends.tests.mocks import FakeAccount, LogMock, SettingsIterMock, mock
 from friends.utils.account import Account, AccountManager
 from friends.utils.model import COLUMN_TYPES
 

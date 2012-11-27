@@ -26,7 +26,6 @@ import datetime
 import unittest
 import threading
 
-from base64 import encodebytes
 from urllib.error import URLError
 from urllib.parse import parse_qs
 from urllib.request import urlopen
@@ -34,7 +33,7 @@ from wsgiref.simple_server import WSGIRequestHandler, make_server
 from wsgiref.util import setup_testing_defaults
 from pkg_resources import resource_filename
 
-from friends.testing.mocks import FakeSoupMessage, LogMock, mock
+from friends.tests.mocks import FakeSoupMessage, LogMock, mock
 from friends.utils.http import Downloader, Uploader
 
 

@@ -31,48 +31,14 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import GObject, GdkPixbuf, EDataServer, EBook
+from gi.repository import GObject, EDataServer, EBook
 
 from friends.errors import AuthorizationError
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
+from friends.utils.notify import notify
 from friends.utils.time import ISO8601_FORMAT
-
-
-# Optional dependency on Notify library.
-try:
-    from gi.repository import Notify
-except ImportError:
-    Notify = None
-    notify = lambda *ignore, **kwignore: None
-else:
-    Notify.init('friends')
-    _notify_capabilities = Notify.get_server_caps()
-    def notify(title, message, icon_uri='', pixbuf=None):
-        if not (title and message):
-            return
-        notification = Notify.Notification.new(
-            title, message, 'friends')
-
-        try:
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                icon_uri, 48, 48)
-        except GObject.GError:
-            pass
-
-        if pixbuf is not None:
-            notification.set_icon_from_pixbuf(pixbuf)
-
-        if 'x-canonical-append' in _notify_capabilities:
-            notification.set_hint_string('x-canonical-append', 'allowed')
-
-        try:
-            notification.show()
-        except GObject.GError:
-            # Most likely we've spammed more than 50 notificatons,
-            # not much we can do about that.
-            pass
 
 
 IGNORED = string.punctuation + string.whitespace
@@ -456,6 +422,33 @@ class Base:
                     contact.get_property('full-name')))
             client.remove_contact_sync(contact, None)
         return True
+
+    def _create_contact(self, user_fullname, user_nickname,
+                        social_network_attrs):
+        """Build a VCard based on a dict representation of a contact."""
+
+        vcard = EBook.VCard.new()
+        info = social_network_attrs
+
+        for i in info:
+            attr = EBook.VCardAttribute.new('social-networking-attributes', i)
+            if type(info[i]) == type(dict()):
+                for j in info[i]:
+                    param = EBook.VCardAttributeParam.new(j)
+                    param.add_value(info[i][j])
+                    attr.add_param(param);
+            else:
+                attr.add_value(info[i])
+            vcard.add_attribute(attr)
+
+        contact = EBook.Contact.new_from_vcard(
+            vcard.to_string(EBook.VCardFormat(1)))
+        contact.set_property('full-name', user_fullname)
+        if user_nickname is not None:
+            contact.set_property('nickname', user_nickname)
+
+        log.debug('Creating new contact for {}'.format(user_fullname))
+        return contact
 
     @classmethod
     def get_features(cls):

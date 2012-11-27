@@ -215,6 +215,33 @@ class Dispatcher(dbus.service.Object):
         else:
             log.error('Could not find account: {}'.format(account_id))
 
+    @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
+    def Upload(self, account_id, uri, description):
+        """Upload an image to the specified account_id..
+
+        It takes three arguments, all strings. The URI option is
+        parsed by GFile and thus seamlessly supports uploading from
+        http:// URLs as well as file:// paths.
+
+        example:
+            import dbus
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
+            service.SendReply(
+                '6/twitter',
+                'file:///path/to/image.png',
+                'A beautiful picture.')
+        """
+        if not self.online:
+            return
+        log.debug('Uploading {} to {}'.format(uri, account_id))
+        account = self.account_manager.get(account_id)
+        if account is not None:
+            account.protocol('upload', uri, description)
+        else:
+            log.error('Could not find account: {}'.format(account_id))
+
     @dbus.service.method(DBUS_INTERFACE, out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.

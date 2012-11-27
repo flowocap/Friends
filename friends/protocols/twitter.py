@@ -35,6 +35,9 @@ from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
 
 
+TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
+
+
 log = logging.getLogger(__name__)
 
 
@@ -296,6 +299,76 @@ class Twitter(Base):
         response = self._get_url('{}?q={}'.format(url, quote(query, safe='')))
         for tweet in response.get(self._search_result_key, []):
             self._publish_tweet(tweet, stream='search/{}'.format(query))
+
+# https://dev.twitter.com/docs/api/1.1/get/friends/ids
+    def _getfriendsids(self):
+        """Get a list of the twitter id's of our twitter friends."""
+        url = self._api_base.format(endpoint="friends/ids")
+        response = self._get_url(url)
+
+        try:
+            # Twitter
+            return response["ids"]
+        except TypeError:
+            # Identica
+            return response
+
+# https://dev.twitter.com/docs/api/1.1/get/users/show
+    def _showuser(self, uid):
+        """Get all the information about a twitter user."""
+        url = self._api_base.format(endpoint="users/show") + "?user_id={}".format(uid)
+        response = self._get_url(url)
+        return response
+
+    def _create_contact(self, userdata):
+        """Build a VCard based on a dict representation of a contact."""
+
+        if userdata.get('error'):
+            log.error(userdata)
+            return None
+
+        user_fullname = userdata['name']
+        user_nickname = userdata['screen_name']
+
+        attrs = {}
+        attrs['twitter-id'] = str(userdata['id'])
+        attrs['twitter-name'] = user_fullname
+        attrs['X-URIS'] = 'https://twitter.com/{}'.format(user_nickname)
+        attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
+            'remote-full-name': user_fullname,
+            'twitter-id': str(userdata['id']),
+            }
+
+        contact = Base._create_contact(
+            self, user_fullname, user_nickname, attrs)
+
+        return contact
+
+    @feature
+    def contacts(self):
+        contacts = self._getfriendsids()
+        log.debug('Size of the contacts returned {}'.format(len(contacts)))
+        source = self._get_eds_source(TWITTER_ADDRESS_BOOK)
+        if source is None:
+            source = self._create_eds_source(TWITTER_ADDRESS_BOOK)
+
+        for contact in contacts:
+            twitterid = str(contact)
+            if self._previously_stored_contact(source,
+                                               'twitter-id', twitterid):
+                continue
+            full_contact = self._showuser(twitterid)
+            eds_contact = self._create_contact(full_contact)
+            if eds_contact is None:
+                continue
+            if not self._push_to_eds(TWITTER_ADDRESS_BOOK, eds_contact):
+                log.error(
+                    'Unable to save twitter contact {}'.format(
+                        contact['name']))
+
+    def delete_contacts(self):
+        source = self._get_eds_source(TWITTER_ADDRESS_BOOK)
+        return self._delete_service_contacts(source)
 
 
 class RateLimiter(BaseRateLimiter):
