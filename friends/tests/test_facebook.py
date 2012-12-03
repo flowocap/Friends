@@ -338,6 +338,35 @@ Facebook error (190 OAuthException): Bad access token
             message_id='234125',
             sender=None)
 
+    @mock.patch('friends.protocols.facebook.Uploader.get_json',
+                return_value=dict(post_id='234125'))
+    @mock.patch('friends.protocols.facebook.time.time',
+                return_value=1352209748.1254)
+    def test_upload_async_local(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+        success = mock.Mock()
+        failure = mock.Mock()
+
+        src = 'file://' + resource_filename('friends.tests.data', 'ubuntu.png')
+        self.protocol.upload(src, 'This is Ubuntu!', success, failure)
+        token.assert_called_once_with()
+        success.assert_called_once_with(
+            'faker/than fake', src, 'https://www.facebook.com/234125')
+
+        publish.assert_called_once_with(
+            sender_nick=None,
+            stream='images',
+            url='https://www.facebook.com/234125',
+            timestamp='2012-11-06T13:49:08Z',
+            sender_id=None,
+            from_me=True,
+            icon_uri='',
+            message='This is Ubuntu!',
+            message_id='234125',
+            sender=None)
+
     @mock.patch('friends.utils.http._soup')
     @mock.patch('friends.protocols.facebook.Uploader._build_request',
                 return_value=None)
