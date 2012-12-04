@@ -166,7 +166,7 @@ class _OperationThread(threading.Thread):
         except SuccessfulCompletion as err:
             self._success_callback(str(err))
         except Exception as err:
-            self._failure_callback(err)
+            self._failure_callback(str(err))
             log.exception(err)
         else:
             # Implicitely call the success callback if no exceptions
