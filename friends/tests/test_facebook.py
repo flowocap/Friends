@@ -354,6 +354,7 @@ Facebook error (190 OAuthException): Bad access token
         token.assert_called_once_with()
         success.assert_called_once_with(
             'faker/than fake', src, 'https://www.facebook.com/234125')
+        self.assertEqual(failure.call_count, 0)
 
         publish.assert_called_once_with(
             sender_nick=None,
@@ -378,9 +379,29 @@ Facebook error (190 OAuthException): Bad access token
         publish = self.protocol._publish = mock.Mock()
 
         src = 'file:///tmp/a/non-existant/path'
-        self.assertRaises(
-            ValueError, self.protocol.upload, src, 'There is no spoon')
+        self.protocol.upload(src, 'There is no spoon')
         token.assert_called_once_with()
+
+        self.assertFalse(publish.called)
+
+    @mock.patch('friends.utils.http._soup')
+    @mock.patch('friends.protocols.facebook.Uploader._build_request',
+                return_value=None)
+    @mock.patch('friends.protocols.facebook.time.time',
+                return_value=1352209748.1254)
+    def test_upload_async_missing(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+        success = mock.Mock()
+        failure = mock.Mock()
+
+        src = 'file:///tmp/a/non-existant/path'
+        self.protocol.upload(src, 'There is no spoon', success, failure)
+        token.assert_called_once_with()
+        failure.assert_called_once_with(
+            'faker/than fake', src, 'Failed to build this HTTP request.')
+        self.assertEqual(success.call_count, 0)
 
         self.assertFalse(publish.called)
 
@@ -391,9 +412,25 @@ Facebook error (190 OAuthException): Bad access token
         publish = self.protocol._publish = mock.Mock()
 
         src = resource_filename('friends.tests.data', 'ubuntu.png')
-        self.assertRaises(
-            GLib.GError, self.protocol.upload, src, 'There is no spoon')
+        self.protocol.upload(src, 'There is no spoon')
         token.assert_called_once_with()
+
+        self.assertFalse(publish.called)
+
+    @mock.patch('friends.utils.http._soup')
+    def test_upload_async_not_uri(self, *mocks):
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='face')
+        publish = self.protocol._publish = mock.Mock()
+        success = mock.Mock()
+        failure = mock.Mock()
+
+        src = resource_filename('friends.tests.data', 'ubuntu.png')
+        self.protocol.upload(src, 'There is no spoon', success, failure)
+        token.assert_called_once_with()
+        failure.assert_called_once_with(
+            'faker/than fake', src, 'Operation not supported')
+        self.assertEqual(success.call_count, 0)
 
         self.assertFalse(publish.called)
 

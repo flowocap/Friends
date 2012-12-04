@@ -279,13 +279,18 @@ class Facebook(Base):
         """Upload local or remote image or video to album."""
         url = '{}/photos?access_token={}'.format(
             ME_URL, self._get_access_token())
-        response = Uploader(
-            url, picture_uri, description,
-            picture_key='source', desc_key='message').get_json()
+        try:
+            response = Uploader(
+                url, picture_uri, description,
+                picture_key='source', desc_key='message').get_json()
+        except Exception as err:
+            failure(self._account.id, picture_uri, str(err))
+            log.error(str(err))
+            return
         if response is None:
             message = 'No response from upload server.'
-            log.error(message)
             failure(self._account.id, picture_uri, message)
+            log.error(message)
             return
         post_id = response.get('post_id')
         if post_id is not None:
