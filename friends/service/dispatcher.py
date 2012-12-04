@@ -35,9 +35,11 @@ from friends.utils.signaler import signaler
 from friends.utils.menus import MenuManager
 from friends.utils.model import persist_model, Model
 
+
 log = logging.getLogger(__name__)
 
 DBUS_INTERFACE = 'com.canonical.Friends.Service'
+STUB = lambda *ignore, **kwignore: None
 
 
 class Dispatcher(dbus.service.Object):
@@ -140,11 +142,18 @@ class Dispatcher(dbus.service.Object):
         """
         self.menu_manager.update_unread_count(0)
 
-    @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
-    def Do(self, action, account_id='', arg=''):
+    @dbus.service.method(DBUS_INTERFACE,
+                         in_signature='sss',
+                         out_signature='s',
+                         async_callbacks=('success','failure'))
+    def Do(self, action, account_id='', arg='',
+           success=STUB, failure=STUB):
         """Performs an arbitrary operation with an optional argument.
 
-        This is how the client initiates retweeting, liking, searching, etc.
+        This is how the client initiates retweeting, liking,
+        searching, etc. See Dispatcher.Upload for an example of how to
+        use the callbacks.
+
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
@@ -155,29 +164,42 @@ class Dispatcher(dbus.service.Object):
             service.Do('list', '6/twitter', 'list_id') # Fetch a single list.
         """
         if not self.online:
+            failure('No internet connection available.')
             return
         if account_id:
             accounts = [self.account_manager.get(account_id)]
             if accounts == [None]:
-                log.error('Could not find account: {}'.format(account_id))
+                message = 'Could not find account: {}'.format(account_id)
+                failure(message)
+                log.error(message)
                 return
         else:
             accounts = list(self.account_manager.get_all())
 
+        called = False
         for account in accounts:
             log.debug('{}: {} {}'.format(account.id, action, arg))
-            args = (action, arg) if arg else (action)
+            args = (action, arg) if arg else (action,)
             try:
-                account.protocol(*args)
+                account.protocol(*args, success=success, failure=failure)
+                called = True
             except NotImplementedError:
                 # Not all accounts are expected to implement every action.
                 pass
+        if not called:
+            failure('No accounts supporting {} found.'.format(action))
 
-    @dbus.service.method(DBUS_INTERFACE, in_signature='s')
-    def SendMessage(self, message):
+    @dbus.service.method(DBUS_INTERFACE,
+                         in_signature='s',
+                         out_signature='s',
+                         async_callbacks=('success','failure'))
+    def SendMessage(self, message, success=STUB, failure=STUB):
         """Posts a message/status update to all send_enabled accounts.
 
-        It takes one argument, which is a message formated as a string.
+        It takes one argument, which is a message formated as a
+        string. See Dispatcher.Upload for an example of how to use the
+        callbacks.
+
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
@@ -186,19 +208,35 @@ class Dispatcher(dbus.service.Object):
             service.SendMessage('Your message')
         """
         if not self.online:
+            failure('No internet connection available.')
             return
+        sent = False
         for account in self.account_manager.get_all():
             if account.send_enabled:
+                sent = True
                 log.debug(
                     'Sending message to {}'.format(
                         account.protocol.__class__.__name__))
-                account.protocol('send', message)
+                account.protocol(
+                    'send',
+                    message,
+                    success=success,
+                    failure=failure,
+                    )
+        if not sent:
+            failure('No send_enabled accounts found.')
 
-    @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
-    def SendReply(self, account_id, message_id, message):
+    @dbus.service.method(DBUS_INTERFACE,
+                         in_signature='sss',
+                         out_signature='s',
+                         async_callbacks=('success','failure'))
+    def SendReply(self, account_id, message_id, message,
+                  success=STUB, failure=STUB):
         """Posts a reply to the indicate message_id on account_id.
 
-        It takes three arguments, all strings.
+        It takes three arguments, all strings. See Dispatcher.Upload
+        for an example of how to use the callbacks.
+
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
@@ -207,47 +245,29 @@ class Dispatcher(dbus.service.Object):
             service.SendReply('6/twitter', '34245645347345626', 'Your reply')
         """
         if not self.online:
+            failure('No internet connection available.')
             return
         log.debug('Replying to {}, {}'.format(account_id, message_id))
         account = self.account_manager.get(account_id)
         if account is not None:
-            account.protocol('send_thread', message_id, message)
+            account.protocol(
+                'send_thread',
+                message_id,
+                message,
+                success=success,
+                failure=failure,
+                )
         else:
-            log.error('Could not find account: {}'.format(account_id))
-
-    @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
-    def Upload(self, account_id, uri, description):
-        """Upload an image to the specified account_id.
-
-        It takes three arguments, all strings. The URI option is
-        parsed by GFile and thus seamlessly supports uploading from
-        http:// URLs as well as file:// paths.
-
-        example:
-            import dbus
-            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/friends/Service')
-            service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.Upload(
-                '6/twitter',
-                'file:///path/to/image.png',
-                'A beautiful picture.')
-        """
-        if not self.online:
-            return
-        log.debug('Uploading {} to {}'.format(uri, account_id))
-        account = self.account_manager.get(account_id)
-        if account is not None:
-            account.protocol('upload', uri, description)
-        else:
-            log.error('Could not find account: {}'.format(account_id))
+            message = 'Could not find account: {}'.format(account_id)
+            failure(message)
+            log.error(message)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
-                         out_signature='sss',
+                         out_signature='s',
                          async_callbacks=('success','failure'))
-    def UploadAsync(self, account_id, uri, description, success, failure):
-        """Upload an image to the specified account_id.
+    def Upload(self, account_id, uri, description, success=STUB, failure=STUB):
+        """Upload an image to the specified account_id, asynchronously.
 
         It takes five arguments, three strings and two callback
         functions. The URI option is parsed by GFile and thus
@@ -269,23 +289,33 @@ class Dispatcher(dbus.service.Object):
             def failure(account_id, uri, message):
                 print('{} failed to upload: {}'.format(uri, message))
 
-            service.UploadAsync(
+            service.Upload(
                 '6/twitter',
                 'file:///path/to/image.png',
                 'A beautiful picture.'
                 reply_handler=success,
                 error_handler=failure)
+
+        Note also that the callbacks are actually optional; you are
+        free to ignore error conditions at your peril.
         """
         if not self.online:
-            failure(account_id, uri, 'No internet connection available.')
+            failure('No internet connection available.')
             return
         log.debug('Uploading {} to {}'.format(uri, account_id))
         account = self.account_manager.get(account_id)
         if account is not None:
-            account.protocol('upload', uri, description, success, failure)
+            account.protocol(
+                'upload',
+                uri,
+                description,
+                success=success,
+                failure=failure,
+                )
         else:
-            failure(account_id, uri, 'Invalid account_id.')
-            log.error('Could not find account: {}'.format(account_id))
+            message = 'Could not find account: {}'.format(account_id)
+            failure(message)
+            log.error(message)
 
     @dbus.service.method(DBUS_INTERFACE, out_signature='s')
     def GetFeatures(self, protocol_name):

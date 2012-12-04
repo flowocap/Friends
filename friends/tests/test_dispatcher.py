@@ -26,7 +26,7 @@ import json
 
 from dbus.mainloop.glib import DBusGMainLoop
 
-from friends.service.dispatcher import Dispatcher
+from friends.service.dispatcher import Dispatcher, STUB
 from friends.tests.mocks import LogMock, mock
 
 
@@ -101,7 +101,7 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.account_manager.get.assert_called_once_with(
             '345/friendface')
         account.protocol.assert_called_once_with(
-            'like', '23346356767354626')
+            'like', '23346356767354626', success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
                          '345/friendface: like 23346356767354626\n')
@@ -133,8 +133,10 @@ class TestDispatcher(unittest.TestCase):
 
         self.dispatcher.SendMessage('Howdy friends!')
         self.dispatcher.account_manager.get_all.assert_called_once_with()
-        account1.protocol.assert_called_once_with('send', 'Howdy friends!')
-        account3.protocol.assert_called_once_with('send', 'Howdy friends!')
+        account1.protocol.assert_called_once_with(
+            'send', 'Howdy friends!', success=STUB, failure=STUB)
+        account3.protocol.assert_called_once_with(
+            'send', 'Howdy friends!', success=STUB, failure=STUB)
         self.assertEqual(account2.protocol.call_count, 0)
 
     def test_send_reply(self):
@@ -145,7 +147,8 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.SendReply('2/facebook', 'objid', '[Hilarious Response]')
         self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
         account.protocol.assert_called_once_with(
-            'send_thread', 'objid', '[Hilarious Response]')
+            'send_thread', 'objid', '[Hilarious Response]',
+            success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
                          'Replying to 2/facebook, objid\n')
@@ -163,21 +166,6 @@ class TestDispatcher(unittest.TestCase):
                          'Replying to 2/facebook, objid\n' +
                          'Could not find account: 2/facebook\n')
 
-    def test_upload(self):
-        account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
-
-        self.dispatcher.Upload('2/facebook',
-                               'file://path/to/image.png',
-                               'A thousand words')
-        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
-        account.protocol.assert_called_once_with(
-            'upload', 'file://path/to/image.png', 'A thousand words')
-
-        self.assertEqual(self.log_mock.empty(),
-                         'Uploading file://path/to/image.png to 2/facebook\n')
-
     def test_upload_async(self):
         account = mock.Mock()
         self.dispatcher.account_manager = mock.Mock()
@@ -186,14 +174,19 @@ class TestDispatcher(unittest.TestCase):
         success = mock.Mock()
         failure = mock.Mock()
 
-        self.dispatcher.UploadAsync('2/facebook',
-                                    'file://path/to/image.png',
-                                    'A thousand words',
-                                    success=success,
-                                    failure=failure)
+        self.dispatcher.Upload('2/facebook',
+                               'file://path/to/image.png',
+                               'A thousand words',
+                               success=success,
+                               failure=failure)
         self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
         account.protocol.assert_called_once_with(
-            'upload', 'file://path/to/image.png', 'A thousand words', success, failure)
+            'upload',
+            'file://path/to/image.png',
+            'A thousand words',
+            success=success,
+            failure=failure,
+            )
 
         self.assertEqual(self.log_mock.empty(),
                          'Uploading file://path/to/image.png to 2/facebook\n')

@@ -27,7 +27,7 @@ import logging
 from datetime import datetime, timedelta
 
 from friends.utils.avatar import Avatar
-from friends.utils.base import Base, feature
+from friends.utils.base import Base, SuccessfulCompletion, feature
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
 
@@ -39,7 +39,6 @@ PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
 FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
-STUB = lambda *ignore, **kwignore: None
 
 
 log = logging.getLogger(__name__)
@@ -274,24 +273,16 @@ class Facebook(Base):
             self._unpublish(obj_id)
 
     @feature
-    def upload(self, picture_uri, description='', success=STUB, failure=STUB):
+    def upload(self, picture_uri, description=''):
         # http://developers.facebook.com/docs/reference/api/photo/
         """Upload local or remote image or video to album."""
         url = '{}/photos?access_token={}'.format(
             ME_URL, self._get_access_token())
-        try:
-            response = Uploader(
-                url, picture_uri, description,
-                picture_key='source', desc_key='message').get_json()
-        except Exception as err:
-            failure(str(err))
-            log.error(str(err))
-            return
+        response = Uploader(
+            url, picture_uri, description,
+            picture_key='source', desc_key='message').get_json()
         if response is None:
-            message = 'No response from upload server.'
-            failure(message)
-            log.error(message)
-            return
+            raise IOError('No response from upload server.')
         post_id = response.get('post_id')
         if post_id is not None:
             destination_url = PERMALINK.format(id=post_id)
@@ -308,9 +299,9 @@ class Facebook(Base):
                 icon_uri=Avatar.get_image(
                     API_BASE.format(id=self._account.user_id) +
                     '/picture?type=large'))
-            success(self._account.id, picture_uri, destination_url)
+            raise SuccessfulCompletion(destination_url)
         else:
-            failure(str(response))
+            raise IOError(str(response))
 
     def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""
