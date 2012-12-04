@@ -399,8 +399,7 @@ Facebook error (190 OAuthException): Bad access token
         src = 'file:///tmp/a/non-existant/path'
         self.protocol.upload(src, 'There is no spoon', success, failure)
         token.assert_called_once_with()
-        failure.assert_called_once_with(
-            'faker/than fake', src, 'Failed to build this HTTP request.')
+        failure.assert_called_once_with('Failed to build this HTTP request.')
         self.assertEqual(success.call_count, 0)
 
         self.assertFalse(publish.called)
@@ -428,8 +427,7 @@ Facebook error (190 OAuthException): Bad access token
         src = resource_filename('friends.tests.data', 'ubuntu.png')
         self.protocol.upload(src, 'There is no spoon', success, failure)
         token.assert_called_once_with()
-        failure.assert_called_once_with(
-            'faker/than fake', src, 'Operation not supported')
+        failure.assert_called_once_with('Operation not supported')
         self.assertEqual(success.call_count, 0)
 
         self.assertFalse(publish.called)

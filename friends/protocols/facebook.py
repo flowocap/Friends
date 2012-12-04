@@ -284,12 +284,12 @@ class Facebook(Base):
                 url, picture_uri, description,
                 picture_key='source', desc_key='message').get_json()
         except Exception as err:
-            failure(self._account.id, picture_uri, str(err))
+            failure(str(err))
             log.error(str(err))
             return
         if response is None:
             message = 'No response from upload server.'
-            failure(self._account.id, picture_uri, message)
+            failure(message)
             log.error(message)
             return
         post_id = response.get('post_id')
@@ -310,7 +310,7 @@ class Facebook(Base):
                     '/picture?type=large'))
             success(self._account.id, picture_uri, destination_url)
         else:
-            failure(self._account.id, picture_uri, str(response))
+            failure(str(response))
 
     def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""
