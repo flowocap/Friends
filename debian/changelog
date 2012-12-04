@@ -1,3 +1,10 @@
+friends (0.0+r84) quantal; urgency=low
+
+  * rev 84
+    - Added new UploadAsync API (LP: #1085781)
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 04 Dec 2012 10:50:54 -0500
+
 friends (0.0+r83) quantal; urgency=low
 
   * rev 83

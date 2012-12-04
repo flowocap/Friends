@@ -217,7 +217,7 @@ class Dispatcher(dbus.service.Object):
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='sss')
     def Upload(self, account_id, uri, description):
-        """Upload an image to the specified account_id..
+        """Upload an image to the specified account_id.
 
         It takes three arguments, all strings. The URI option is
         parsed by GFile and thus seamlessly supports uploading from
@@ -228,7 +228,7 @@ class Dispatcher(dbus.service.Object):
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.SendReply(
+            service.Upload(
                 '6/twitter',
                 'file:///path/to/image.png',
                 'A beautiful picture.')
@@ -240,6 +240,51 @@ class Dispatcher(dbus.service.Object):
         if account is not None:
             account.protocol('upload', uri, description)
         else:
+            log.error('Could not find account: {}'.format(account_id))
+
+    @dbus.service.method(DBUS_INTERFACE,
+                         in_signature='sss',
+                         out_signature='sss',
+                         async_callbacks=('success','failure'))
+    def UploadAsync(self, account_id, uri, description, success, failure):
+        """Upload an image to the specified account_id.
+
+        It takes five arguments, three strings and two callback
+        functions. The URI option is parsed by GFile and thus
+        seamlessly supports uploading from http:// URLs as well as
+        file:// paths. You'll also need a working glib mainloop for
+        the below example to function correctly.
+
+        example:
+            import dbus
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
+
+            def success(account_id, uri, destination_url):
+                print(
+                    '{} successfully uploaded to {}.'.format(
+                        uri, destination_url))
+
+            def failure(account_id, uri, message):
+                print('{} failed to upload: {}'.format(uri, message))
+
+            service.UploadAsync(
+                '6/twitter',
+                'file:///path/to/image.png',
+                'A beautiful picture.'
+                reply_handler=success,
+                error_handler=failure)
+        """
+        if not self.online:
+            failure(account_id, uri, 'No internet connection available.')
+            return
+        log.debug('Uploading {} to {}'.format(uri, account_id))
+        account = self.account_manager.get(account_id)
+        if account is not None:
+            account.protocol('upload', uri, description, success, failure)
+        else:
+            failure(account_id, uri, 'Invalid account_id.')
             log.error('Could not find account: {}'.format(account_id))
 
     @dbus.service.method(DBUS_INTERFACE, out_signature='s')

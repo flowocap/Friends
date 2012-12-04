@@ -178,6 +178,26 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(self.log_mock.empty(),
                          'Uploading file://path/to/image.png to 2/facebook\n')
 
+    def test_upload_async(self):
+        account = mock.Mock()
+        self.dispatcher.account_manager = mock.Mock()
+        self.dispatcher.account_manager.get.return_value = account
+
+        success = mock.Mock()
+        failure = mock.Mock()
+
+        self.dispatcher.UploadAsync('2/facebook',
+                                    'file://path/to/image.png',
+                                    'A thousand words',
+                                    success=success,
+                                    failure=failure)
+        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
+        account.protocol.assert_called_once_with(
+            'upload', 'file://path/to/image.png', 'A thousand words', success, failure)
+
+        self.assertEqual(self.log_mock.empty(),
+                         'Uploading file://path/to/image.png to 2/facebook\n')
+
     def test_get_features(self):
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),
                          ['contacts', 'delete', 'home', 'like', 'receive',
