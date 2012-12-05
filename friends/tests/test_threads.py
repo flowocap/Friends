@@ -64,7 +64,7 @@ class TestThreads(unittest.TestCase):
         # Wait for threads to exit, avoiding race condition.
         join_all_threads()
 
-        failure.assert_called_once_with(err)
+        failure.assert_called_once_with(str(err))
         self.assertEqual(success.call_count, 0)
 
     def test_no_exception_calls_success_callback(self):
