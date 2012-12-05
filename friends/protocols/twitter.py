@@ -33,6 +33,7 @@ from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
+from friends.errors import FriendsError
 
 
 TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
@@ -206,13 +207,9 @@ class Twitter(Base):
         you.
         """
         url = self._api_base.format(endpoint='direct_messages/new')
-        try:
-            tweet = self._get_url(
-                url, dict(text=message, screen_name=screen_name))
-        except HTTPError as error:
-            log.error('{}: Does that user follow you?'.format(error))
-        else:
-            self._publish_tweet(tweet, stream='private')
+        tweet = self._get_url(
+            url, dict(text=message, screen_name=screen_name))
+        self._publish_tweet(tweet, stream='private')
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/update
     @feature
@@ -324,8 +321,7 @@ class Twitter(Base):
         """Build a VCard based on a dict representation of a contact."""
 
         if userdata.get('error'):
-            log.error(userdata)
-            return None
+            raise FriendsError(userdata)
 
         user_fullname = userdata['name']
         user_nickname = userdata['screen_name']
@@ -358,11 +354,12 @@ class Twitter(Base):
                                                'twitter-id', twitterid):
                 continue
             full_contact = self._showuser(twitterid)
-            eds_contact = self._create_contact(full_contact)
-            if eds_contact is None:
+            try:
+                eds_contact = self._create_contact(full_contact)
+            except FriendsError:
                 continue
             if not self._push_to_eds(TWITTER_ADDRESS_BOOK, eds_contact):
-                log.error(
+                raise FriendsError(
                     'Unable to save twitter contact {}'.format(
                         contact['name']))
 

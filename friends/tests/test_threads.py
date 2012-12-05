@@ -24,7 +24,8 @@ import unittest
 import threading
 
 from friends.tests.mocks import mock
-from friends.utils.base import _OperationThread, SuccessfulCompletion
+from friends.utils.base import _OperationThread
+from friends.errors import SuccessfulCompletion
 
 
 def join_all_threads():

@@ -1,3 +1,9 @@
+friends (0.0+r88) quantal; urgency=low
+
+  * fix for duplicate uploads 
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 05 Dec 2012 17:04:43 -0500
+
 friends (0.0+r86.1) quantal; urgency=low
 
   * debian/control

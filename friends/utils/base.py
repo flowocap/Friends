@@ -33,7 +33,7 @@ from datetime import datetime
 
 from gi.repository import GObject, EDataServer, EBook
 
-from friends.errors import AuthorizationError
+from friends.errors import AuthorizationError, SuccessfulCompletion
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
@@ -132,17 +132,6 @@ def initialize_caches():
     log.debug(
         '_seen_ids: {}, _seen_messages: {}'.format(
             len(_seen_ids), len(_seen_messages)))
-
-
-class SuccessfulCompletion(Exception):
-    """This is an exception used to indicate a successful thread completion.
-
-    This was necessary because _OperationThread had no way of getting
-    a return value from a thread, but it can catch exceptions. This
-    isn't used everywhere, but only where a certain return value is
-    desired in the success callback.
-    """
-    pass
 
 
 class _OperationThread(threading.Thread):
