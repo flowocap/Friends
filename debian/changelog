@@ -1,3 +1,12 @@
+friends (0.0+r86.1) quantal; urgency=low
+
+  * debian/control
+    - Dropped build depends for python3-gobject, all we need is python3-gi
+    - Added depends to friends-service for gir1.2-accounts-1.0 and 
+      python3-pkg-resources
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 05 Dec 2012 10:26:51 -0500
+
 friends (0.0+r86) quantal; urgency=low
 
   * rev 86
