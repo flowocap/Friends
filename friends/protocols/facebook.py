@@ -27,9 +27,10 @@ import logging
 from datetime import datetime, timedelta
 
 from friends.utils.avatar import Avatar
-from friends.utils.base import Base, SuccessfulCompletion, feature
+from friends.utils.base import Base, feature
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
+from friends.errors import SuccessfulCompletion, FriendsError
 
 
 # 'id' can be the id of *any* Facebook object
@@ -57,9 +58,8 @@ class Facebook(Base):
         error = data.get('error')
         if error is None:
             return False
-        log.error('Facebook error ({} {}): {}'.format(
+        raise FriendsError('Facebook error ({} {}): {}'.format(
             error.get('code'), error.get('type'), error.get('message')))
-        return True
 
     def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
@@ -205,7 +205,7 @@ class Facebook(Base):
 
         if not Downloader(url, method=method,
                           params=dict(access_token=token)).get_json():
-            log.error('Failed to {} like {} on Facebook'.format(
+            raise FriendsError('Failed to {} like {} on Facebook'.format(
                 method, obj_id))
 
     @feature
@@ -234,8 +234,7 @@ class Facebook(Base):
             params=dict(access_token=token, message=message)).get_json()
         new_id = result.get('id')
         if new_id is None:
-            log.error('Failed sending to Facebook: {!r}'.format(result))
-            return
+            raise FriendsError('Failed sending to Facebook: {!r}'.format(result))
 
         url = API_BASE.format(id=new_id)
         entry = Downloader(url, params=dict(access_token=token)).get_json()
@@ -268,7 +267,7 @@ class Facebook(Base):
 
         if not Downloader(url, method='DELETE',
                           params=dict(access_token=token)).get_json():
-            log.error('Failed to delete {} on Facebook'.format(obj_id))
+            raise FriendsError('Failed to delete {} on Facebook'.format(obj_id))
         else:
             self._unpublish(obj_id)
 
@@ -282,7 +281,7 @@ class Facebook(Base):
             url, picture_uri, description,
             picture_key='source', desc_key='message').get_json()
         if response is None:
-            raise IOError('No response from upload server.')
+            raise FriendsError('No response from upload server.')
         post_id = response.get('post_id')
         if post_id is not None:
             destination_url = PERMALINK.format(id=post_id)
@@ -301,7 +300,7 @@ class Facebook(Base):
                     '/picture?type=large'))
             raise SuccessfulCompletion(destination_url)
         else:
-            raise IOError(str(response))
+            raise FriendsError(str(response))
 
     def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""
@@ -363,7 +362,7 @@ class Facebook(Base):
             full_contact = self._fetch_contact(contact['id'])
             eds_contact = self._create_contact(full_contact)
             if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
-                log.error(
+                raise FriendsError(
                     'Unable to save facebook contact {}'.format(
                         contact['name']))
 

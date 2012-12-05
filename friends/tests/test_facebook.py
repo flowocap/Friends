@@ -25,9 +25,10 @@ import unittest
 from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
 
-from friends.protocols.facebook import Facebook, SuccessfulCompletion
+from friends.protocols.facebook import Facebook
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
+from friends.errors import SuccessfulCompletion, FriendsError
 from friends.utils.model import COLUMN_TYPES
 
 
@@ -95,12 +96,14 @@ class TestFacebook(unittest.TestCase):
     def test_error_response(self, *mocks):
         with LogMock('friends.utils.base',
                      'friends.protocols.facebook') as log_mock:
-            self.protocol.home()
+            self.assertRaises(
+                FriendsError,
+                self.protocol.home,
+                )
             contents = log_mock.empty(trim=False)
         self.assertEqual(contents, """\
 Logging in to Facebook
 Facebook UID: None
-Facebook error (190 OAuthException): Bad access token
 """)
 
     @mock.patch('friends.utils.http.Soup.Message',

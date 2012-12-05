@@ -297,11 +297,12 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             raise HTTPError('url', 403, 'Forbidden', 'Forbidden', mock.Mock())
 
         with mock.patch.object(self.protocol, '_get_url', side_effect=fail):
-            self.protocol.send_private('pumpichank', 'Are you mocking me?')
-
-        self.assertEqual(
-            self.log_mock.empty(),
-            'HTTP Error 403: Forbidden: Does that user follow you?\n')
+            self.assertRaises(
+                HTTPError,
+                self.protocol.send_private,
+                'pumpichank',
+                'Are you mocking me?',
+                )
 
     def test_send(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')

@@ -26,6 +26,7 @@ from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader
 from friends.utils.time import iso8601utc
+from friends.errors import FriendsError
 
 
 log = logging.getLogger(__name__)
@@ -74,8 +75,7 @@ class FourSquare(Base):
 
         response_code = result.get('meta', {}).get('code')
         if response_code != 200:
-            log.error('FourSquare: Error: {}'.format(result))
-            return
+            raise FriendsError('FourSquare: Error: {}'.format(result))
 
         checkins = result.get('response', {}).get('recent', [])
         for checkin in checkins:
