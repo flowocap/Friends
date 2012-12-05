@@ -205,5 +205,4 @@ class Uploader(HTTP):
         multipart.append_form_file(
            self.picture_key, self.filename, 'application/octet-stream', body)
         message = Soup.form_request_new_from_multipart(self.url, multipart)
-        _soup.send_message(message)
         return message
