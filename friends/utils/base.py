@@ -41,6 +41,7 @@ from friends.utils.notify import notify
 from friends.utils.time import ISO8601_FORMAT
 
 
+STUB = lambda *ignore, **kwignore: None
 IGNORED = string.punctuation + string.whitespace
 SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)
 EMPTY_STRING = ''
@@ -133,11 +134,25 @@ def initialize_caches():
             len(_seen_ids), len(_seen_messages)))
 
 
+class SuccessfulCompletion(Exception):
+    """This is an exception used to indicate a successful thread completion.
+
+    This was necessary because _OperationThread had no way of getting
+    a return value from a thread, but it can catch exceptions. This
+    isn't used everywhere, but only where a certain return value is
+    desired in the success callback.
+    """
+    pass
+
+
 class _OperationThread(threading.Thread):
     """Catch, log, and swallow all exceptions in the sub-thread."""
 
-    def __init__(self, *args, identifier=None, **kws):
+    def __init__(self, *args, identifier=None, success=STUB, failure=STUB,
+                 **kws):
         self._id = identifier
+        self._success_callback = success
+        self._failure_callback = failure
         super().__init__(*args, **kws)
 
     # Always run these as daemon threads, so they don't block the main thread,
@@ -148,8 +163,17 @@ class _OperationThread(threading.Thread):
         log.debug('{} is starting in a new thread.'.format(self._id))
         try:
             super().run()
-        except Exception:
-            log.exception('Friends operation exception:\n')
+        except SuccessfulCompletion as err:
+            self._success_callback(str(err))
+        except Exception as err:
+            self._failure_callback(str(err))
+            log.exception(err)
+        else:
+            # Implicitely call the success callback if no exceptions
+            # have been raised. This means that ALL error conditions,
+            # no matter how slight, MUST raise exceptions if you don't
+            # want the success callback to be called.
+            self._success_callback(self._id)
         log.debug('{} has completed, thread exiting.'.format(self._id))
 
         # If this is the last thread to exit, then the refresh is
@@ -171,7 +195,7 @@ class Base:
         self._source_registry = EDataServer.SourceRegistry.new_sync(None)
         self._account = account
 
-    def __call__(self, operation, *args, **kwargs):
+    def __call__(self, operation, *args, success=STUB, failure=STUB, **kwargs):
         """Call an operation, i.e. a method, with arguments in a sub-thread.
 
         Sub-threads do not currently communicate any state to the main thread,
@@ -183,7 +207,12 @@ class Base:
         method = getattr(self, operation)
         _OperationThread(
             identifier='{}.{}'.format(self.__class__.__name__, operation),
-            target=method, args=args, kwargs=kwargs).start()
+            target=method,
+            success=success,
+            failure=failure,
+            args=args,
+            kwargs=kwargs,
+            ).start()
 
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.

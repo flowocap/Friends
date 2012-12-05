@@ -24,7 +24,7 @@ import logging
 
 sys.path.insert(0, '.')
 
-from gi.repository import GObject
+from gi.repository import GLib
 from friends.utils.logging import initialize
 
 # Print all logs for debugging purposes
@@ -67,6 +67,6 @@ if __name__ == '__main__':
     if not found:
         log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
     else:
-        loop = GObject.MainLoop()
-        GObject.timeout_add_seconds(10, loop.quit)
+        loop = GLib.MainLoop()
+        GLib.timeout_add_seconds(10, loop.quit)
         loop.run()
