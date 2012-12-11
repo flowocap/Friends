@@ -70,21 +70,35 @@ class TestDispatcher(unittest.TestCase):
     @mock.patch('friends.service.dispatcher.threading')
     def test_refresh(self, threading_mock):
         account = mock.Mock()
-        thread = mock.Mock()
-        threading_mock.enumerate.return_value = [thread]
-        threading_mock.current_thread.return_value = 'MainThread'
+        threading_mock.activeCount.return_value = 1
         self.dispatcher.account_manager = mock.Mock()
         self.dispatcher.account_manager.get_all.return_value = [account]
 
         self.assertTrue(self.dispatcher.Refresh())
-        threading_mock.current_thread.assert_called_once_with()
-        threading_mock.enumerate.assert_called_once_with()
-        thread.join.assert_called_once_with()
+        threading_mock.activeCount.assert_called_once_with()
 
         self.dispatcher.account_manager.get_all.assert_called_once_with()
         account.protocol.assert_called_once_with('receive')
 
         self.assertEqual(self.log_mock.empty(), 'Refresh requested\n')
+
+    @mock.patch('friends.service.dispatcher.threading')
+    def test_refresh_premature(self, threading_mock):
+        account = mock.Mock()
+        threading_mock.activeCount.return_value = 10
+        self.dispatcher.account_manager = mock.Mock()
+        self.dispatcher.account_manager.get_all.return_value = [account]
+
+        self.assertTrue(self.dispatcher.Refresh())
+        threading_mock.activeCount.assert_called_once_with()
+
+        self.assertEqual(self.dispatcher.account_manager.get_all.call_count, 0)
+        self.assertEqual(account.protocol.call_count, 0)
+
+        self.assertEqual(
+            self.log_mock.empty(),
+            'Refresh requested\n' +
+            'Aborting refresh because previous refresh incomplete!\n')
 
     def test_clear_indicators(self):
         self.dispatcher.menu_manager = mock.Mock()
