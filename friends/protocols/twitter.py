@@ -381,6 +381,7 @@ class RateLimiter(BaseRateLimiter):
     def wait(self, message):
         # If we haven't seen this URL, default to no wait.
         seconds = self._limits.get(self._sanitize_url(message.get_uri()), 0)
+        log.debug('Sleeping for {} seconds!'.format(seconds))
         time.sleep(seconds)
 
     def update(self, message):
@@ -406,3 +407,6 @@ class RateLimiter(BaseRateLimiter):
             else:
                 wait_secs = rate_delta / rate_count
                 self._limits[url] = wait_secs
+            log.debug(
+                'Next access to {} must wait {} seconds!'.format(
+                    url, self._limits.get(url, 0)))

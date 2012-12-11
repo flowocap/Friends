@@ -105,20 +105,17 @@ class Dispatcher(dbus.service.Object):
         self._unread_count = 0
 
         log.debug('Refresh requested')
-        # Wait for all previous actions to complete before
-        # starting a load of new ones.
-        current = threading.current_thread()
-        for thread in threading.enumerate():
-            if thread != current:
-                thread.join()
+
+        if threading.activeCount() > 1:
+            log.debug('Aborting refresh because previous refresh incomplete!')
+            return True
 
         if not self.online:
             return
 
-        # account.protocol() starts a new thread for each account present
-        # and returns immediately. So this method should be quick unless
-        # there are a bunch of old, incomplete jobs waiting around from
-        # the last refresh.
+        # account.protocol() starts a new thread and then returns
+        # immediately, so there is no delay or blocking during the
+        # execution of this method.
         for account in self.account_manager.get_all():
             try:
                 account.protocol('receive')
