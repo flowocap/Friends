@@ -29,6 +29,7 @@ from urllib.error import HTTPError
 from friends.protocols.twitter import RateLimiter, Twitter
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
+from friends.errors import AuthorizationError
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -59,7 +60,7 @@ class TestTwitter(unittest.TestCase):
     @mock.patch('friends.protocols.twitter.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, dload, login):
-        self.assertFalse(self.protocol._login())
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 

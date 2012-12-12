@@ -361,10 +361,7 @@ class Facebook(Base):
                     contact['name'], contact['id']))
             full_contact = self._fetch_contact(contact['id'])
             eds_contact = self._create_contact(full_contact)
-            if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
-                raise FriendsError(
-                    'Unable to save facebook contact {}'.format(
-                        contact['name']))
+            self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact)
 
     def delete_contacts(self):
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)

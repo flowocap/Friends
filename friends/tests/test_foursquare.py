@@ -27,6 +27,7 @@ from gi.repository import Dee
 from friends.protocols.foursquare import FourSquare
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
+from friends.errors import AuthorizationError
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -62,7 +63,7 @@ class TestFourSquare(unittest.TestCase):
     @mock.patch('friends.utils.http.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
-        self.assertFalse(self.protocol._login())
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 

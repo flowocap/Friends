@@ -28,6 +28,7 @@ import unittest
 
 from friends.utils.authentication import Authentication
 from friends.tests.mocks import FakeAccount, mock
+from friends.errors import AuthorizationError
 
 
 class FakeSignon:
@@ -91,8 +92,4 @@ class TestAuthentication(unittest.TestCase):
             message = 'who are you?'
         self.account.auth.parameters = Error
         authenticator = Authentication(self.account)
-        reply = authenticator.login()
-        self.assertEqual(reply, 'auth reply')
-        self.assertEqual(logger.debug_messages, ['Login completed'])
-        self.assertEqual(logger.error_messages,
-                         ['Got authentication error: who are you?'])
+        self.assertRaises(AuthorizationError, authenticator.login)

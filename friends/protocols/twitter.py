@@ -314,8 +314,7 @@ class Twitter(Base):
     def _showuser(self, uid):
         """Get all the information about a twitter user."""
         url = self._api_base.format(endpoint="users/show") + "?user_id={}".format(uid)
-        response = self._get_url(url)
-        return response
+        return self._get_url(url)
 
     def _create_contact(self, userdata):
         """Build a VCard based on a dict representation of a contact."""
@@ -350,18 +349,14 @@ class Twitter(Base):
 
         for contact in contacts:
             twitterid = str(contact)
-            if self._previously_stored_contact(source,
-                                               'twitter-id', twitterid):
+            if self._previously_stored_contact(source, 'twitter-id', twitterid):
                 continue
             full_contact = self._showuser(twitterid)
             try:
                 eds_contact = self._create_contact(full_contact)
             except FriendsError:
                 continue
-            if not self._push_to_eds(TWITTER_ADDRESS_BOOK, eds_contact):
-                raise FriendsError(
-                    'Unable to save twitter contact {}'.format(
-                        contact['name']))
+            self._push_to_eds(TWITTER_ADDRESS_BOOK, eds_contact)
 
     def delete_contacts(self):
         source = self._get_eds_source(TWITTER_ADDRESS_BOOK)

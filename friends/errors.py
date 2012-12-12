@@ -49,6 +49,16 @@ class AuthorizationError(FriendsError):
         return '{} (account: {})'.format(self.message, self.account)
 
 
+class ContactsError(FriendsError):
+    """Errors relating to EDS contact management."""
+
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return 'EDS: {}'.format(self.message)
+
+
 class UnsupportedProtocolError(FriendsError):
     def __init__(self, protocol):
         self.protocol = protocol

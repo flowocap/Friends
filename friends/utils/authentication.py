@@ -24,6 +24,10 @@ import logging
 import time
 
 from gi.repository import GObject, Signon
+
+from friends.errors import AuthorizationError
+
+
 GObject.threads_init(None)
 
 
@@ -48,10 +52,12 @@ class Authentication:
             # callback gets called to give us the response to return.
             time.sleep(0.5)
             timeout -= 1
+        if self._reply is None:
+            raise AuthorizationError(self.account.id, 'Login timed out.')
         return self._reply
 
     def _login_cb(self, session, reply, error, user_data):
         self._reply = reply
         if error:
-            log.error('Got authentication error: {}'.format(error.message))
+            raise AuthorizationError(self.account.id, error.message)
         log.debug('Login completed')

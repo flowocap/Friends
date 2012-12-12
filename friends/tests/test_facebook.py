@@ -28,7 +28,8 @@ from pkg_resources import resource_filename
 from friends.protocols.facebook import Facebook
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
-from friends.errors import SuccessfulCompletion, FriendsError
+from friends.errors import SuccessfulCompletion, ContactsError
+from friends.errors import FriendsError, AuthorizationError
 from friends.utils.model import COLUMN_TYPES
 
 
@@ -73,7 +74,7 @@ class TestFacebook(unittest.TestCase):
                 return_value=None)
     def test_login_unsuccessful_authentication(self, mock):
         # The user is not already logged in, but the act of logging in fails.
-        self.protocol._login()
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.access_token)
         self.assertIsNone(self.account.user_name)
 
@@ -82,7 +83,7 @@ class TestFacebook(unittest.TestCase):
     def test_unsuccessful_login_no_access_token(self, mock):
         # When Authentication.login() returns a dictionary, but that does not
         # have the AccessToken key, then the account data is not updated.
-        self.protocol._login()
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.access_token)
         self.assertIsNone(self.account.user_name)
 
@@ -497,8 +498,8 @@ Facebook UID: None
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
-        result = self.protocol._push_to_eds('test-address-book', eds_contact)
-        self.assertEqual(result, True)
+        # Implicitely fail test if the following raises any exceptions
+        self.protocol._push_to_eds('test-address-book', eds_contact)
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=None)
@@ -510,8 +511,12 @@ Facebook UID: None
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
-        result = self.protocol._push_to_eds('test-address-book', eds_contact)
-        self.assertEqual(result, False)
+        self.assertRaises(
+            ContactsError,
+            self.protocol._push_to_eds,
+            'test-address-book',
+            eds_contact,
+            )
 
     @mock.patch('gi.repository.EDataServer.Source.new',
                 return_value=EDSSource('foo', 'bar'))
