@@ -70,19 +70,10 @@ class TestFacebook(unittest.TestCase):
         self.assertEqual(self.account.user_name, 'Bart Person')
         self.assertEqual(self.account.user_id, '801')
 
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value=None)
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     def test_login_unsuccessful_authentication(self, mock):
         # The user is not already logged in, but the act of logging in fails.
-        self.assertRaises(AuthorizationError, self.protocol._login)
-        self.assertIsNone(self.account.access_token)
-        self.assertIsNone(self.account.user_name)
-
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value={})
-    def test_unsuccessful_login_no_access_token(self, mock):
-        # When Authentication.login() returns a dictionary, but that does not
-        # have the AccessToken key, then the account data is not updated.
         self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.access_token)
         self.assertIsNone(self.account.user_name)

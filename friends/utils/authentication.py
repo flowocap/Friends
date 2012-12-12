@@ -34,6 +34,9 @@ GObject.threads_init(None)
 log = logging.getLogger(__name__)
 
 
+LOGIN_TIMEOUT = 30 # Currently this is measured in half-seconds.
+
+
 class Authentication:
     def __init__(self, account):
         self.account = account
@@ -45,7 +48,7 @@ class Authentication:
         self.auth_session.process(
             auth.parameters, auth.mechanism,
             self._login_cb, None)
-        timeout = 30
+        timeout = LOGIN_TIMEOUT
         while self._reply is None and timeout > 0:
             # We're building a synchronous API on top of an inherently
             # async library, so we need to block this thread until the
@@ -54,6 +57,10 @@ class Authentication:
             timeout -= 1
         if self._reply is None:
             raise AuthorizationError(self.account.id, 'Login timed out.')
+        if 'AccessToken' not in self._reply:
+            raise AuthorizationError(
+                self.account.id,
+                'No AccessToken found: {!r}'.format(self._reply))
         return self._reply
 
     def _login_cb(self, session, reply, error, user_data):

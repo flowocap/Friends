@@ -57,12 +57,6 @@ class TestFlickr(unittest.TestCase):
         # The set of public features.
         self.assertEqual(Flickr.get_features(), ['receive'])
 
-    def test_failed_login(self):
-        # Force the Flickr login to fail.
-        with mock.patch.object(self.protocol, '_login',
-                               return_value=False):
-            self.assertRaises(AuthorizationError, self.protocol.receive)
-
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
@@ -77,20 +71,6 @@ class TestFlickr(unittest.TestCase):
         self.assertEqual(self.log_mock.empty(), '')
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
-
-    @mock.patch('friends.utils.http.Soup.Message',
-                FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
-    def test_unsuccessful_login(self):
-        # The user is not already logged in, but the act of logging in
-        # fails.
-        def side_effect():
-            # Sorry, the login is unsuccessful, even though it adds a user_id
-            # key to the account.
-            self.account.user_id = 'bart'
-            return False
-        with mock.patch.object(self.protocol, '_login',
-                               side_effect=side_effect):
-            self.assertRaises(AuthorizationError, self.protocol.receive)
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -110,24 +90,11 @@ class TestFlickr(unittest.TestCase):
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                # No AccessToken, so for all intents-and-purposes; fail!
-                return_value=dict(username='Bob Dobbs',
-                                  user_nsid='bob',
-                                  TokenSecret='abc'))
-    def test_login_unsuccessful_authentication(self, mock):
-        # Logging in required communication with the account service to get an
-        # AccessToken, but this fails.
-        self.assertRaises(AuthorizationError, self.protocol.receive)
-
-    @mock.patch('friends.utils.http.Soup.Message',
-                FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                # login() callback never happens.
-                return_value=None)
-    def test_login_unsuccessful_authentication_no_callback(self, mock):
+    def test_login_unsuccessful_authentication_no_callback(self, *mocks):
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
         self.assertRaises(AuthorizationError, self.protocol.receive)

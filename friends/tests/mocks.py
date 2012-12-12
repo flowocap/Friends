@@ -53,7 +53,10 @@ NEWLINE = '\n'
 
 
 class FakeAuth:
-    pass
+    id = 'fakeauth id'
+    method = 'fakeauth method'
+    parameters = 'fakeauth parameters'
+    mechanism = 'fakeauth mechanism'
 
 
 class FakeAccount:

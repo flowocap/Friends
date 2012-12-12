@@ -33,8 +33,7 @@ from datetime import datetime
 
 from gi.repository import GObject, EDataServer, EBook
 
-from friends.errors import AuthorizationError, SuccessfulCompletion
-from friends.errors import ContactsError
+from friends.errors import SuccessfulCompletion, ContactsError
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
@@ -335,11 +334,7 @@ class Base:
     def _get_access_token(self):
         """Return an access token, logging in if necessary."""
         if self._account.access_token is None:
-            if not self._login():
-                raise AuthorizationError(
-                    self._account.id,
-                    'No {} authentication results received.'.format(
-                        self.__class__.__name__))
+            self._login()
 
         return self._account.access_token
 
@@ -381,21 +376,10 @@ class Base:
                 'Re-authenticating' if old_token else 'Logging in', protocol))
 
         result = Authentication(self._account).login()
-        if result is None:
-            raise AuthorizationError(
-                self._account.id,
-                'No {} authentication results received.'.format(protocol))
 
-        token = result.get('AccessToken')
-        if token is None:
-            raise AuthorizationError(
-                self._account.id,
-                'No AccessToken in {} session: {!r}'.format(
-                    protocol, result))
-        else:
-            self._account.access_token = token
-            self._whoami(result)
-            log.debug('{} UID: {}'.format(protocol, self._account.user_id))
+        self._account.access_token = result.get('AccessToken')
+        self._whoami(result)
+        log.debug('{} UID: {}'.format(protocol, self._account.user_id))
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)

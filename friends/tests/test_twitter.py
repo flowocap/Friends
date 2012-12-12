@@ -55,8 +55,8 @@ class TestTwitter(unittest.TestCase):
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
 
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value=None)
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.protocols.twitter.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, dload, login):

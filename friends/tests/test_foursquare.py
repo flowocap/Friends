@@ -58,8 +58,8 @@ class TestFourSquare(unittest.TestCase):
         # The set of public features.
         self.assertEqual(FourSquare.get_features(), ['receive'])
 
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value=None)
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
