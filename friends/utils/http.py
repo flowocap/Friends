@@ -24,11 +24,9 @@ __all__ = [
 
 import json
 import logging
-import sys
 
-from base64 import encodebytes
 from contextlib import contextmanager
-from gi.repository import GLib, Gio, Soup, SoupGNOME
+from gi.repository import Gio, Soup, SoupGNOME
 from urllib.parse import urlencode
 
 log = logging.getLogger(__name__)

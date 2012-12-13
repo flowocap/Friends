@@ -33,7 +33,7 @@ from friends.utils.account import AccountManager
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
 from friends.utils.menus import MenuManager
-from friends.utils.model import persist_model, Model
+from friends.utils.model import Model
 
 
 log = logging.getLogger(__name__)

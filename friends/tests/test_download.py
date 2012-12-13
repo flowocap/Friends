@@ -227,12 +227,14 @@ class TestDownloader(unittest.TestCase):
 
     def test_uploads(self):
         filename = resource_filename('friends.tests.data', 'ubuntu.png')
-        raw_sent = Uploader('http://localhost:9180/mirror',
-                            'file://' + filename,
-                            'Great logo!',
-                            picture_key='source',
-                            desc_key='message',
-                            foo='bar').get_bytes()
+        raw_sent = Uploader(
+            'http://localhost:9180/mirror',
+            'file://' + filename,
+            'Great logo!',
+            picture_key='source',
+            desc_key='message',
+            foo='bar',
+            ).get_bytes()
         delimiter = raw_sent[2:66]
         self.assertTrue(
             raw_sent.startswith(
@@ -251,11 +253,13 @@ class TestDownloader(unittest.TestCase):
     @mock.patch('friends.utils.http._soup')
     def test_upload_happens_only_once(self, _soupmock, Soupmock):
         filename = resource_filename('friends.tests.data', 'ubuntu.png')
-        raw_sent = Uploader('http://localhost:9180/mirror',
-                            'file://' + filename,
-                            'Great logo!',
-                            picture_key='source',
-                            desc_key='message',
-                            foo='bar').get_bytes()
+        Uploader(
+            'http://localhost:9180/mirror',
+            'file://' + filename,
+            'Great logo!',
+            picture_key='source',
+            desc_key='message',
+            foo='bar',
+            ).get_bytes()
         _soupmock.send_message.assert_called_once_with(
             Soupmock.form_request_new_from_multipart())
