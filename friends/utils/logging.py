@@ -16,7 +16,6 @@
 """Logging utilities."""
 
 import os
-import errno
 import logging
 import logging.handlers
 import oauthlib.oauth1
@@ -55,9 +54,8 @@ def initialize(console=False, debug=False, filename=None):
         filename = LOG_FILENAME
     try:
         os.makedirs(os.path.dirname(filename))
-    except OSError as error:
-        if error.errno != errno.EEXIST:
-            raise
+    except FileExistsError:
+        pass
 
     # Install a rotating log file handler.  XXX There should be a
     # configuration file rather than hard-coded values.
