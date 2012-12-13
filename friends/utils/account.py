@@ -150,40 +150,11 @@ class Account:
         self.login_lock = Lock()
 
     def _on_account_changed(self, account_service, account):
-        settings = account.get_settings_iter('friends/')
-        # This is horrible on several fronts.  Ideally, we'd like to just get
-        # the small set of values that we care about, but the Python bindings
-        # for gi.repository.Accounts does not make this easy.  First, there's
-        # no direct mapping to .get_value() - you have to use .get_string(),
-        # .get_int(), and .get_bool().  But even there, it's not clear that
-        # the values its returning are the right settings values.  E.g. in my
-        # tests, I received *different* values than the ones I expected, or
-        # the ones returned from the iterator below.  It's also way to easy to
-        # segfault .get_value() -- try this:
-        #
-        # account_service.get_bool('friends/send_enabled')
-        #
-        # KABOOM!
-        #
-        # The other problem here is that libaccounts doesn't provide an
-        # override for AgAccountSettingIter so that it supports the Python
-        # iteration protocol.  We could use 2-argument built-in iter() with a
-        # sentinel of (False, None, None), but afaict, the second and third
-        # items are undocumented when the first is False, so that would just
-        # be crossing our fingers.
-        #
-        # Of all the options, this appears to be the most reliable and safest
-        # way until the libaccounts API improves.
-        while True:
-            success, key, value = settings.next()
-            if success:
+        settings = account.get_settings_dict('friends/')
+        for (key, value) in settings.items():
+            if key in Account._LIBACCOUNTS_PROPERTIES:
                 log.debug('{} got {}: {}'.format(self.id, key, value))
-                # Testing for tuple membership makes this easy to expand
-                # later, if necessary.
-                if key in Account._LIBACCOUNTS_PROPERTIES:
-                    setattr(self, key, value)
-            else:
-                break
+                setattr(self, key, value)
 
     @property
     def enabled(self):
