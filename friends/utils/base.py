@@ -135,7 +135,7 @@ def initialize_caches():
 
 
 class _OperationThread(threading.Thread):
-    """Catch, log, and swallow all exceptions in the sub-thread."""
+    """Manage async callbacks, and log subthread exceptions."""
 
     def __init__(self, *args, id=None, success=STUB, failure=STUB, **kws):
         self._id = id
@@ -149,11 +149,11 @@ class _OperationThread(threading.Thread):
 
         super().__init__(*args, **kws)
 
-    # Always run these as daemon threads, so they don't block the main thread,
-    # i.e. friends-service, from exiting.
+    # Don't block friends-service from exiting if subthreads are still running.
     daemon = True
 
     def _retval_catcher(self, func, *args, **kwargs):
+        """Call the success callback, but only if no exceptions were raised."""
         self._success_callback(func(*args, **kwargs))
 
     def run(self):
@@ -189,36 +189,13 @@ class Base:
     def __call__(self, operation, *args, success=STUB, failure=STUB, **kwargs):
         """Call an operation, i.e. a method, with arguments in a sub-thread.
 
-        Return values from subthreads are discarded by Python's
-        threading implementation, however we have subclassed
-        threading.Thread in order to catch exceptions raised by the
-        subthread. In order to communicate raised exceptions back to
-        the calling code, we have implemented an asynchronous callback
-        API, including support for DBus. (So eg if you are writing a
-        client that communicates with friends-service via DBus, and
-        you invoke a method over DBus that raises an exception in
-        friends-service, that exception will be communicated to you by
-        calling the failure callback, in which you are free to attempt
-        to handle the error condition and potentially retry your
-        request).
-
-        Originally, the success callback was only triggered
-        implicitely, ie, if no exceptions were raised then we simply
-        assumed that the operation was a success and then called the
-        success callback. However, it was discovered that we sometimes
-        want to be able to pass a specific return value from the
-        subthread into the success callback, and the most direct way
-        to do this was by way of raising an exception (since the
-        framework was already in place for catching them; it was
-        easier than trying to bolt-on support for return values). So
-        now all protocol operations (eg, Facebook.upload) can raise
-        SuccessfulCompletion with a value of their choosing when they
-        want to explicitely trigger the success callback with a
-        specific value. If a method exits successfully without raising
-        SuccessfulCompletion, then the value passed to the success
-        callback is a relatively useless identifier, such as
-        'Twitter.send' or similar, simply indicating which operation
-        it is that's completed successfully.
+        If a protocol method raises an exception, that will be caught
+        and passed to the failure callback; if no exception is raised,
+        then the return value of the method will be passed to the
+        success callback. Programs communicating with friends-service
+        via DBus shoudl therefore specify success & failure callbacks
+        in order to be notified of the results of their DBus method
+        calls.
         """
         if operation.startswith('_') or not hasattr(self, operation):
             raise NotImplementedError(operation)
