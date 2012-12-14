@@ -35,18 +35,11 @@ from io import StringIO
 from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
 from queue import Empty, Queue
+from unittest import mock
 from urllib.parse import urlsplit
 
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
-
 
 NEWLINE = '\n'
 
