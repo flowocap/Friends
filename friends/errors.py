@@ -33,6 +33,12 @@ class SuccessfulCompletion(Exception):
     desired in the success callback.
     """
 
+    def __init__(self, retval):
+        self.retval = retval
+
+    def __str__(self):
+        return 'Method completed successfully!'
+
 
 class FriendsError(Exception):
     """Base class for all internal Friends exceptions."""

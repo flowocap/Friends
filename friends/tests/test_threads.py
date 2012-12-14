@@ -55,7 +55,7 @@ class TestThreads(unittest.TestCase):
         err = ValueError('This value is bad, and you should feel bad!')
 
         _OperationThread(
-            identifier='Test.thread',
+            id='Test.thread',
             target=exception_raiser,
             success=success,
             failure=failure,
@@ -73,7 +73,7 @@ class TestThreads(unittest.TestCase):
         failure = mock.Mock()
 
         _OperationThread(
-            identifier='Test.thread',
+            id='Test.thread',
             target=it_cant_fail,
             success=success,
             failure=failure,
@@ -82,7 +82,7 @@ class TestThreads(unittest.TestCase):
         # Wait for threads to exit, avoiding race condition.
         join_all_threads()
 
-        success.assert_called_once_with('Test.thread')
+        success.assert_called_once_with(2)
         self.assertEqual(failure.call_count, 0)
 
     def test_success_exception_calls_success_callback(self):
@@ -91,7 +91,7 @@ class TestThreads(unittest.TestCase):
         err = SuccessfulCompletion('You win!')
 
         _OperationThread(
-            identifier='Test.thread',
+            id='Test.thread',
             target=exception_raiser,
             success=success,
             failure=failure,

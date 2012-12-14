@@ -30,7 +30,7 @@ from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
-from friends.errors import SuccessfulCompletion, FriendsError
+from friends.errors import FriendsError
 
 
 # 'id' can be the id of *any* Facebook object
@@ -108,6 +108,7 @@ class Facebook(Base):
                 self._publish_entry(
                     stream='reply_to/{}'.format(message_id),
                     entry=comment)
+        return args['url']
 
     def _follow_pagination(self, url, params, limit=None):
         """Follow Facebook's pagination until we hit the limit."""
@@ -238,7 +239,7 @@ class Facebook(Base):
 
         url = API_BASE.format(id=new_id)
         entry = Downloader(url, params=dict(access_token=token)).get_json()
-        self._publish_entry(entry)
+        return self._publish_entry(entry)
 
     @feature
     def send(self, message, obj_id='me'):
@@ -248,7 +249,7 @@ class Facebook(Base):
         be any type of Facebook object that has a wall, be it a user, an app,
         a company, an event, etc.
         """
-        self._send(obj_id, message, '/feed')
+        return self._send(obj_id, message, '/feed')
 
     @feature
     def send_thread(self, obj_id, message):
@@ -257,7 +258,7 @@ class Facebook(Base):
         obj_id can be the id of any Facebook object that supports being
         commented on, which will generally be Posts.
         """
-        self._send(obj_id, message, '/comments')
+        return self._send(obj_id, message, '/comments')
 
     @feature
     def delete(self, obj_id):
@@ -298,7 +299,7 @@ class Facebook(Base):
                 icon_uri=Avatar.get_image(
                     API_BASE.format(id=self._account.user_id) +
                     '/picture?type=large'))
-            raise SuccessfulCompletion(destination_url)
+            return destination_url
         else:
             raise FriendsError(str(response))
 

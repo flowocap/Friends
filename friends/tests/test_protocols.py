@@ -66,13 +66,8 @@ class TestProtocolManager(unittest.TestCase):
 class MyProtocol(Base):
     """Simplest possible protocol implementation to allow testing of Base."""
 
-    # This exists just to make it easier to test that noop() was actually
-    # called asynchronously.  Normally, __call__() is not expected to, nor
-    # does it really support, returning results.
-    result = ''
-
     def noop(self, one=None, two=None):
-        self.result = '{}:{}'.format(one, two)
+        return '{}:{}'.format(one, two)
 
     # A non-public method that cannot be called through __call__()
     _private = noop
@@ -115,33 +110,36 @@ class TestProtocols(unittest.TestCase):
         fake_account = object()
         my_protocol = MyProtocol(fake_account)
         # We can call the method directly.
-        my_protocol._private('ant', 'bee')
-        self.assertEqual(my_protocol.result, 'ant:bee')
+        result = my_protocol._private('ant', 'bee')
+        self.assertEqual(result, 'ant:bee')
         # But we cannot call the method through the __call__ interface.
-        my_protocol.result = ''
         with self.assertRaises(NotImplementedError) as cm:
             my_protocol('_private', 'cat', 'dog')
         self.assertEqual(str(cm.exception), '_private')
-        self.assertEqual(my_protocol.result, '')
 
     def test_basic_api_synchronous(self):
         # Protocols get instantiated with an account, and the instance gets
         # called to perform an operation.
         fake_account = object()
         my_protocol = MyProtocol(fake_account)
-        my_protocol.noop(one='foo', two='bar')
-        self.assertEqual(my_protocol.result, 'foo:bar')
+        result = my_protocol.noop(one='foo', two='bar')
+        self.assertEqual(result, 'foo:bar')
 
     def test_basic_api_asynchronous(self):
         fake_account = object()
         my_protocol = MyProtocol(fake_account)
+        successes = []
+        failures = []
         # Using __call__ makes invocation happen asynchronously in a thread.
-        my_protocol('noop', one='one', two='two')
+        my_protocol('noop', 'one', 'two',
+                    success=lambda x:successes.append(x),
+                    failure=lambda x:failures.append(x))
         for thread in threading.enumerate():
             # Join all but the main thread.
             if thread != threading.current_thread():
                 thread.join()
-        self.assertEqual(my_protocol.result, 'one:two')
+        self.assertEqual(successes, ['one:two'])
+        self.assertEqual(failures, [])
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_shared_model_successfully_mocked(self):

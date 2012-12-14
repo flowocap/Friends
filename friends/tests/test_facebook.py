@@ -28,8 +28,7 @@ from pkg_resources import resource_filename
 from friends.protocols.facebook import Facebook
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
-from friends.errors import SuccessfulCompletion, ContactsError
-from friends.errors import FriendsError, AuthorizationError
+from friends.errors import ContactsError, FriendsError, AuthorizationError
 from friends.utils.model import COLUMN_TYPES
 
 
@@ -318,11 +317,9 @@ Facebook UID: None
         publish = self.protocol._publish = mock.Mock()
 
         src = 'file://' + resource_filename('friends.tests.data', 'ubuntu.png')
-        self.assertRaises(
-            SuccessfulCompletion,
-            self.protocol.upload,
-            src,
-            'This is Ubuntu!')
+        self.assertEqual(self.protocol.upload(src, 'This is Ubuntu!'),
+                         'https://www.facebook.com/234125')
+
         token.assert_called_once_with()
 
         publish.assert_called_once_with(

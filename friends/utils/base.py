@@ -134,14 +134,24 @@ def initialize_caches():
             len(_seen_ids), len(_seen_messages)))
 
 
+def retval_catcher(func, *args):
+    """Catch return values and report them by raising an exception."""
+    raise SuccessfulCompletion(func(*args))
+
+
 class _OperationThread(threading.Thread):
     """Catch, log, and swallow all exceptions in the sub-thread."""
 
-    def __init__(self, *args, identifier=None, success=STUB, failure=STUB,
-                 **kws):
-        self._id = identifier
+    def __init__(self, *args, id=None, success=STUB, failure=STUB, **kws):
+        self._id = id
         self._success_callback = success
         self._failure_callback = failure
+
+        # Wrap the real target inside retval_catcher
+        method = kws.get('target')
+        kws['args'] = (method,) + kws.get('args', ())
+        kws['target'] = retval_catcher
+
         super().__init__(*args, **kws)
 
     # Always run these as daemon threads, so they don't block the main thread,
@@ -152,17 +162,17 @@ class _OperationThread(threading.Thread):
         log.debug('{} is starting in a new thread.'.format(self._id))
         try:
             super().run()
-        except SuccessfulCompletion as err:
-            self._success_callback(str(err))
+        except SuccessfulCompletion as success:
+            # If your protocol operation does not raise any exceptions
+            # of it's own, then SuccessfulCompletion will be raised
+            # implicitely with the operation's return value. This
+            # means that you must raise an exception to indicate ALL
+            # error conditions, no matter how slight, in order to
+            # avoid the success callback from being called.
+            self._success_callback(success.retval)
         except Exception as err:
             self._failure_callback(str(err))
             log.exception(err)
-        else:
-            # Implicitely call the success callback if no exceptions
-            # have been raised. This means that ALL error conditions,
-            # no matter how slight, MUST raise exceptions if you don't
-            # want the success callback to be called.
-            self._success_callback(self._id)
         log.debug('{} has completed, thread exiting.'.format(self._id))
 
         # If this is the last thread to exit, then the refresh is
@@ -222,7 +232,7 @@ class Base:
             raise NotImplementedError(operation)
         method = getattr(self, operation)
         _OperationThread(
-            identifier='{}.{}'.format(self.__class__.__name__, operation),
+            id='{}.{}'.format(self.__class__.__name__, operation),
             target=method,
             success=success,
             failure=failure,

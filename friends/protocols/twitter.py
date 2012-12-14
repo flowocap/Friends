@@ -116,6 +116,9 @@ class Twitter(Base):
                       user.get('profile_image_url') or       # Identi.ca
                       '')
 
+        permalink = self._tweet_permalink.format(
+            user_id=screen_name,
+            tweet_id=tweet_id)
         self._publish(
             message_id=tweet_id,
             message=tweet.get('text', ''),
@@ -128,9 +131,9 @@ class Twitter(Base):
             icon_uri=Avatar.get_image(
                 avatar_url.replace('_normal.', '.')),
             liked=tweet.get('favorited', False),
-            url=self._tweet_permalink.format(user_id=screen_name,
-                                             tweet_id=tweet_id),
+            url=permalink,
             )
+        return permalink
 
 # https://dev.twitter.com/docs/api/1.1/get/statuses/home_timeline
     @feature
@@ -208,7 +211,7 @@ class Twitter(Base):
         url = self._api_base.format(endpoint='direct_messages/new')
         tweet = self._get_url(
             url, dict(text=message, screen_name=screen_name))
-        self._publish_tweet(tweet, stream='private')
+        return self._publish_tweet(tweet, stream='private')
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/update
     @feature
@@ -216,7 +219,7 @@ class Twitter(Base):
         """Publish a public tweet."""
         url = self._api_base.format(endpoint='statuses/update')
         tweet = self._get_url(url, dict(status=message))
-        self._publish_tweet(tweet)
+        return self._publish_tweet(tweet)
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/update
     @feature
@@ -230,7 +233,7 @@ class Twitter(Base):
         url = self._api_base.format(endpoint='statuses/update')
         tweet = self._get_url(url, dict(in_reply_to_status_id=message_id,
                                         status=message))
-        self._publish_tweet(tweet)
+        return self._publish_tweet(tweet)
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/destroy/%3Aid
     @feature
@@ -247,7 +250,7 @@ class Twitter(Base):
         """Republish somebody else's tweet with your name on it."""
         url = self._retweet.format(message_id)
         tweet = self._get_url(url, dict(trim_user='true'))
-        self._publish_tweet(tweet)
+        return self._publish_tweet(tweet)
 
 # https://dev.twitter.com/docs/api/1.1/post/friendships/destroy
     @feature
