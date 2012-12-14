@@ -19,25 +19,8 @@
 __all__ = [
     'AuthorizationError',
     'FriendsError',
-    'SuccessfulCompletion',
     'UnsupportedProtocolError',
     ]
-
-
-class SuccessfulCompletion(Exception):
-    """This is an exception used to indicate a successful thread completion.
-
-    This was necessary because _OperationThread had no way of getting
-    a return value from a thread, but it can catch exceptions. This
-    isn't used everywhere, but only where a certain return value is
-    desired in the success callback.
-    """
-
-    def __init__(self, retval):
-        self.retval = retval
-
-    def __str__(self):
-        return 'Method completed successfully!'
 
 
 class FriendsError(Exception):

@@ -33,7 +33,7 @@ from datetime import datetime
 
 from gi.repository import GObject, EDataServer, EBook
 
-from friends.errors import SuccessfulCompletion, ContactsError
+from friends.errors import ContactsError
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
@@ -134,11 +134,6 @@ def initialize_caches():
             len(_seen_ids), len(_seen_messages)))
 
 
-def retval_catcher(func, *args):
-    """Catch return values and report them by raising an exception."""
-    raise SuccessfulCompletion(func(*args))
-
-
 class _OperationThread(threading.Thread):
     """Catch, log, and swallow all exceptions in the sub-thread."""
 
@@ -150,7 +145,7 @@ class _OperationThread(threading.Thread):
         # Wrap the real target inside retval_catcher
         method = kws.get('target')
         kws['args'] = (method,) + kws.get('args', ())
-        kws['target'] = retval_catcher
+        kws['target'] = self._retval_catcher
 
         super().__init__(*args, **kws)
 
@@ -158,19 +153,16 @@ class _OperationThread(threading.Thread):
     # i.e. friends-service, from exiting.
     daemon = True
 
+    def _retval_catcher(self, func, *args, **kwargs):
+        self._success_callback(func(*args, **kwargs))
+
     def run(self):
         log.debug('{} is starting in a new thread.'.format(self._id))
         try:
             super().run()
-        except SuccessfulCompletion as success:
-            # If your protocol operation does not raise any exceptions
-            # of it's own, then SuccessfulCompletion will be raised
-            # implicitely with the operation's return value. This
-            # means that you must raise an exception to indicate ALL
-            # error conditions, no matter how slight, in order to
-            # avoid the success callback from being called.
-            self._success_callback(success.retval)
         except Exception as err:
+            # Raising an exception is the only way for a protocol
+            # operation to avoid triggering the success callback.
             self._failure_callback(str(err))
             log.exception(err)
         log.debug('{} has completed, thread exiting.'.format(self._id))

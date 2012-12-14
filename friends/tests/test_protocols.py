@@ -128,18 +128,19 @@ class TestProtocols(unittest.TestCase):
     def test_basic_api_asynchronous(self):
         fake_account = object()
         my_protocol = MyProtocol(fake_account)
-        successes = []
-        failures = []
+        success = mock.Mock()
+        failure = mock.Mock()
         # Using __call__ makes invocation happen asynchronously in a thread.
         my_protocol('noop', 'one', 'two',
-                    success=lambda x:successes.append(x),
-                    failure=lambda x:failures.append(x))
+                    success=success,
+                    failure=failure)
         for thread in threading.enumerate():
             # Join all but the main thread.
             if thread != threading.current_thread():
                 thread.join()
-        self.assertEqual(successes, ['one:two'])
-        self.assertEqual(failures, [])
+
+        success.assert_called_once_with('one:two')
+        self.assertEqual(failure.call_count, 0)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_shared_model_successfully_mocked(self):

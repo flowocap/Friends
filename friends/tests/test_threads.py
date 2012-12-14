@@ -25,7 +25,6 @@ import threading
 
 from friends.tests.mocks import mock
 from friends.utils.base import _OperationThread
-from friends.errors import SuccessfulCompletion
 
 
 def join_all_threads():
@@ -83,23 +82,4 @@ class TestThreads(unittest.TestCase):
         join_all_threads()
 
         success.assert_called_once_with(2)
-        self.assertEqual(failure.call_count, 0)
-
-    def test_success_exception_calls_success_callback(self):
-        success = mock.Mock()
-        failure = mock.Mock()
-        err = SuccessfulCompletion('You win!')
-
-        _OperationThread(
-            id='Test.thread',
-            target=exception_raiser,
-            success=success,
-            failure=failure,
-            args=(err,),
-            ).start()
-
-        # Wait for threads to exit, avoiding race condition.
-        join_all_threads()
-
-        success.assert_called_once_with('You win!')
         self.assertEqual(failure.call_count, 0)
