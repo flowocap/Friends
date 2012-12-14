@@ -31,32 +31,29 @@ from friends.tests.mocks import FakeAccount, mock
 from friends.errors import AuthorizationError
 
 
-class FakeSignon:
-    class AuthSession:
-        @classmethod
-        def new(cls, id, method):
-            return cls()
+class FakeAuthSession:
+    results = None
 
-        def process(self, parameters, mechanism, callback, ignore):
-            # Pass in fake data.  The callback expects a session, reply,
-            # error, and user_data arguments.  We'll use the parameters
-            # argument as a way to specify whether an error occurred during
-            # authentication or not.  Beautiful cruft.
-            callback(None, dict(AccessToken='auth reply'), parameters, None)
+    @classmethod
+    def new(cls, id, method):
+        return cls()
+
+    def process(self, parameters, mechanism, callback, ignore):
+        # Pass in fake data.  The callback expects a session, reply,
+        # error, and user_data arguments.  We'll use the parameters
+        # argument as a way to specify whether an error occurred during
+        # authentication or not.
+        callback(None, self.results, parameters, None)
+
+
+class FakeSignon:
+    class AuthSession(FakeAuthSession):
+        results = dict(AccessToken='auth reply')
 
 
 class FailingSignon:
-    class AuthSession:
-        @classmethod
-        def new(cls, id, method):
-            return cls()
-
-        def process(self, parameters, mechanism, callback, ignore):
-            # Pass in fake data.  The callback expects a session, reply,
-            # error, and user_data arguments.  We'll use the parameters
-            # argument as a way to specify whether an error occurred during
-            # authentication or not.  Beautiful cruft.
-            callback(None, dict(NoAccessToken='fail'), parameters, None)
+    class AuthSession(FakeAuthSession):
+        results = dict(NoAccessToken='fail')
 
 
 class Logger:
