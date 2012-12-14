@@ -255,7 +255,9 @@ class TestAccountManager(unittest.TestCase):
             '', '', '', '', '', '', '', '', '']
         row_iter = TestModel.append(*example_row)
         from friends.utils.base import _seen_ids
-        _seen_ids[('base', 'faker/than fake', '5678')] = row_iter
+        _seen_ids[
+            ('base', 'faker/than fake', '5678')
+            ] = TestModel.get_position(row_iter)
         self.assertEqual(list(TestModel.get_row(0)), example_row)
         manager._on_account_deleted(accounts_manager, 'faker/than fake')
         self.assertEqual(list(TestModel.get_row(0)), result_row)

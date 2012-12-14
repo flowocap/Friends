@@ -126,9 +126,9 @@ def initialize_caches():
     for i in range(Model.get_n_rows()):
         row_iter = Model.get_iter_at_row(i)
         row = Model.get_row(row_iter)
-        _seen_messages[_make_key(row)] = row_iter
+        _seen_messages[_make_key(row)] = i
         for triple in row[IDS_IDX]:
-            _seen_ids[tuple(triple)] = row_iter
+            _seen_ids[tuple(triple)] = i
     log.debug(
         '_seen_ids: {}, _seen_messages: {}'.format(
             len(_seen_ids), len(_seen_messages)))
@@ -249,10 +249,10 @@ class Base:
             # Don't let duplicate messages into the model, but do record the
             # unique message ids of each duplicate message.
             key = _make_key(args)
-            row_iter = _seen_messages.get(key)
-            if row_iter is None:
+            row_idx = _seen_messages.get(key)
+            if row_idx is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = Model.append(*args)
+                _seen_messages[key] = Model.get_position(Model.append(*args))
                 # I think it's safe not to notify the user about
                 # messages that they sent themselves...
                 if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
@@ -264,7 +264,7 @@ class Base:
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.
-                row = Model.get_row(row_iter)
+                row = Model.get_row(Model.get_iter_at_row(row_idx))
                 # Remember that row[IDS] is the nested list-of-lists of
                 # message_ids.  args[IDS] is the nested list-of-lists for the
                 # message that we're publishing.  The outer list of the latter
@@ -288,11 +288,13 @@ class Base:
                   message_id)
         log.debug('Unpublishing {}!'.format(triple))
 
-        row_iter = _seen_ids.pop(triple, None)
-        if row_iter is None:
+        row_idx = _seen_ids.pop(triple, None)
+        if row_idx is None:
             raise FriendsError('Tried to delete an invalid message id.')
 
+        row_iter = Model.get_iter_at_row(row_idx)
         row = Model.get_row(row_iter)
+
         if len(row[IDS_IDX]) == 1:
             # Message only exists on one protocol, delete it
             del _seen_messages[_make_key(row)]
