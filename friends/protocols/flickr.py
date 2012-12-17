@@ -115,8 +115,8 @@ class Flickr(Base):
                 icon_uri=icon_uri,
                 url=url,
                 from_me=from_me,
-                message=data.get('title', ''),
                 timestamp=timestamp,
-                img_url=img_url,
-                img_src=img_src,
-                img_thumb=img_thumb)
+                link_caption=data.get('title', ''),
+                link_url=img_url,
+                link_picture=img_src,
+                link_icon=img_thumb)
