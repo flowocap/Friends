@@ -158,6 +158,7 @@ class _OperationThread(threading.Thread):
 
     def run(self):
         log.debug('{} is starting in a new thread.'.format(self._id))
+        start = time.time()
         try:
             super().run()
         except Exception as err:
@@ -165,7 +166,9 @@ class _OperationThread(threading.Thread):
             # operation to avoid triggering the success callback.
             self._failure_callback(str(err))
             log.exception(err)
-        log.debug('{} has completed, thread exiting.'.format(self._id))
+        elapsed = time.time() - start
+        log.debug('{} has completed in {:.2f}s, thread exiting.'.format(
+                self._id, elapsed))
 
         # If this is the last thread to exit, then the refresh is
         # completed and we should save the model.
