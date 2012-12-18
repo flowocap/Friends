@@ -18,6 +18,7 @@
 
 __all__ = [
     'Facebook',
+    'FacebookError',
     ]
 
 
@@ -45,6 +46,17 @@ FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
 log = logging.getLogger(__name__)
 
 
+class FacebookError(FriendsError):
+    def __init__(self, code, type, message):
+        self.code = code
+        self.type = type
+        self.message = message
+
+    def __str__(self):
+        return 'Facebook error ({} {}): {}'.format(
+            self.code, self.type, self.message)
+
+
 class Facebook(Base):
     def _whoami(self, authdata):
         """Identify the authenticating user."""
@@ -58,8 +70,7 @@ class Facebook(Base):
         error = data.get('error')
         if error is None:
             return False
-        raise FriendsError('Facebook error ({} {}): {}'.format(
-            error.get('code'), error.get('type'), error.get('message')))
+        raise FacebookError(**error)
 
     def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
