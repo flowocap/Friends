@@ -281,8 +281,6 @@ class Facebook(Base):
         response = Uploader(
             url, picture_uri, description,
             picture_key='source', desc_key='message').get_json()
-        if response is None:
-            raise FriendsError('No response from upload server.')
         post_id = response.get('post_id')
         if post_id is not None:
             destination_url = PERMALINK.format(id=post_id)
