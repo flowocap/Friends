@@ -22,6 +22,7 @@ __all__ = [
     'FakeOpen',
     'FakeSoupMessage',
     'LogMock',
+    'SettingsIterMock',
     'mock',
     ]
 
@@ -146,6 +147,23 @@ class FakeOpen:
         # This must pretend to be a context manager, but there's no resource
         # that needs closing.
         pass
+
+
+class SettingsIterMock:
+    """Mimic the weird libaccounts AgAccountSettingIter semantics.
+
+    The default Python mapping of this object does not follow standard Python
+    iterator semantics.
+    """
+
+    def __init__(self):
+        self.items = [(True, 'send_enabled', True)]
+
+    def next(self):
+        if self.items:
+            return self.items.pop()
+        else:
+            return (False, None, None)
 
 
 class LogMock:
