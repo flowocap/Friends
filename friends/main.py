@@ -25,6 +25,7 @@ __all__ = [
 
 
 import sys
+import dbus
 import logging
 
 from dbus.mainloop.glib import DBusGMainLoop
@@ -33,7 +34,7 @@ from gi.repository import Gio, GLib, GObject
 GObject.threads_init(None)
 
 from friends.service.connection import ConnectionMonitor
-from friends.service.dispatcher import Dispatcher
+from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
 from friends.service.shortener import URLShorten
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, initialize_caches
@@ -62,6 +63,13 @@ def main():
             package, dot, class_name = cls.__name__.rpartition('.')
             print(class_name)
         return
+
+    # Disallow multiple instances of friends-service
+    bus = dbus.SessionBus()
+    obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
+    iface = dbus.Interface(obj, 'org.freedesktop.DBus')
+    if DBUS_INTERFACE in iface.ListNames():
+        sys.exit('friends-service is already running! Abort!')
 
     if args.performance:
         try:
