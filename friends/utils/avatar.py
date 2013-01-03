@@ -21,6 +21,7 @@ __all__ = [
 
 
 import os
+import errno
 import logging
 
 from datetime import date, timedelta
@@ -37,8 +38,11 @@ CACHE_AGE = timedelta(weeks=4)
 
 try:
     os.makedirs(CACHE_DIR)
-except FileExistsError:
-    pass
+except OSError as error:
+    # It raises OSError if the dir already existed, which is fine,
+    # but don't ignore other errors.
+    if error.errno != errno.EEXIST:
+        raise
 
 
 log = logging.getLogger(__name__)
@@ -56,7 +60,11 @@ class Avatar:
         local_path = Avatar.get_path(url)
         try:
             size = os.stat(local_path).st_size
-        except FileNotFoundError:
+        except OSError as error:
+            if error.errno != errno.ENOENT:
+                # Some other error occurred, so propagate it up.
+                raise
+            # Treat a missing file as zero length.
             size = 0
         if size == 0:
             log.debug('Getting: {}'.format(url))
@@ -86,5 +94,6 @@ class Avatar:
                 try:
                     log.debug('Expiring: {}'.format(path))
                     os.remove(path)
-                except FileNotFoundError:
-                    pass
+                except OSError as error:
+                    if error.errno != errno.ENOENT:
+                        raise
