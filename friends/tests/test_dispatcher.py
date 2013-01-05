@@ -44,7 +44,7 @@ class TestDispatcher(unittest.TestCase):
     def setUp(self, *mocks):
         self.log_mock = LogMock('friends.service.dispatcher',
                                 'friends.utils.account')
-        self.dispatcher = Dispatcher(mock.Mock(), 300)
+        self.dispatcher = Dispatcher(mock.Mock(), mock.Mock(), 300)
         self.dispatcher.Refresh.assert_called_once_with()
 
     def tearDown(self):
@@ -232,3 +232,25 @@ class TestDispatcher(unittest.TestCase):
 
         self.assertEqual(self.log_mock.empty(),
                          'Friends Service is being shutdown\n')
+
+    @mock.patch('friends.service.dispatcher.logging')
+    def test_urlshorten_already_shortened(self, logging_mock):
+        self.assertEqual(
+            'http://tinyurl.com/foo',
+            self.dispatcher.URLShorten('http://tinyurl.com/foo'))
+
+    @mock.patch('friends.service.dispatcher.logging')
+    @mock.patch('friends.service.dispatcher.lookup')
+    def test_urlshorten(self, lookup_mock, logging_mock):
+        lookup_mock.is_shortened.return_value = False
+        lookup_mock.lookup.return_value = mock.Mock()
+        lookup_mock.lookup.return_value.shorten.return_value = 'short url'
+        self.dispatcher.settings.get_string.return_value = 'is.gd'
+        long_url = 'http://example.com/really/really/long'
+        self.assertEqual(
+            self.dispatcher.URLShorten(long_url),
+            'short url')
+        lookup_mock.is_shortened.assert_called_once_with(long_url)
+        self.dispatcher.settings.get_boolean.assert_called_once_with('shorten-urls')
+        lookup_mock.lookup.assert_called_once_with('is.gd')
+        lookup_mock.lookup.return_value.shorten.assert_called_once_with(long_url)

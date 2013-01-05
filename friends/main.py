@@ -128,8 +128,7 @@ def main():
     # about unused local variables.
     class services:
         connection = ConnectionMonitor()
-        dispatcher = Dispatcher(loop, refresh_interval)
-        shorten = URLShorten(gsettings)
+        dispatcher = Dispatcher(gsettings, loop, refresh_interval)
 
     try:
         log.info('Starting friends-service main loop')
