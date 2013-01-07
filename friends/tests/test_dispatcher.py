@@ -107,30 +107,30 @@ class TestDispatcher(unittest.TestCase):
 
     def test_do(self):
         account = mock.Mock()
-        account.id = '345/friendface'
+        account.id = '345'
         self.dispatcher.account_manager = mock.Mock()
         self.dispatcher.account_manager.get.return_value = account
 
-        self.dispatcher.Do('like', '345/friendface', '23346356767354626')
+        self.dispatcher.Do('like', '345', '23346356767354626')
         self.dispatcher.account_manager.get.assert_called_once_with(
-            '345/friendface')
+            '345')
         account.protocol.assert_called_once_with(
             'like', '23346356767354626', success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         '345/friendface: like 23346356767354626\n')
+                         '345: like 23346356767354626\n')
 
     def test_failing_do(self):
         account = mock.Mock()
         self.dispatcher.account_manager = mock.Mock()
         self.dispatcher.account_manager.get.return_value = None
 
-        self.dispatcher.Do('unlike', '6/twitter', '23346356767354626')
-        self.dispatcher.account_manager.get.assert_called_once_with('6/twitter')
+        self.dispatcher.Do('unlike', '6', '23346356767354626')
+        self.dispatcher.account_manager.get.assert_called_once_with('6')
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Could not find account: 6/twitter\n')
+                         'Could not find account: 6\n')
 
     def test_send_message(self):
         account1 = mock.Mock()
@@ -158,27 +158,27 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.account_manager = mock.Mock()
         self.dispatcher.account_manager.get.return_value = account
 
-        self.dispatcher.SendReply('2/facebook', 'objid', '[Hilarious Response]')
-        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
+        self.dispatcher.SendReply('2', 'objid', '[Hilarious Response]')
+        self.dispatcher.account_manager.get.assert_called_once_with('2')
         account.protocol.assert_called_once_with(
             'send_thread', 'objid', '[Hilarious Response]',
             success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Replying to 2/facebook, objid\n')
+                         'Replying to 2, objid\n')
 
     def test_send_reply_failed(self):
         account = mock.Mock()
         self.dispatcher.account_manager = mock.Mock()
         self.dispatcher.account_manager.get.return_value = None
 
-        self.dispatcher.SendReply('2/facebook', 'objid', '[Hilarious Response]')
-        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
+        self.dispatcher.SendReply('2', 'objid', '[Hilarious Response]')
+        self.dispatcher.account_manager.get.assert_called_once_with('2')
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Replying to 2/facebook, objid\n' +
-                         'Could not find account: 2/facebook\n')
+                         'Replying to 2, objid\n' +
+                         'Could not find account: 2\n')
 
     def test_upload_async(self):
         account = mock.Mock()
@@ -188,12 +188,12 @@ class TestDispatcher(unittest.TestCase):
         success = mock.Mock()
         failure = mock.Mock()
 
-        self.dispatcher.Upload('2/facebook',
+        self.dispatcher.Upload('2',
                                'file://path/to/image.png',
                                'A thousand words',
                                success=success,
                                failure=failure)
-        self.dispatcher.account_manager.get.assert_called_once_with('2/facebook')
+        self.dispatcher.account_manager.get.assert_called_once_with('2')
         account.protocol.assert_called_once_with(
             'upload',
             'file://path/to/image.png',
@@ -203,7 +203,7 @@ class TestDispatcher(unittest.TestCase):
             )
 
         self.assertEqual(self.log_mock.empty(),
-                         'Uploading file://path/to/image.png to 2/facebook\n')
+                         'Uploading file://path/to/image.png to 2\n')
 
     def test_get_features(self):
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),

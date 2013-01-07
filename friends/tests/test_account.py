@@ -80,8 +80,8 @@ class TestAccount(unittest.TestCase):
         self.assertEqual(auth.parameters, 'fake parameters')
 
     def test_account_id(self):
-        # The 'id' key of the account gets the full service name.
-        self.assertEqual(self.account.id, 'fake_id/flickr')
+        self.assertEqual(self.account.id, 'fake_id')
+        self.assertEqual(self.account.protocol_name, 'flickr')
 
     def test_account_service(self):
         # The protocol attribute refers directly to the protocol used.
@@ -205,7 +205,7 @@ class TestAccountManager(unittest.TestCase):
     def test_account_manager_enabled_event(self):
         manager = AccountManager()
         manager._get_id = mock.Mock()
-        manager._get_id.return_value = [mock.Mock(), '2/facebook']
+        manager._get_id.return_value = [mock.Mock(), '2']
         manager._add_new_account = mock.Mock()
         manager._add_new_account.return_value = account = mock.Mock()
         manager._on_enabled_event(accounts_manager, 2)
@@ -243,12 +243,12 @@ class TestAccountManager(unittest.TestCase):
         manager._get_id = mock.Mock()
         manager._get_id.return_value = [self.account_service, 'faker/than fake']
         manager._add_new_account(self.account_service)
-        example_row = [[['twitter', '6/twitter', '1234'],
+        example_row = [[['twitter', '6', '1234'],
              ['base', 'faker/than fake', '5678']],
             'messages', 'Fred Flintstone', '', 'fred', True,
             '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '',
             0.0, False, '', '', '', '', '', '']
-        result_row = [[['twitter', '6/twitter', '1234']],
+        result_row = [[['twitter', '6', '1234']],
             'messages', 'Fred Flintstone', '', 'fred', True,
             '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '',
             0.0, False, '', '', '', '', '', '']

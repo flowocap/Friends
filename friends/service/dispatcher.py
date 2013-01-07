@@ -156,9 +156,9 @@ class Dispatcher(dbus.service.Object):
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/Friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.Do('like', '3/facebook', 'post_id') # Likes that FB post.
+            service.Do('like', '3', 'post_id') # Likes that FB post.
             service.Do('search', '', 'search terms') # Searches all accounts.
-            service.Do('list', '6/twitter', 'list_id') # Fetch a single list.
+            service.Do('list', '6', 'list_id') # Fetch a single list.
         """
         if not self.online:
             failure('No internet connection available.')
@@ -239,7 +239,7 @@ class Dispatcher(dbus.service.Object):
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.SendReply('6/twitter', '34245645347345626', 'Your reply')
+            service.SendReply('6', '34245645347345626', 'Your reply')
         """
         if not self.online:
             failure('No internet connection available.')
@@ -290,7 +290,7 @@ class Dispatcher(dbus.service.Object):
                 print('failed to upload: {}'.format(message))
 
             service.Upload(
-                '6/twitter',
+                '6',
                 'file:///path/to/image.png',
                 'A beautiful picture.',
                 reply_handler=success,

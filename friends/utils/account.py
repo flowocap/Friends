@@ -135,14 +135,12 @@ class Account:
         self.auth = AuthData(account_service.get_auth_data())
         # The provider in libaccounts should match the name of our protocol.
         account = account_service.get_account()
-        protocol_name = account.get_provider_name()
-        protocol_class = protocol_manager.protocols.get(protocol_name)
+        self.protocol_name = account.get_provider_name()
+        protocol_class = protocol_manager.protocols.get(self.protocol_name)
         if protocol_class is None:
-            raise UnsupportedProtocolError(protocol_name)
+            raise UnsupportedProtocolError(self.protocol_name)
         self.protocol = protocol_class(self)
-        # account.id is a number, and the protocol_name is a word, so the
-        # resulting id will look something like '6/twitter' or '2/facebook'
-        self.id = '{}/{}'.format(account.id, protocol_name)
+        self.id = str(account.id)
         # Connect responders to changes in the account information.
         account_service.connect('changed', self._on_account_changed, account)
         self._on_account_changed(account_service, account)
