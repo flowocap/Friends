@@ -18,6 +18,7 @@
 
 __all__ = [
     'Facebook',
+    'FacebookError',
     ]
 
 
@@ -30,7 +31,7 @@ from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
-from friends.errors import SuccessfulCompletion, FriendsError
+from friends.errors import FriendsError
 
 
 # 'id' can be the id of *any* Facebook object
@@ -43,6 +44,17 @@ FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
 
 
 log = logging.getLogger(__name__)
+
+
+class FacebookError(FriendsError):
+    def __init__(self, code, type, message):
+        self.code = code
+        self.type = type
+        self.message = message
+
+    def __str__(self):
+        return 'Facebook error ({} {}): {}'.format(
+            self.code, self.type, self.message)
 
 
 class Facebook(Base):
@@ -58,8 +70,7 @@ class Facebook(Base):
         error = data.get('error')
         if error is None:
             return False
-        raise FriendsError('Facebook error ({} {}): {}'.format(
-            error.get('code'), error.get('type'), error.get('message')))
+        raise FacebookError(**error)
 
     def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
@@ -108,6 +119,7 @@ class Facebook(Base):
                 self._publish_entry(
                     stream='reply_to/{}'.format(message_id),
                     entry=comment)
+        return args['url']
 
     def _follow_pagination(self, url, params, limit=None):
         """Follow Facebook's pagination until we hit the limit."""
@@ -238,7 +250,7 @@ class Facebook(Base):
 
         url = API_BASE.format(id=new_id)
         entry = Downloader(url, params=dict(access_token=token)).get_json()
-        self._publish_entry(entry)
+        return self._publish_entry(entry)
 
     @feature
     def send(self, message, obj_id='me'):
@@ -248,7 +260,7 @@ class Facebook(Base):
         be any type of Facebook object that has a wall, be it a user, an app,
         a company, an event, etc.
         """
-        self._send(obj_id, message, '/feed')
+        return self._send(obj_id, message, '/feed')
 
     @feature
     def send_thread(self, obj_id, message):
@@ -257,7 +269,7 @@ class Facebook(Base):
         obj_id can be the id of any Facebook object that supports being
         commented on, which will generally be Posts.
         """
-        self._send(obj_id, message, '/comments')
+        return self._send(obj_id, message, '/comments')
 
     @feature
     def delete(self, obj_id):
@@ -280,8 +292,6 @@ class Facebook(Base):
         response = Uploader(
             url, picture_uri, description,
             picture_key='source', desc_key='message').get_json()
-        if response is None:
-            raise FriendsError('No response from upload server.')
         post_id = response.get('post_id')
         if post_id is not None:
             destination_url = PERMALINK.format(id=post_id)
@@ -298,7 +308,7 @@ class Facebook(Base):
                 icon_uri=Avatar.get_image(
                     API_BASE.format(id=self._account.user_id) +
                     '/picture?type=large'))
-            raise SuccessfulCompletion(destination_url)
+            return destination_url
         else:
             raise FriendsError(str(response))
 
@@ -361,10 +371,7 @@ class Facebook(Base):
                     contact['name'], contact['id']))
             full_contact = self._fetch_contact(contact['id'])
             eds_contact = self._create_contact(full_contact)
-            if not self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact):
-                raise FriendsError(
-                    'Unable to save facebook contact {}'.format(
-                        contact['name']))
+            self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact)
 
     def delete_contacts(self):
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)

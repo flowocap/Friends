@@ -33,7 +33,7 @@ from datetime import datetime
 
 from gi.repository import GObject, EDataServer, EBook
 
-from friends.errors import AuthorizationError, SuccessfulCompletion
+from friends.errors import ContactsError
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
@@ -126,44 +126,49 @@ def initialize_caches():
     for i in range(Model.get_n_rows()):
         row_iter = Model.get_iter_at_row(i)
         row = Model.get_row(row_iter)
-        _seen_messages[_make_key(row)] = row_iter
+        _seen_messages[_make_key(row)] = i
         for triple in row[IDS_IDX]:
-            _seen_ids[tuple(triple)] = row_iter
+            _seen_ids[tuple(triple)] = i
     log.debug(
         '_seen_ids: {}, _seen_messages: {}'.format(
             len(_seen_ids), len(_seen_messages)))
 
 
 class _OperationThread(threading.Thread):
-    """Catch, log, and swallow all exceptions in the sub-thread."""
+    """Manage async callbacks, and log subthread exceptions."""
 
-    def __init__(self, *args, identifier=None, success=STUB, failure=STUB,
-                 **kws):
-        self._id = identifier
+    def __init__(self, *args, id=None, success=STUB, failure=STUB, **kws):
+        self._id = id
         self._success_callback = success
         self._failure_callback = failure
+
+        # Wrap the real target inside retval_catcher
+        method = kws.get('target')
+        kws['args'] = (method,) + kws.get('args', ())
+        kws['target'] = self._retval_catcher
+
         super().__init__(*args, **kws)
 
-    # Always run these as daemon threads, so they don't block the main thread,
-    # i.e. friends-service, from exiting.
+    # Don't block friends-service from exiting if subthreads are still running.
     daemon = True
+
+    def _retval_catcher(self, func, *args, **kwargs):
+        """Call the success callback, but only if no exceptions were raised."""
+        self._success_callback(func(*args, **kwargs))
 
     def run(self):
         log.debug('{} is starting in a new thread.'.format(self._id))
+        start = time.time()
         try:
             super().run()
-        except SuccessfulCompletion as err:
-            self._success_callback(str(err))
         except Exception as err:
+            # Raising an exception is the only way for a protocol
+            # operation to avoid triggering the success callback.
             self._failure_callback(str(err))
             log.exception(err)
-        else:
-            # Implicitely call the success callback if no exceptions
-            # have been raised. This means that ALL error conditions,
-            # no matter how slight, MUST raise exceptions if you don't
-            # want the success callback to be called.
-            self._success_callback(self._id)
-        log.debug('{} has completed, thread exiting.'.format(self._id))
+        elapsed = time.time() - start
+        log.debug('{} has completed in {:.2f}s, thread exiting.'.format(
+                self._id, elapsed))
 
         # If this is the last thread to exit, then the refresh is
         # completed and we should save the model.
@@ -187,15 +192,19 @@ class Base:
     def __call__(self, operation, *args, success=STUB, failure=STUB, **kwargs):
         """Call an operation, i.e. a method, with arguments in a sub-thread.
 
-        Sub-threads do not currently communicate any state to the main thread,
-        and any exception that occurs in the sub-thread is simply logged and
-        discarded.
+        If a protocol method raises an exception, that will be caught
+        and passed to the failure callback; if no exception is raised,
+        then the return value of the method will be passed to the
+        success callback. Programs communicating with friends-service
+        via DBus shoudl therefore specify success & failure callbacks
+        in order to be notified of the results of their DBus method
+        calls.
         """
         if operation.startswith('_') or not hasattr(self, operation):
             raise NotImplementedError(operation)
         method = getattr(self, operation)
         _OperationThread(
-            identifier='{}.{}'.format(self.__class__.__name__, operation),
+            id='{}.{}'.format(self.__class__.__name__, operation),
             target=method,
             success=success,
             failure=failure,
@@ -243,10 +252,10 @@ class Base:
             # Don't let duplicate messages into the model, but do record the
             # unique message ids of each duplicate message.
             key = _make_key(args)
-            row_iter = _seen_messages.get(key)
-            if row_iter is None:
+            row_idx = _seen_messages.get(key)
+            if row_idx is None:
                 # We haven't seen this message before.
-                _seen_messages[key] = Model.append(*args)
+                _seen_messages[key] = Model.get_position(Model.append(*args))
                 # I think it's safe not to notify the user about
                 # messages that they sent themselves...
                 if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
@@ -258,7 +267,7 @@ class Base:
             else:
                 # We have seen this before, so append to the matching column's
                 # message_ids list, this message's id.
-                row = Model.get_row(row_iter)
+                row = Model.get_row(Model.get_iter_at_row(row_idx))
                 # Remember that row[IDS] is the nested list-of-lists of
                 # message_ids.  args[IDS] is the nested list-of-lists for the
                 # message that we're publishing.  The outer list of the latter
@@ -282,12 +291,13 @@ class Base:
                   message_id)
         log.debug('Unpublishing {}!'.format(triple))
 
-        row_iter = _seen_ids.pop(triple, None)
-        if row_iter is None:
-            log.error('Tried to delete an invalid message id.')
-            return
+        row_idx = _seen_ids.pop(triple, None)
+        if row_idx is None:
+            raise FriendsError('Tried to delete an invalid message id.')
 
+        row_iter = Model.get_iter_at_row(row_idx)
         row = Model.get_row(row_iter)
+
         if len(row[IDS_IDX]) == 1:
             # Message only exists on one protocol, delete it
             del _seen_messages[_make_key(row)]
@@ -308,11 +318,7 @@ class Base:
     def _get_access_token(self):
         """Return an access token, logging in if necessary."""
         if self._account.access_token is None:
-            if not self._login():
-                raise AuthorizationError(
-                    self._account.id,
-                    'No {} authentication results received.'.format(
-                        self.__class__.__name__))
+            self._login()
 
         return self._account.access_token
 
@@ -354,41 +360,26 @@ class Base:
                 'Re-authenticating' if old_token else 'Logging in', protocol))
 
         result = Authentication(self._account).login()
-        if result is None:
-            log.error(
-                'No {} authentication results received.'.format(protocol))
-            return
 
-        token = result.get('AccessToken')
-        if token is None:
-            log.error('No AccessToken in {} session: {!r}'.format(
-                protocol, result))
-        else:
-            self._account.access_token = token
-            self._whoami(result)
-            log.debug('{} UID: {}'.format(protocol, self._account.user_id))
+        self._account.access_token = result.get('AccessToken')
+        self._whoami(result)
+        log.debug('{} UID: {}'.format(protocol, self._account.user_id))
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)
-        try:
-            client.open_sync(False, None)
-        except GObject.GError:
-            log.error('EDS client failed to open.')
-            return
-        else:
-            return client
+        client.open_sync(False, None)
+        return client
 
     def _push_to_eds(self, online_service, contact):
         source_match = self._get_eds_source(online_service)
         if source_match is None:
-            log.error(
-                'Push to EDS failed because we have been handed an online' +
-                'service ({}) which does not have an address book'.format(
+            raise ContactsError(
+                '{} does not have an address book.'.format(
                     online_service))
-            return False
         client = self._new_book_client(source_match)
-        if client is not None:
-            return client.add_contact_sync(contact, None)
+        success = client.add_contact_sync(contact, None)
+        if not success:
+            raise ContactsError('Failed to save contact {!r}', contact)
 
     def _create_eds_source(self, online_service):
         source = EDataServer.Source.new(None, None)
@@ -414,25 +405,19 @@ class Base:
 
     def _previously_stored_contact(self, source, field, search_term):
         client = self._new_book_client(source)
-        if client is None:
-            return False
         query = EBook.book_query_vcard_field_test(
             field, EBook.BookQueryTest(0), search_term)
         success, result = client.get_contacts_sync(query.to_string(), None)
         if not success:
-            log.error('EDS Search failed on field {}'.format(field))
-            return False
+            raise ContactsError('Search failed on field {}'.format(field))
         return len(result) > 0
 
     def _delete_service_contacts(self, source):
         client = self._new_book_client(source)
-        if client is None:
-            return False
         query = EBook.book_query_any_field_contains('')
         success, results = client.get_contacts_sync(query.to_string(), None)
         if not success:
-            log.error('EDS search for delete all contacts failed')
-            return False
+            raise ContactsError('Search for delete all contacts failed')
         log.debug('Found {} contacts to delete'.format(len(results)))
         for contact in results:
             log.debug(
@@ -444,7 +429,6 @@ class Base:
     def _create_contact(self, user_fullname, user_nickname,
                         social_network_attrs):
         """Build a VCard based on a dict representation of a contact."""
-
         vcard = EBook.VCard.new()
         info = social_network_attrs
 

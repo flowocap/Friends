@@ -28,6 +28,7 @@ from gi.repository import Dee
 from friends.protocols.identica import Identica
 from friends.tests.mocks import FakeAccount, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
+from friends.errors import AuthorizationError
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -52,12 +53,12 @@ class TestIdentica(unittest.TestCase):
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
 
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value=None)
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
-        self.assertFalse(self.protocol._login())
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 

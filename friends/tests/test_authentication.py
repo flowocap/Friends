@@ -28,20 +28,32 @@ import unittest
 
 from friends.utils.authentication import Authentication
 from friends.tests.mocks import FakeAccount, mock
+from friends.errors import AuthorizationError
+
+
+class FakeAuthSession:
+    results = None
+
+    @classmethod
+    def new(cls, id, method):
+        return cls()
+
+    def process(self, parameters, mechanism, callback, ignore):
+        # Pass in fake data.  The callback expects a session, reply,
+        # error, and user_data arguments.  We'll use the parameters
+        # argument as a way to specify whether an error occurred during
+        # authentication or not.
+        callback(None, self.results, parameters, None)
 
 
 class FakeSignon:
-    class AuthSession:
-        @classmethod
-        def new(cls, id, method):
-            return cls()
+    class AuthSession(FakeAuthSession):
+        results = dict(AccessToken='auth reply')
 
-        def process(self, parameters, mechanism, callback, ignore):
-            # Pass in fake data.  The callback expects a session, reply,
-            # error, and user_data arguments.  We'll use the parameters
-            # argument as a way to specify whether an error occurred during
-            # authentication or not.  Beautiful cruft.
-            callback(None, 'auth reply', parameters, None)
+
+class FailingSignon:
+    class AuthSession(FakeAuthSession):
+        results = dict(NoAccessToken='fail')
 
 
 class Logger:
@@ -79,9 +91,17 @@ class TestAuthentication(unittest.TestCase):
         self.account.auth.parameters = False
         authenticator = Authentication(self.account)
         reply = authenticator.login()
-        self.assertEqual(reply, 'auth reply')
+        self.assertEqual(reply, dict(AccessToken='auth reply'))
         self.assertEqual(logger.debug_messages, ['Login completed'])
         self.assertEqual(logger.error_messages, [])
+
+    @mock.patch('friends.utils.authentication.log', logger)
+    @mock.patch('friends.utils.authentication.Signon', FailingSignon)
+    def test_missing_access_token(self):
+        # Prevent an error in the callback.
+        self.account.auth.parameters = False
+        authenticator = Authentication(self.account)
+        self.assertRaises(AuthorizationError, authenticator.login)
 
     @mock.patch('friends.utils.authentication.log', logger)
     @mock.patch('friends.utils.authentication.Signon', FakeSignon)
@@ -91,8 +111,4 @@ class TestAuthentication(unittest.TestCase):
             message = 'who are you?'
         self.account.auth.parameters = Error
         authenticator = Authentication(self.account)
-        reply = authenticator.login()
-        self.assertEqual(reply, 'auth reply')
-        self.assertEqual(logger.debug_messages, ['Login completed'])
-        self.assertEqual(logger.error_messages,
-                         ['Got authentication error: who are you?'])
+        self.assertRaises(AuthorizationError, authenticator.login)

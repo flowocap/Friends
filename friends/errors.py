@@ -19,19 +19,8 @@
 __all__ = [
     'AuthorizationError',
     'FriendsError',
-    'SuccessfulCompletion',
     'UnsupportedProtocolError',
     ]
-
-
-class SuccessfulCompletion(Exception):
-    """This is an exception used to indicate a successful thread completion.
-
-    This was necessary because _OperationThread had no way of getting
-    a return value from a thread, but it can catch exceptions. This
-    isn't used everywhere, but only where a certain return value is
-    desired in the success callback.
-    """
 
 
 class FriendsError(Exception):
@@ -47,6 +36,16 @@ class AuthorizationError(FriendsError):
 
     def __str__(self):
         return '{} (account: {})'.format(self.message, self.account)
+
+
+class ContactsError(FriendsError):
+    """Errors relating to EDS contact management."""
+
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return 'EDS: {}'.format(self.message)
 
 
 class UnsupportedProtocolError(FriendsError):

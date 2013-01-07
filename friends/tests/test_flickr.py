@@ -57,12 +57,6 @@ class TestFlickr(unittest.TestCase):
         # The set of public features.
         self.assertEqual(Flickr.get_features(), ['receive'])
 
-    def test_failed_login(self):
-        # Force the Flickr login to fail.
-        with mock.patch.object(self.protocol, '_login',
-                               return_value=False):
-            self.assertRaises(AuthorizationError, self.protocol.receive)
-
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
@@ -77,20 +71,6 @@ class TestFlickr(unittest.TestCase):
         self.assertEqual(self.log_mock.empty(), '')
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
-
-    @mock.patch('friends.utils.http.Soup.Message',
-                FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
-    def test_unsuccessful_login(self):
-        # The user is not already logged in, but the act of logging in
-        # fails.
-        def side_effect():
-            # Sorry, the login is unsuccessful, even though it adds a user_id
-            # key to the account.
-            self.account.user_id = 'bart'
-            return False
-        with mock.patch.object(self.protocol, '_login',
-                               side_effect=side_effect):
-            self.assertRaises(AuthorizationError, self.protocol.receive)
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -110,24 +90,11 @@ class TestFlickr(unittest.TestCase):
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                # No AccessToken, so for all intents-and-purposes; fail!
-                return_value=dict(username='Bob Dobbs',
-                                  user_nsid='bob',
-                                  TokenSecret='abc'))
-    def test_login_unsuccessful_authentication(self, mock):
-        # Logging in required communication with the account service to get an
-        # AccessToken, but this fails.
-        self.assertRaises(AuthorizationError, self.protocol.receive)
-
-    @mock.patch('friends.utils.http.Soup.Message',
-                FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                # login() callback never happens.
-                return_value=None)
-    def test_login_unsuccessful_authentication_no_callback(self, mock):
+    def test_login_unsuccessful_authentication_no_callback(self, *mocks):
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
         self.assertRaises(AuthorizationError, self.protocol.receive)
@@ -193,39 +160,69 @@ class TestFlickr(unittest.TestCase):
                                return_value='token'):
             self.protocol.receive()
         self.assertEqual(TestModel.get_n_rows(), 3)
-        # Image 1 data in the first row.
-        row = list(TestModel.get_row(0))
-        # For convenience.
-        def col(name):
-            return row[COLUMN_INDICES[name]]
-        self.assertEqual(col('message'), 'ant')
-        self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '801']])
-        self.assertEqual(col('sender_id'), '123')
-        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45Z')
-        self.assertFalse(col('from_me'))
-        row = list(TestModel.get_row(1))
-        # Image 2 data.  The image is from the account owner.
-        self.assertEqual(col('message'), 'bee')
-        self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '802']])
-        self.assertEqual(col('sender_id'), '456')
-        self.assertEqual(col('sender_nick'), 'Alex Lifeson')
-        self.assertTrue(col('from_me'))
-        # Image 3 data.  This data set has some additional entries that allow
-        # various image urls and other keys to be added.
-        row = list(TestModel.get_row(2))
-        self.assertEqual(col('message'), 'cat')
+
         self.assertEqual(
-            col('img_url'),
-            'http://farmanimalz.static.flickr.com/1/789_ghi_b.jpg')
+            list(TestModel.get_row(0)),
+            [[['flickr', 'lerxst', '801']],
+             'images',
+             '',
+             '123',
+             '',
+             False,
+             '2012-05-10T13:36:45Z',
+             '',
+             '',
+             '',
+             0.0,
+             False,
+             '',
+             '',
+             '',
+             '',
+             'ant',
+             '',
+             ])
+
         self.assertEqual(
-            col('img_src'),
-            'http://farmanimalz.static.flickr.com/1/789_ghi_m.jpg')
+            list(TestModel.get_row(1)),
+            [[['flickr', 'lerxst', '802']],
+             'images',
+             'Alex Lifeson',
+             '456',
+             'Alex Lifeson',
+             True,
+             '',
+             '',
+             '',
+             '',
+             0.0,
+             False,
+             '',
+             '',
+             '',
+             '',
+             'bee',
+             '',
+             ])
+
         self.assertEqual(
-            col('img_thumb'),
-            'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg')
-        self.assertEqual(col('icon_uri'), '')
-        self.assertFalse(col('from_me'))
-        self.assertEqual(col('sender'), 'Bob Dobbs')
-        self.assertEqual(col('sender_id'), '789')
-        self.assertEqual(col('sender_nick'), 'Bob Dobbs')
-        self.assertEqual(col('url'), 'http://www.flickr.com/people/789')
+            list(TestModel.get_row(2)),
+            [[['flickr', 'lerxst', '803']],
+             'images',
+             'Bob Dobbs',
+             '789',
+             'Bob Dobbs',
+             False,
+             '',
+             '',
+             '',
+             'http://www.flickr.com/people/789',
+             0.0,
+             False,
+             'http://farmanimalz.static.flickr.com/1/789_ghi_m.jpg',
+             '',
+             'http://farmanimalz.static.flickr.com/1/789_ghi_b.jpg',
+             '',
+             'cat',
+             'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg',
+             ])

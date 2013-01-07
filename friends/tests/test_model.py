@@ -43,12 +43,10 @@ class TestModel(unittest.TestCase):
 
     def test_basic_properties(self):
         self.assertIsInstance(Model, Dee.SequenceModel)
-        self.assertEqual(Model.get_n_columns(), 37)
+        self.assertEqual(Model.get_n_columns(), 18)
         self.assertEqual(Model.get_schema(),
-                         ['aas', 's', 's', 's', 's', 'b', 's', 's', 's',
-                          's', 's', 's', 's', 's', 's', 'd', 'b', 's', 's',
-                          's', 's', 's', 's', 's', 's', 's', 's', 's', 's',
-                          's', 's', 's', 's', 's', 's', 's', 's'])
+                         ['aas', 's', 's', 's', 's', 'b', 's', 's', 's', 's',
+                          'd', 'b', 's', 's', 's', 's', 's', 's'])
         if first_run or stale_schema:
             # Then the Model should be brand-new and empty
             self.assertEqual(Model.get_n_rows(), 0)

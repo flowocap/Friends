@@ -33,7 +33,7 @@ from friends.utils.account import AccountManager
 from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
 from friends.utils.menus import MenuManager
-from friends.utils.model import persist_model, Model
+from friends.utils.model import Model
 
 
 log = logging.getLogger(__name__)
@@ -269,29 +269,34 @@ class Dispatcher(dbus.service.Object):
         It takes five arguments, three strings and two callback
         functions. The URI option is parsed by GFile and thus
         seamlessly supports uploading from http:// URLs as well as
-        file:// paths. You'll also need a working glib mainloop for
-        the below example to function correctly.
+        file:// paths.
 
         example:
             import dbus
+            from dbus.mainloop.glib import DBusGMainLoop
+            from gi.repository import GLib
+
+            DBusGMainLoop(set_as_default=True)
+            loop = GLib.MainLoop()
+
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
 
-            def success(account_id, uri, destination_url):
-                print(
-                    '{} successfully uploaded to {}.'.format(
-                        uri, destination_url))
+            def success(destination_url):
+                print('successfully uploaded to {}.'.format(destination_url))
 
-            def failure(account_id, uri, message):
-                print('{} failed to upload: {}'.format(uri, message))
+            def failure(message):
+                print('failed to upload: {}'.format(message))
 
             service.Upload(
                 '6/twitter',
                 'file:///path/to/image.png',
-                'A beautiful picture.'
+                'A beautiful picture.',
                 reply_handler=success,
                 error_handler=failure)
+
+            loop.run()
 
         Note also that the callbacks are actually optional; you are
         free to ignore error conditions at your peril.

@@ -25,7 +25,6 @@ import threading
 
 from friends.tests.mocks import mock
 from friends.utils.base import _OperationThread
-from friends.errors import SuccessfulCompletion
 
 
 def join_all_threads():
@@ -45,6 +44,11 @@ def it_cant_fail():
     return 1 + 1
 
 
+def adder(a, b):
+    """Used for testing that argument passing works with subthreads."""
+    return a + b
+
+
 @mock.patch('friends.utils.base.notify', mock.Mock())
 class TestThreads(unittest.TestCase):
     """Test protocol implementations."""
@@ -55,7 +59,7 @@ class TestThreads(unittest.TestCase):
         err = ValueError('This value is bad, and you should feel bad!')
 
         _OperationThread(
-            identifier='Test.thread',
+            id='Test.thread',
             target=exception_raiser,
             success=success,
             failure=failure,
@@ -73,7 +77,7 @@ class TestThreads(unittest.TestCase):
         failure = mock.Mock()
 
         _OperationThread(
-            identifier='Test.thread',
+            id='Test.thread',
             target=it_cant_fail,
             success=success,
             failure=failure,
@@ -82,24 +86,41 @@ class TestThreads(unittest.TestCase):
         # Wait for threads to exit, avoiding race condition.
         join_all_threads()
 
-        success.assert_called_once_with('Test.thread')
+        success.assert_called_once_with(2)
         self.assertEqual(failure.call_count, 0)
 
-    def test_success_exception_calls_success_callback(self):
+    def test_can_pass_args_to_operations(self):
         success = mock.Mock()
         failure = mock.Mock()
-        err = SuccessfulCompletion('You win!')
 
         _OperationThread(
-            identifier='Test.thread',
-            target=exception_raiser,
+            id='Test.thread',
+            target=adder,
             success=success,
             failure=failure,
-            args=(err,),
+            args=(5, 7),
             ).start()
 
         # Wait for threads to exit, avoiding race condition.
         join_all_threads()
 
-        success.assert_called_once_with('You win!')
+        success.assert_called_once_with(12)
+        self.assertEqual(failure.call_count, 0)
+
+    def test_can_pass_kwargs_to_operations(self):
+        success = mock.Mock()
+        failure = mock.Mock()
+
+        _OperationThread(
+            id='Test.thread',
+            target=adder,
+            success=success,
+            failure=failure,
+            kwargs=dict(a=5, b=7),
+            ).start()
+
+        # Wait for threads to exit, avoiding race condition.
+        join_all_threads()
+
+        success.assert_called_once_with(12)
         self.assertEqual(failure.call_count, 0)

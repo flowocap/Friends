@@ -29,6 +29,7 @@ from urllib.error import HTTPError
 from friends.protocols.twitter import RateLimiter, Twitter
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
+from friends.errors import AuthorizationError
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -54,12 +55,12 @@ class TestTwitter(unittest.TestCase):
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
 
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value=None)
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.protocols.twitter.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, dload, login):
-        self.assertFalse(self.protocol._login())
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 
@@ -129,31 +130,27 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         expected = [
             [[['twitter', 'faker/than fake', '240558470661799936']],
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
-             '2012-08-28T21:16:23Z', 'just another test', '', '',
-             'https://twitter.com/oauth_dancer/status/240558470661799936', '',
-             '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-             '', '', '', '', '', '', '', '', '', '',
+             '2012-08-28T21:16:23Z', 'just another test', '',
+             'https://twitter.com/oauth_dancer/status/240558470661799936',
+             0.0, False, '', '', '', '', '', '',
              ],
             [[['twitter', 'faker/than fake', '240556426106372096']],
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data ' +
              'with twitter" class at @cal with @othman  http://t.co/bfj7zkDJ',
-             '', '', 'https://twitter.com/raffi/status/240556426106372096', '',
-             '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-             '', '', '', '', '', '', '', '', '', '',
+             '', 'https://twitter.com/raffi/status/240556426106372096',
+             0.0, False, '', '', '', '', '', '',
              ],
             [[['twitter', 'faker/than fake', '240539141056638977']],
              'messages', 'Taylor Singletary', '819797', 'episod', False,
              '2012-08-28T19:59:34Z',
-             'You\'d be right more often if you thought you were wrong.', '',
-             '', 'https://twitter.com/episod/status/240539141056638977', '',
-             '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-             '', '', '', '', '', '', '', '', '', '',
+             'You\'d be right more often if you thought you were wrong.',
+             '', 'https://twitter.com/episod/status/240539141056638977',
+             0.0, False, '', '', '', '', '', '',
              ],
             ]
         for i, expected_row in enumerate(expected):
-            for got, want in zip(TestModel.get_row(i), expected_row):
-                self.assertEqual(got, want)
+            self.assertEqual(list(TestModel.get_row(i)), expected_row)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
@@ -177,13 +174,11 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         expected_row = [
             [['twitter', 'faker/than fake', '240558470661799936']],
             'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', True,
-            '2012-08-28T21:16:23Z', 'just another test', '', '',
-            'https://twitter.com/oauth_dancer/status/240558470661799936', '',
-            '', '', '', 0.0, False, '', '', '', '', '', '', '', '', '', '',
-            '', '', '', '', '', '', '', '', '', '',
+            '2012-08-28T21:16:23Z', 'just another test', '',
+            'https://twitter.com/oauth_dancer/status/240558470661799936',
+            0.0, False, '', '', '', '', '', '',
             ]
-        for got, want in zip(TestModel.get_row(0), expected_row):
-            self.assertEqual(got, want)
+        self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
     def test_home_url(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])

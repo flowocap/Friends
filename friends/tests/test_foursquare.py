@@ -27,6 +27,7 @@ from gi.repository import Dee
 from friends.protocols.foursquare import FourSquare
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_TYPES
+from friends.errors import AuthorizationError
 
 
 # Create a test model that will not interfere with the user's environment.
@@ -57,12 +58,12 @@ class TestFourSquare(unittest.TestCase):
         # The set of public features.
         self.assertEqual(FourSquare.get_features(), ['receive'])
 
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value=None)
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Downloader.get_json',
                 return_value=None)
     def test_unsuccessful_authentication(self, *mocks):
-        self.assertFalse(self.protocol._login())
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 
@@ -94,12 +95,11 @@ class TestFourSquare(unittest.TestCase):
         expected = [
             [['foursquare', 'faker/than fake', '50574c9ce4b0a9a6e84433a0']],
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
-            "Working on friends's foursquare plugin.", '',
+            "Working on friends's foursquare plugin.",
             '~/.cache/friends/avatar/hash',
             'https://api.foursquare.com/v2/checkins/50574c9ce4b0a9a6e84433a0' +
-            '?oauth_token=tokeny goodness&v=20121104', '', '', '', '', 0.0,
-            False, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-            '', '', '', '', '', '',
+            '?oauth_token=tokeny goodness&v=20121104', 0.0, False, '', '', '',
+            '', '', '',
             ]
         for got, want in zip(TestModel.get_row(0), expected):
             self.assertEqual(got, want)

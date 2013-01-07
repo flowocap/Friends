@@ -24,12 +24,12 @@ __all__ = [
 
 import json
 import logging
-import sys
 
-from base64 import encodebytes
 from contextlib import contextmanager
-from gi.repository import GLib, Gio, Soup, SoupGNOME
+from gi.repository import Gio, Soup, SoupGNOME
 from urllib.parse import urlencode
+
+from friends.errors import FriendsError
 
 log = logging.getLogger(__name__)
 
@@ -100,6 +100,14 @@ class HTTP:
         with self._transfer() as message:
             payload = message.response_body.flatten().get_data()
             charset = _get_charset(message)
+
+        if not payload:
+            raise FriendsError('Got zero-length response from server.')
+
+        if len(payload) < 4:
+            # This doesn't even seem to be a valid JSON response.
+            raise FriendsError('Server response did not contain valid JSON.')
+
         # RFC 4627 $3.  JSON text SHALL be encoded in Unicode.  The default
         # encoding is UTF-8.  Since the first two characters of a JSON text
         # will always be ASCII characters [RFC0020], it is possible to
@@ -118,6 +126,7 @@ class HTTP:
                 charset = 'utf-32le'
             elif (octet_0 == octet_1 == octet_2 == 0):
                 charset = 'utf-32be'
+
         return json.loads(payload.decode(charset))
 
     def get_bytes(self):

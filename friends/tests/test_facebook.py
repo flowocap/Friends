@@ -25,10 +25,10 @@ import unittest
 from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
 
-from friends.protocols.facebook import Facebook
+from friends.protocols.facebook import Facebook, FacebookError
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
-from friends.errors import SuccessfulCompletion, FriendsError
+from friends.errors import ContactsError, FriendsError, AuthorizationError
 from friends.utils.model import COLUMN_TYPES
 
 
@@ -69,20 +69,11 @@ class TestFacebook(unittest.TestCase):
         self.assertEqual(self.account.user_name, 'Bart Person')
         self.assertEqual(self.account.user_id, '801')
 
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value=None)
+    @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
+    @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     def test_login_unsuccessful_authentication(self, mock):
         # The user is not already logged in, but the act of logging in fails.
-        self.protocol._login()
-        self.assertIsNone(self.account.access_token)
-        self.assertIsNone(self.account.user_name)
-
-    @mock.patch('friends.utils.authentication.Authentication.login',
-                return_value={})
-    def test_unsuccessful_login_no_access_token(self, mock):
-        # When Authentication.login() returns a dictionary, but that does not
-        # have the AccessToken key, then the account data is not updated.
-        self.protocol._login()
+        self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.access_token)
         self.assertIsNone(self.account.user_name)
 
@@ -97,7 +88,7 @@ class TestFacebook(unittest.TestCase):
         with LogMock('friends.utils.base',
                      'friends.protocols.facebook') as log_mock:
             self.assertRaises(
-                FriendsError,
+                FacebookError,
                 self.protocol.home,
                 )
             contents = log_mock.empty(trim=False)
@@ -129,28 +120,9 @@ Facebook UID: None
             '2012-09-26T17:16:00Z',
             'OK Don...10) Headlong Flight',
             '',
-            '',
             'https://www.facebook.com/117402931676347_386054134801436_3235476',
-            '',
-            '',
-            '',
-            '',
             0.0,
             False,
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
             '',
             '',
             '',
@@ -167,33 +139,14 @@ Facebook UID: None
             '2012-09-26T17:34:00Z',
             'Rush takes off to the Great White North',
             '',
-            '',
             'https://www.facebook.com/108',
-            '',
-            '',
-            '',
-            '',
             16.0,
             False,
-            '',
-            '',
-            '',
             'https://fbexternal-a.akamaihd.net/rush.jpg',
             'Rush is a Band Blog',
             'http://www.rushisaband.com/blog/Rush-Clockwork-Angels-tour',
             'Rush is a Band: Neil Peart, Geddy Lee, Alex Lifeson',
             'www.rushisaband.com',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
             ''])
         self.assertEqual(list(TestModel.get_row(1)), [
             [['facebook', 'faker/than fake', '109']],
@@ -205,33 +158,14 @@ Facebook UID: None
             '2012-09-26T17:49:06Z',
             'http://www2.gibson.com/Alex-Lifeson-0225-2011.aspx',
             '',
-            '',
             'https://www.facebook.com/109',
-            '',
-            '',
-            '',
-            '',
             27.0,
             False,
-            '',
-            '',
-            '',
             'https://images.gibson.com/Rush_Clockwork-Angels_t.jpg',
             'Top 10 Alex Lifeson Guitar Moments',
             'http://www2.gibson.com/Alex-Lifeson.aspx',
             'For millions of Rush fans old and new, it’s a pleasure',
             'www2.gibson.com',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
-            '',
             ''])
 
     # XXX We really need full coverage of the receive() method, including
@@ -326,11 +260,9 @@ Facebook UID: None
         publish = self.protocol._publish = mock.Mock()
 
         src = 'file://' + resource_filename('friends.tests.data', 'ubuntu.png')
-        self.assertRaises(
-            SuccessfulCompletion,
-            self.protocol.upload,
-            src,
-            'This is Ubuntu!')
+        self.assertEqual(self.protocol.upload(src, 'This is Ubuntu!'),
+                         'https://www.facebook.com/234125')
+
         token.assert_called_once_with()
 
         publish.assert_called_once_with(
@@ -497,8 +429,8 @@ Facebook UID: None
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
-        result = self.protocol._push_to_eds('test-address-book', eds_contact)
-        self.assertEqual(result, True)
+        # Implicitely fail test if the following raises any exceptions
+        self.protocol._push_to_eds('test-address-book', eds_contact)
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=None)
@@ -510,8 +442,12 @@ Facebook UID: None
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
-        result = self.protocol._push_to_eds('test-address-book', eds_contact)
-        self.assertEqual(result, False)
+        self.assertRaises(
+            ContactsError,
+            self.protocol._push_to_eds,
+            'test-address-book',
+            eds_contact,
+            )
 
     @mock.patch('gi.repository.EDataServer.Source.new',
                 return_value=EDSSource('foo', 'bar'))

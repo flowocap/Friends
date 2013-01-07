@@ -18,9 +18,6 @@
 import logging
 import subprocess
 
-from gettext import gettext as _
-from gi.repository import Gio
-
 
 MessagingMenu = None
 try:
