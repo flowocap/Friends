@@ -95,12 +95,11 @@ class TestFourSquare(unittest.TestCase):
         expected = [
             [['foursquare', 'faker/than fake', '50574c9ce4b0a9a6e84433a0']],
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
-            "Working on friends's foursquare plugin.", '',
+            "Working on friends's foursquare plugin.",
             '~/.cache/friends/avatar/hash',
             'https://api.foursquare.com/v2/checkins/50574c9ce4b0a9a6e84433a0' +
-            '?oauth_token=tokeny goodness&v=20121104', '', '', '', '', 0.0,
-            False, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-            '', '', '', '', '', '',
+            '?oauth_token=tokeny goodness&v=20121104', 0.0, False, '', '', '',
+            '', '', '',
             ]
         for got, want in zip(TestModel.get_row(0), expected):
             self.assertEqual(got, want)

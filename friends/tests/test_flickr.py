@@ -160,39 +160,69 @@ class TestFlickr(unittest.TestCase):
                                return_value='token'):
             self.protocol.receive()
         self.assertEqual(TestModel.get_n_rows(), 3)
-        # Image 1 data in the first row.
-        row = list(TestModel.get_row(0))
-        # For convenience.
-        def col(name):
-            return row[COLUMN_INDICES[name]]
-        self.assertEqual(col('message'), 'ant')
-        self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '801']])
-        self.assertEqual(col('sender_id'), '123')
-        self.assertEqual(col('timestamp'), '2012-05-10T13:36:45Z')
-        self.assertFalse(col('from_me'))
-        row = list(TestModel.get_row(1))
-        # Image 2 data.  The image is from the account owner.
-        self.assertEqual(col('message'), 'bee')
-        self.assertEqual(col('message_ids'), [['flickr', 'lerxst', '802']])
-        self.assertEqual(col('sender_id'), '456')
-        self.assertEqual(col('sender_nick'), 'Alex Lifeson')
-        self.assertTrue(col('from_me'))
-        # Image 3 data.  This data set has some additional entries that allow
-        # various image urls and other keys to be added.
-        row = list(TestModel.get_row(2))
-        self.assertEqual(col('message'), 'cat')
+
         self.assertEqual(
-            col('img_url'),
-            'http://farmanimalz.static.flickr.com/1/789_ghi_b.jpg')
+            list(TestModel.get_row(0)),
+            [[['flickr', 'lerxst', '801']],
+             'images',
+             '',
+             '123',
+             '',
+             False,
+             '2012-05-10T13:36:45Z',
+             '',
+             '',
+             '',
+             0.0,
+             False,
+             '',
+             '',
+             '',
+             '',
+             'ant',
+             '',
+             ])
+
         self.assertEqual(
-            col('img_src'),
-            'http://farmanimalz.static.flickr.com/1/789_ghi_m.jpg')
+            list(TestModel.get_row(1)),
+            [[['flickr', 'lerxst', '802']],
+             'images',
+             'Alex Lifeson',
+             '456',
+             'Alex Lifeson',
+             True,
+             '',
+             '',
+             '',
+             '',
+             0.0,
+             False,
+             '',
+             '',
+             '',
+             '',
+             'bee',
+             '',
+             ])
+
         self.assertEqual(
-            col('img_thumb'),
-            'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg')
-        self.assertEqual(col('icon_uri'), '')
-        self.assertFalse(col('from_me'))
-        self.assertEqual(col('sender'), 'Bob Dobbs')
-        self.assertEqual(col('sender_id'), '789')
-        self.assertEqual(col('sender_nick'), 'Bob Dobbs')
-        self.assertEqual(col('url'), 'http://www.flickr.com/people/789')
+            list(TestModel.get_row(2)),
+            [[['flickr', 'lerxst', '803']],
+             'images',
+             'Bob Dobbs',
+             '789',
+             'Bob Dobbs',
+             False,
+             '',
+             '',
+             '',
+             'http://www.flickr.com/people/789',
+             0.0,
+             False,
+             'http://farmanimalz.static.flickr.com/1/789_ghi_m.jpg',
+             '',
+             'http://farmanimalz.static.flickr.com/1/789_ghi_b.jpg',
+             '',
+             'cat',
+             'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg',
+             ])
