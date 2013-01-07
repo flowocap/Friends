@@ -64,6 +64,10 @@ def main():
             print(class_name)
         return
 
+    # Set up the DBus main loop.
+    DBusGMainLoop(set_as_default=True)
+    loop = GLib.MainLoop()
+
     # Disallow multiple instances of friends-service
     bus = dbus.SessionBus()
     obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
@@ -116,10 +120,6 @@ def main():
     # This builds two different indexes of our persisted Dee.Model
     # data for the purposes of faster duplicate checks.
     initialize_caches()
-
-    # Set up the DBus main loop.
-    DBusGMainLoop(set_as_default=True)
-    loop = GLib.MainLoop()
 
     refresh_interval = max(gsettings.get_int('interval'), 5) * 60
 
