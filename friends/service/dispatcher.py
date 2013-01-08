@@ -319,7 +319,7 @@ class Dispatcher(dbus.service.Object):
             failure(message)
             log.error(message)
 
-    @dbus.service.method(DBUS_INTERFACE, out_signature='s')
+    @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.
 
