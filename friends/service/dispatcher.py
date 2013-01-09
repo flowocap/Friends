@@ -34,6 +34,7 @@ from friends.utils.manager import protocol_manager
 from friends.utils.signaler import signaler
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model
+from friends.shorteners import lookup
 
 
 log = logging.getLogger(__name__)
@@ -46,7 +47,8 @@ class Dispatcher(dbus.service.Object):
     """This is the primary handler of dbus method calls."""
     __dbus_object_path__ = '/com/canonical/friends/Service'
 
-    def __init__(self, mainloop, interval):
+    def __init__(self, settings, mainloop, interval):
+        self.settings = settings
         self.bus = dbus.SessionBus()
         bus_name = dbus.service.BusName(DBUS_INTERFACE, bus=self.bus)
         super().__init__(bus_name, self.__dbus_object_path__)
@@ -156,9 +158,9 @@ class Dispatcher(dbus.service.Object):
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/Friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.Do('like', '3/facebook', 'post_id') # Likes that FB post.
+            service.Do('like', '3', 'post_id') # Likes that FB post.
             service.Do('search', '', 'search terms') # Searches all accounts.
-            service.Do('list', '6/twitter', 'list_id') # Fetch a single list.
+            service.Do('list', '6', 'list_id') # Fetch a single list.
         """
         if not self.online:
             failure('No internet connection available.')
@@ -239,7 +241,7 @@ class Dispatcher(dbus.service.Object):
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
                 '/com/canonical/friends/Service')
             service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.SendReply('6/twitter', '34245645347345626', 'Your reply')
+            service.SendReply('6', '34245645347345626', 'Your reply')
         """
         if not self.online:
             failure('No internet connection available.')
@@ -290,7 +292,7 @@ class Dispatcher(dbus.service.Object):
                 print('failed to upload: {}'.format(message))
 
             service.Upload(
-                '6/twitter',
+                '6',
                 'file:///path/to/image.png',
                 'A beautiful picture.',
                 reply_handler=success,
@@ -319,7 +321,7 @@ class Dispatcher(dbus.service.Object):
             failure(message)
             log.error(message)
 
-    @dbus.service.method(DBUS_INTERFACE, out_signature='s')
+    @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.
 
@@ -347,3 +349,30 @@ class Dispatcher(dbus.service.Object):
         log.info('Friends Service is being shutdown')
         logging.shutdown()
         self.mainloop.quit()
+
+    @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
+    def URLShorten(self, url):
+        """Shorten a URL.
+
+        Takes a url as a string and returns a shortened url as a string.
+
+        example:
+            import dbus
+            url = 'http://www.example.com/this/is/a/long/url'
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/Friends/Service')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
+            short_url = service.URLShorten(url)
+        """
+        service_name = self.settings.get_string('urlshorter')
+        log.info('Shortening URL {} with {}'.format(url, service_name))
+        if (lookup.is_shortened(url) or
+            not self.settings.get_boolean('shorten-urls')):
+            # It's already shortened, or the preference is not set.
+            return url
+        service = lookup.lookup(service_name)
+        try:
+            return service.shorten(url)
+        except Exception:
+            log.exception('URL shortening class: {}'.format(service))
+            return url

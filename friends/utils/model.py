@@ -44,11 +44,11 @@ log = logging.getLogger(__name__)
 # Most of this schema is very straightforward, but the 'message_ids' column
 # needs a bit of explanation:
 #
-# It is a two-dimensional array (ie, an array of arrays).  Each inner array
-# contains three elements: the name of the protocol (introspected from the
-# name of the class that implements the protocol), the account_id (like
-# '6/flickr' or '3/facebook'), followed by the message_id for that particular
-# service.
+# It is a two-dimensional array (ie, an array of arrays). Each inner
+# array contains three elements: the name of the protocol
+# (introspected from the name of the class that implements the
+# protocol), the account_id as a string (like '6' or '3'), followed by
+# the message_id for that particular service.
 #
 # Then, there will be one of these triples present for every service on which
 # the message exists.  So for example, if the user posts the same message to
@@ -56,8 +56,8 @@ log = logging.getLogger(__name__)
 # schema, and the 'message_ids' column will look something like this:
 #
 # [
-#     ['facebook', '2/facebook', '12345'],
-#     ['twitter', '3/twitter', '987654'],
+#     ['facebook', '2', '12345'],
+#     ['twitter', '3', '987654'],
 # ]
 SCHEMA = (
     ('message_ids',    'aas'),
