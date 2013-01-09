@@ -35,7 +35,6 @@ GObject.threads_init(None)
 
 from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
-from friends.service.shortener import URLShorten
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, initialize_caches
 from friends.utils.logging import initialize
