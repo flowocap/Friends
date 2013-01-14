@@ -1,0 +1,186 @@
+friends (0.1.0-0ubuntu1) UNRELEASED; urgency=low
+
+  * Initial public release.
+  * Packaging data inlined.
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Mon, 14 Jan 2013 14:42:06 -0800
+
+friends (0.0+r116) raring; urgency=low
+
+  * rev 116
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 09 Jan 2013 14:14:59 -0500
+
+friends (0.0+r112) quantal; urgency=low
+
+  * rev 112
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Mon, 07 Jan 2013 10:26:40 -0500
+
+friends (0.0+r90) quantal; urgency=low
+
+  * rev 90
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 11 Dec 2012 09:02:29 -0500
+
+friends (0.0+r88) quantal; urgency=low
+
+  * fix for duplicate uploads
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 05 Dec 2012 17:04:43 -0500
+
+friends (0.0+r86.1) quantal; urgency=low
+
+  * debian/control
+    - Dropped build depends for python3-gobject, all we need is python3-gi
+    - Added depends to friends-service for gir1.2-accounts-1.0 and
+      python3-pkg-resources
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 05 Dec 2012 10:26:51 -0500
+
+friends (0.0+r86) quantal; urgency=low
+
+  * rev 86
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 04 Dec 2012 20:32:05 -0500
+
+friends (0.0+r84) quantal; urgency=low
+
+  * rev 84
+    - Added new UploadAsync API (LP: #1085781)
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 04 Dec 2012 10:50:54 -0500
+
+friends (0.0+r83) quantal; urgency=low
+
+  * rev 83
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 27 Nov 2012 13:35:54 -0500
+
+friends (0.0+r77) quantal; urgency=low
+
+  * rev 77
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 16 Nov 2012 23:17:48 -0500
+
+friends (0.0+r76) quantal; urgency=low
+
+  * Added notifications
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 16 Nov 2012 15:06:41 -0500
+
+friends (0.0+r72) quantal; urgency=low
+
+  * Rev 72
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 15 Nov 2012 15:34:43 -0500
+
+friends (0.0+r71) quantal; urgency=low
+
+  * Don't crash if avatars dir doesn't exist
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 15 Nov 2012 09:36:00 -0500
+
+friends (0.0+r69) quantal; urgency=low
+
+  * rev 69
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 08 Nov 2012 11:19:24 -0500
+
+friends (0.0+r67) quantal; urgency=low
+
+  * rev 67
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 07 Nov 2012 13:30:12 -0500
+
+friends (0.0+r48) quantal; urgency=low
+
+  * rev 48
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 31 Oct 2012 16:23:21 +0100
+
+friends (0.0+r44) quantal; urgency=low
+
+  * rev 44
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 31 Oct 2012 07:58:57 +0100
+
+friends (0.0+r34) quantal; urgency=low
+
+  * rev 34
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Sat, 27 Oct 2012 02:45:37 +0200
+
+friends (0.0+r29-2) quantal; urgency=low
+
+  * debian/control
+    - really added build depends for evolution-data-server
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 26 Oct 2012 15:50:39 +0200
+
+friends (0.0+r29-1) quantal; urgency=low
+
+  * debian/control
+    - added build depends for evolution-data-server
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 26 Oct 2012 10:10:23 +0200
+
+friends (0.0+r29) quantal; urgency=low
+
+  * rev 29
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 26 Oct 2012 09:54:54 +0200
+
+friends (0.0+r27) quantal; urgency=low
+
+  * rev 27 which adds facebook contacts sync
+  * debian/control
+    - added depends for gir1.2-ebook-1.2 and gir1.2-edataserver-1.2
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 25 Oct 2012 10:59:22 +0200
+
+friends (0.0+r24) quantal; urgency=low
+
+  * rev 24
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 24 Oct 2012 23:31:27 +0200
+
+friends (0.0+r23) quantal; urgency=low
+
+  * rev 23 from trunk
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 24 Oct 2012 21:27:29 +0200
+
+friends (0.0+r18) quantal; urgency=low
+
+  * rev 18 from trunk
+  * debian/control
+    - build depend on dbus-test-runner
+  * debian/rules
+    - use dbus-test-runner
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 23 Oct 2012 08:08:32 +0200
+
+friends (0.0+r16+19) quantal; urgency=low
+
+  * autopkgtests
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Mon, 22 Oct 2012 17:01:29 +0200
+
+friends (0.0+r16) quantal; urgency=low
+
+  * rev 16 from trunk
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Sun, 21 Oct 2012 09:39:24 -0400
+
+friends (0.0+r13) quantal; urgency=low
+
+  * rev 13 from trunk
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 18 Oct 2012 16:05:27 -0400
+
+friends (0.0+r8) quantal; urgency=low
+
+  * Initial package
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 17 Oct 2012 16:31:52 -0400

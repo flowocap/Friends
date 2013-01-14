@@ -1,0 +1,90 @@
+Source: friends
+Section: misc
+Priority: extra
+Maintainer: Ken VanDine <ken.vandine@canonical.com>
+Build-Depends: dbus-test-runner,
+               debhelper (>= 9),
+               evolution-data-server,
+               gir1.2-dbusmenu-glib-0.4,
+               gir1.2-dee-1.0,
+               gir1.2-ebook-1.2,
+               gir1.2-edataserver-1.2,
+               gir1.2-gdkpixbuf-2.0,
+               gir1.2-glib-2.0,
+               gir1.2-messagingmenu-1.0,
+               gir1.2-networkmanager-1.0,
+               gir1.2-notify-0.7,
+               gir1.2-signon-1.0,
+               gir1.2-soup-2.4,
+               gir1.2-unity-5.0,
+               libaccounts-glib-dev,
+               libsignon-glib1,
+               python3,
+               python3-dbus,
+               python3-distutils-extra,
+               python3-gi,
+               python3-mock,
+               python3-oauthlib,
+               python3-pkg-resources,
+               python3-setuptools,
+               shared-mime-info,
+Standards-Version: 3.9.3
+Homepage: https://launchpad.net/friends
+# If you aren't a member of ~super-friends but need to upload packaging changes,
+# just go ahead.  ~super-friends will notice and sync up the code again.
+Vcs-Bzr: https://code.launchpad.net/~super-friends/friends/trunk
+XS-Testsuite: autopkgtest
+
+Package: friends
+Architecture: all
+Depends: gir1.2-dee-1.0,
+         gir1.2-ebook-1.2,
+         gir1.2-edataserver-1.2,
+         gir1.2-gdkpixbuf-2.0,
+         gir1.2-glib-2.0,
+         gir1.2-networkmanager-1.0,
+         gir1.2-notify-0.7,
+         gir1.2-signon-1.0,
+         gir1.2-soup-2.4,
+         gir1.2-accounts-1.0,
+         python3-pkg-resources,
+         python3-dbus,
+         ${misc:Depends},
+         ${python3:Depends},
+Recommends: friends-facebook,
+            friends-twitter,
+            gir1.2-dbusmenu-glib-0.4,
+            gir1.2-messagingmenu-1.0,
+            gir1.2-unity-5.0,
+Description: Social integration with the desktop
+ Provides social networking integration with the desktop
+
+Package: friends-facebook
+Architecture: all
+Depends: friends, ${misc:Depends}, ${python3:Depends}
+Description: Social integration with the desktop - Facebook
+ Provides social networking integration with the desktop
+
+Package: friends-twitter
+Architecture: all
+Depends: friends, ${misc:Depends}, ${python3:Depends}
+Description: Social integration with the desktop - Twitter
+ Provides social networking integration with the desktop
+
+Package: friends-identica
+Architecture: all
+Depends: friends, ${misc:Depends}, ${python3:Depends}
+Description: Social integration with the desktop - Identi.ca
+ Provides social networking integration with the desktop
+
+Package: friends-foursquare
+Architecture: all
+Depends: friends, ${misc:Depends}, ${python3:Depends}
+Description: Social integration with the desktop - Foursquare
+ Provides social networking integration with the desktop
+
+Package: friends-flickr
+Architecture: all
+Depends: friends, ${misc:Depends}, ${python3:Depends}
+Description: Social integration with the desktop - Flickr
+ Provides social networking integration with the desktop

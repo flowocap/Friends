@@ -1,0 +1,9 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: friends
+Source: https://launchpad.net/friends
+
+Files: *
+Copyright: 2012 Canonical Ltd.
+License: GPL-3
+ On Debian systems, the complete text of the GNU General
+ Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
