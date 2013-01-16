@@ -1,3 +1,9 @@
+friends (0.1.1bzr13.01.16-0ubuntu1) UNRELEASED; urgency=low
+
+  * Version bump to fix launchpad recipe builds.
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Wed, 16 Jan 2013 11:35:06 -0800
+
 friends (0.1.0bzr13.01.15-0raring1) raring; urgency=low
 
   * Initial public release.
