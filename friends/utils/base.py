@@ -177,6 +177,24 @@ class _OperationThread(threading.Thread):
 
 
 class Base:
+    """Parent class for any protocol plugin such as Facebook or Twitter.
+
+    In order to add support for a new social network (hereafter
+    referred to as a "protocol") to Friends, you must first ensure
+    that Ubuntu Online Accounts supports your protocol, then create a
+    new class that subclasses this one, and then override as many
+    methods as necessary until your protocol functions as desired.
+    Please refer to protocols/facebook.py and protocols/twitter.py for
+    relatively complete examples of how to do this.
+
+    This documentation will identify which methods are necessary to
+    override in order to build a working protocol plugin. If you find
+    that some of the code in this class is not actually compatible
+    with the protocol you are trying to implement, it should be
+    straightforward to override it, however this should be unlikely.
+    The code in this class has been tested against Facebook, Twitter,
+    Flickr, Identica, and Foursquare, and works well with all of them.
+    """
     # This number serves a guideline (not a hard limit) for the protocol
     # subclasses to download in each refresh.
     _DOWNLOAD_LIMIT = 50
@@ -189,6 +207,74 @@ class Base:
         self._source_registry = EDataServer.SourceRegistry.new_sync(None)
         self._account = account
 
+    def _whoami(self, result):
+        """Use OAuth login results to identify the authenticating user.
+
+        This method gets called with the OAuth server's login
+        response, and must be used to populate self._account.user_id
+        and self._account.user_name variables. Each protocol must
+        override this method to accomplish this task specifically for
+        the social network being implemented. For example, Twitter
+        provides this information directly and simply needs to be
+        assigned to the variables; Facebook does not provide this
+        information and thus it's necessary to initiate an additional
+        HTTP request within this method in order to discover that
+        information.
+
+        This method will be called only once, immediately after a
+        successful OAuth authentication, and you can safely assume
+        that self._account.access_token will already be populated with
+        a valid access token by the time this method is invoked.
+
+        :param result: An already-instantiated JSON object, typically in the
+            form of a dict, typically containing an AccessToken key and
+            potentially others.
+        :type result: dict
+        """
+        raise NotImplementedError(
+            '{} protocol has no _whoami() method.'.format(
+                self.__class__.__name__))
+
+    def receive(self):
+        """Poll the social network for new messages.
+
+        Friends will periodically invoke this method on your protocol
+        in order to fetch new messages and publish them into the
+        Dee.SharedModel.
+
+        This method must be implemented by all subclasses. It is
+        expected to initiate an HTTP request to the social network,
+        interpret the results, and then call self._publish() with the
+        interpreted results.
+
+        Typically, this method (and other similar ones that you may
+        implement at your option) will start with a call to
+        self._get_access_token(), as this is the recommended way to
+        initiate only a single login attempt (all subsequent calls
+        return the cached access token without re-authenticating).
+
+        The Friends-service daemon will invoke these methods
+        asynchronously, in a sub-thread, but we have designed the
+        threading architecture in a very orthogonal way, so it should
+        be very easy for you to write the methods in a straightforward
+        synchronous way. If you need to indicate that there is an
+        error condition (any error condition at all), just raise an
+        exception (any exception will do, as long as it is a subclass
+        of the builtin Exception class). Friends-service will
+        automatically log the exception and indicate the error
+        condition to the user. If you need to return a value (such as
+        the destination URL that a successfully uploaded photo has
+        been uploaded to), you can simply return the value, and
+        Friends-service will catch that return value and invoke a
+        callback in the calling code for you automatically. Only a
+        single return value is supported, but it can be any Python
+        object you like, so feel free to return lists or tuples or
+        dicts if you need to return more than one value.
+        """
+        raise NotImplementedError(
+            '{} protocol has no receive() method.'.format(
+                self.__class__.__name__))
+
     def __call__(self, operation, *args, success=STUB, failure=STUB, **kwargs):
         """Call an operation, i.e. a method, with arguments in a sub-thread.
 
@@ -196,9 +282,24 @@ class Base:
         and passed to the failure callback; if no exception is raised,
         then the return value of the method will be passed to the
         success callback. Programs communicating with friends-service
-        via DBus shoudl therefore specify success & failure callbacks
+        via DBus should therefore specify success & failure callbacks
         in order to be notified of the results of their DBus method
         calls.
+
+        :param operation: The name of the instance method to invoke in
+            a sub-thread.
+        :type operation: string
+        :param args: The arguments you wish to pass to that method.
+        :type args: tuple
+        :param kwargs: Keyword arguments you wish to pass to that method.
+        :type kwargs: dict
+        :param success: A callback to invoke in the event of successful
+            asynchronous completion.
+        :type success: callable
+        :param failure: A callback to invoke in the event of an exception being
+            raised in the sub-thread.
+        :type failure: callable
+        :return: None
         """
         if operation.startswith('_') or not hasattr(self, operation):
             raise NotImplementedError(operation)
@@ -215,13 +316,27 @@ class Base:
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
 
+        This method inserts a new full row into the Dee.SharedModel
+        that we use for storing and sharing tweets/messages/posts/etc.
+
+        Rows cannot (easily) be modified once inserted, so if you need
+        to process a lot of information in order to construct a row,
+        it is easiest to invoke this method like so:
+
+            args = {}
+            args['message_id'] = '1234'
+            args['message'] = 'hello.'
+            args['from_me'] = is_from_me() #etc
+            self._publish(**args)
+
         :param message_id: The service-specific id of the message being
             published.  Serves as the third component of the unique
             'message_ids' column.
         :type message_id: string
         :param kwargs: The additional column name/values to be published into
             the model.  Not all columns must be given, but it is an error if
-            any non-column keys are given.
+            any non-column keys are given. Refer to utils/model.py to see the
+            schema which defines the valid arguments to this method.
         :raises: TypeError if non-column names are given in kwargs.
         :return: True if the message was appended to the model or already
             present.  Otherwise, False is returned if the message could not be
@@ -285,7 +400,12 @@ class Base:
             return key in _seen_messages
 
     def _unpublish(self, message_id):
-        """Remove message_id from the Dee.SharedModel."""
+        """Remove message_id from the Dee.SharedModel.
+
+        :param message_id: The service-specific id of the message being
+            published.
+        :type message_id: string
+        """
         triple = (self.__class__.__name__.lower(),
                   self._account.id,
                   message_id)
@@ -309,21 +429,35 @@ class Base:
                             if message_id not in ids]
 
     def _unpublish_all(self):
-        """Remove all of this account's messages from the Model."""
+        """Remove all of this account's messages from the Model.
+
+        Saves the Model to disk after it is done purging rows."""
         for triple in _seen_ids.copy():
             if self._account.id in triple:
                 self._unpublish(triple[-1])
         persist_model()
 
     def _get_access_token(self):
-        """Return an access token, logging in if necessary."""
+        """Return an access token, logging in if necessary.
+
+        :return: The access_token, if we are successfully logged in."""
         if self._account.access_token is None:
             self._login()
 
         return self._account.access_token
 
     def _login(self):
-        """Prevent redundant login attempts."""
+        """Prevent redundant login attempts.
+
+        This method implements some tricky threading logic in order to
+        avoid race conditions, and it should not be overridden any
+        subclass. If you need to modify the way logging in functions
+        in order to make your protocol login correctly, you should
+        override _locked_login() instead.
+
+        :return: True if we are already logged in, or if a new login
+            was successful.
+        """
         # The first time the user logs in, we expect old_token to be None.
         # Because this code can be executed in multiple threads, we first
         # acquire a lock and then try to log in.  The act of logging in also
@@ -354,7 +488,16 @@ class Base:
             return self._account.access_token != old_token
 
     def _locked_login(self, old_token):
-        """Sign in without worrying about concurrent login attempts."""
+        """Synchronous login implementation.
+
+        Subclasses should only need to implement _whoami() in order to
+        handle the protocol-specific details of a login operation,
+        however this method can be overridden if you need a greater
+        degree of control over the login process. It is safe to assume
+        that this method will only be called once, the first time any
+        subthread needs to log in. You do not have to worry about
+        subthread race conditions inside this method.
+        """
         protocol = self.__class__.__name__
         log.debug('{} to {}'.format(
                 'Re-authenticating' if old_token else 'Logging in', protocol))
