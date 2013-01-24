@@ -422,11 +422,15 @@ class Base:
             # Message only exists on one protocol, delete it
             del _seen_messages[_make_key(row)]
             Model.remove(row_iter)
+            # Shift our cached indexes up one, when one gets deleted.
+            for key, value in _seen_ids.items():
+                if value > row_idx:
+                    _seen_ids[key] = value - 1
         else:
             # Message exists on other protocols too, only drop id
             row[IDS_IDX] = [ids for ids
                             in row[IDS_IDX]
-                            if message_id not in ids]
+                            if ids[-1] != message_id]
 
     def _unpublish_all(self):
         """Remove all of this account's messages from the Model.

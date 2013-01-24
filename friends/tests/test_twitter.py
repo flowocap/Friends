@@ -128,20 +128,20 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         # This test data was ripped directly from Twitter's API docs.
         expected = [
-            [[['twitter', 'faker/than fake', '240558470661799936']],
+            [[['twitter', '1234', '240558470661799936']],
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
              '2012-08-28T21:16:23Z', 'just another test', '',
              'https://twitter.com/oauth_dancer/status/240558470661799936',
              0.0, False, '', '', '', '', '', '',
              ],
-            [[['twitter', 'faker/than fake', '240556426106372096']],
+            [[['twitter', '1234', '240556426106372096']],
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data ' +
              'with twitter" class at @cal with @othman  http://t.co/bfj7zkDJ',
              '', 'https://twitter.com/raffi/status/240556426106372096',
              0.0, False, '', '', '', '', '', '',
              ],
-            [[['twitter', 'faker/than fake', '240539141056638977']],
+            [[['twitter', '1234', '240539141056638977']],
              'messages', 'Taylor Singletary', '819797', 'episod', False,
              '2012-08-28T19:59:34Z',
              'You\'d be right more often if you thought you were wrong.',
@@ -172,7 +172,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         # This test data was ripped directly from Twitter's API docs.
         expected_row = [
-            [['twitter', 'faker/than fake', '240558470661799936']],
+            [['twitter', '1234', '240558470661799936']],
             'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', True,
             '2012-08-28T21:16:23Z', 'just another test', '',
             'https://twitter.com/oauth_dancer/status/240558470661799936',

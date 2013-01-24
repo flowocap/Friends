@@ -175,7 +175,7 @@ class TestAccountManager(unittest.TestCase):
         self.account_service = mock.Mock()
 
     @mock.patch('friends.utils.account.Accounts')
-    def test_get_id(self, accounts_mock):
+    def test_get_service(self, accounts_mock):
         manager = AccountManager()
         manager_mock = mock.Mock()
         account_mock = mock.Mock()
@@ -187,25 +187,24 @@ class TestAccountManager(unittest.TestCase):
         account_service_mock.get_service(
             ).get_display_name().lower.return_value = 'protocol'
 
-        service, id_ = manager._get_id(manager_mock, 10)
+        service = manager._get_service(manager_mock, 10)
 
         manager_mock.get_account.assert_called_once_with(10)
         account_mock.list_services.assert_called_once_with()
         accounts_mock.AccountService.new.assert_called_with(account_mock,
                                                             service_mock)
-        self.assertEqual(id_, '10/protocol')
 
     def test_account_manager_add_new_account(self):
         # Explicitly adding a new account puts the account's global_id into
         # the account manager's mapping.
         manager = AccountManager()
         manager._add_new_account(self.account_service)
-        self.assertIn('faker/than fake', manager._accounts)
+        self.assertIn('1234', manager._accounts)
 
     def test_account_manager_enabled_event(self):
         manager = AccountManager()
-        manager._get_id = mock.Mock()
-        manager._get_id.return_value = [mock.Mock(), '2']
+        manager._get_service = mock.Mock()
+        manager._get_service.return_value = mock.Mock()
         manager._add_new_account = mock.Mock()
         manager._add_new_account.return_value = account = mock.Mock()
         manager._on_enabled_event(accounts_manager, 2)
@@ -215,11 +214,11 @@ class TestAccountManager(unittest.TestCase):
         # Deleting an account removes the global_id from the mapping.  But if
         # that global id is missing, then it does not cause an exception.
         manager = AccountManager()
-        manager._get_id = mock.Mock()
-        manager._get_id.return_value = [self.account_service, 'faker/than fake']
-        self.assertNotIn('faker/than fake', manager._accounts)
-        manager._on_account_deleted(accounts_manager, 'faker/than fake')
-        self.assertNotIn('faker/than fake', manager._accounts)
+        manager._get_service = mock.Mock()
+        manager._get_service.return_value = self.account_service
+        self.assertNotIn('1234', manager._accounts)
+        manager._on_account_deleted(accounts_manager, '1234')
+        self.assertNotIn('1234', manager._accounts)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
@@ -227,12 +226,12 @@ class TestAccountManager(unittest.TestCase):
         # Deleting an account removes the id from the mapping. But if
         # that id is missing, then it does not cause an exception.
         manager = AccountManager()
-        manager._get_id = mock.Mock()
-        manager._get_id.return_value = [self.account_service, 'faker/than fake']
+        manager._get_service = mock.Mock()
+        manager._get_service.return_value = self.account_service
         manager._add_new_account(self.account_service)
-        self.assertIn('faker/than fake', manager._accounts)
-        manager._on_account_deleted(accounts_manager, 'faker/than fake')
-        self.assertNotIn('faker/than fake', manager._accounts)
+        self.assertIn('1234', manager._accounts)
+        manager._on_account_deleted(accounts_manager, '1234')
+        self.assertNotIn('1234', manager._accounts)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
@@ -240,11 +239,11 @@ class TestAccountManager(unittest.TestCase):
         # Deleting an Account should not delete messages from the row
         # that exist on other protocols too.
         manager = AccountManager()
-        manager._get_id = mock.Mock()
-        manager._get_id.return_value = [self.account_service, 'faker/than fake']
+        manager._get_service = mock.Mock()
+        manager._get_service.return_value = self.account_service
         manager._add_new_account(self.account_service)
         example_row = [[['twitter', '6', '1234'],
-             ['base', 'faker/than fake', '5678']],
+             ['base', '1234', '5678']],
             'messages', 'Fred Flintstone', '', 'fred', True,
             '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '',
             0.0, False, '', '', '', '', '', '']
@@ -255,10 +254,10 @@ class TestAccountManager(unittest.TestCase):
         row_iter = TestModel.append(*example_row)
         from friends.utils.base import _seen_ids
         _seen_ids[
-            ('base', 'faker/than fake', '5678')
+            ('base', '1234', '5678')
             ] = TestModel.get_position(row_iter)
         self.assertEqual(list(TestModel.get_row(0)), example_row)
-        manager._on_account_deleted(accounts_manager, 'faker/than fake')
+        manager._on_account_deleted(accounts_manager, '1234')
         self.assertEqual(list(TestModel.get_row(0)), result_row)
 
 

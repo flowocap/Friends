@@ -68,7 +68,7 @@ class FakeAccount:
         self.user_id = None
         self.auth = FakeAuth()
         self.login_lock = threading.Lock()
-        self.id = 'faker/than fake'
+        self.id = '1234'
         self.protocol = Base(self)
 
 

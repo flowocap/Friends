@@ -49,40 +49,37 @@ class AccountManager:
             self._add_new_account(account_service)
         log.info('Accounts found: {}'.format(len(self._accounts)))
 
-    def _get_id(self, manager, account_id):
+    def _get_service(self, manager, account_id):
         """Instantiate an AccountService and identify it."""
         account = manager.get_account(account_id)
         for service in account.list_services():
-            account_service = Accounts.AccountService.new(account, service)
-            id_ = '{}/{}'.format(
-                account_id,
-                account_service.get_service().get_display_name().lower())
-            return account_service, id_
-        return (None, None)
+            return Accounts.AccountService.new(account, service)
 
     def _on_enabled_event(self, manager, account_id):
         """React to new microblogging accounts being enabled or disabled."""
-        account_service, id_ = self._get_id(manager, account_id)
+        account_service = self._get_service(manager, account_id)
         if account_service is not None and account_service.get_enabled():
-            log.debug('Adding account {}'.format(id_))
+            log.debug('Adding account {}'.format(account_id))
             account = self._add_new_account(account_service)
             if account is not None:
                 account.protocol('receive')
         else:
             # If an account has been disabled in UOA, we should remove
             # it's messages from the SharedModel.
-            self._unpublish_entire_account(id_)
+            self._unpublish_entire_account(account_id)
 
     def _on_account_deleted(self, manager, account_id):
-        account_service, id_ = self._get_id(manager, account_id)
-        if id_ is not None:
-            log.debug('Deleting account {}'.format(id_))
-            self._unpublish_entire_account(id_)
+        account_service = self._get_service(manager, account_id)
+        if account_service is not None:
+            log.debug('Deleting account {}'.format(account_id))
+            self._unpublish_entire_account(account_id)
+        else:
+            log.error('Tried to delete invalid account: {}'.format(account_id))
 
-    def _unpublish_entire_account(self, id_):
+    def _unpublish_entire_account(self, account_id):
         """Delete all the account's messages from the SharedModel."""
-        log.debug('Deleting all messages from {}.'.format(id_))
-        account = self._accounts.pop(id_, None)
+        log.debug('Deleting all messages from {}.'.format(account_id))
+        account = self._accounts.pop(str(account_id), None)
         if account is not None:
             account.protocol._unpublish_all()
 
@@ -92,14 +89,14 @@ class AccountManager:
         except UnsupportedProtocolError as error:
             log.info(error)
         else:
-            self._accounts[new_account.id] = new_account
+            self._accounts[str(new_account.id)] = new_account
             return new_account
 
     def get_all(self):
         return self._accounts.values()
 
     def get(self, account_id, default=None):
-        return self._accounts.get(account_id, default)
+        return self._accounts.get(str(account_id), default)
 
 
 class AuthData:

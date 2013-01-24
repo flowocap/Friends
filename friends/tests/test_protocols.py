@@ -170,12 +170,12 @@ class TestProtocols(unittest.TestCase):
         initialize_caches()
         self.assertEqual(sorted(list(_seen_messages.keys())), ['aa', 'ab'])
         self.assertEqual(sorted(list(_seen_ids.keys())),
-                         [('base', 'faker/than fake', 'alpha'),
-                          ('base', 'faker/than fake', 'beta'),
-                          ('base', 'faker/than fake', 'omega')])
+                         [('base', '1234', 'alpha'),
+                          ('base', '1234', 'beta'),
+                          ('base', '1234', 'omega')])
         # These two point at the same row because sender+message are identical
-        self.assertEqual(_seen_ids[('base', 'faker/than fake', 'alpha')],
-                         _seen_ids[('base', 'faker/than fake', 'beta')])
+        self.assertEqual(_seen_ids[('base', '1234', 'alpha')],
+                         _seen_ids[('base', '1234', 'beta')])
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_invalid_argument(self):
@@ -219,7 +219,7 @@ class TestProtocols(unittest.TestCase):
         def V(column_name):
             return row[COLUMN_INDICES[column_name]]
         self.assertEqual(V('message_ids'),
-                         [['base', 'faker/than fake', '1234']])
+                         [['base', '1234', '1234']])
         self.assertEqual(V('stream'), 'messages')
         self.assertEqual(V('sender'), 'fred')
         self.assertEqual(V('sender_nick'), 'freddy')
@@ -251,12 +251,12 @@ class TestProtocols(unittest.TestCase):
             message='hello, +jimmy'))
         self.assertEqual(1, TestModel.get_n_rows())
         self.assertEqual(TestModel[0][0],
-                         [['base', 'faker/than fake', '1234'],
-                          ['base', 'faker/than fake', '5678']])
+                         [['base', '1234', '1234'],
+                          ['base', '1234', '5678']])
         base._unpublish('1234')
         self.assertEqual(1, TestModel.get_n_rows())
         self.assertEqual(TestModel[0][0],
-                         [['base', 'faker/than fake', '5678']])
+                         [['base', '1234', '5678']])
         base._unpublish('5678')
         self.assertEqual(0, TestModel.get_n_rows())
 
@@ -302,8 +302,8 @@ class TestProtocols(unittest.TestCase):
         self.assertEqual(row[COLUMN_INDICES['message']], 'hello, @jimmy')
         # Both message ids will be present, in the order they were published.
         self.assertEqual(row[COLUMN_INDICES['message_ids']],
-                         [['base', 'faker/than fake', '1234'],
-                          ['base', 'faker/than fake', '5678']])
+                         [['base', '1234', '1234'],
+                          ['base', '1234', '5678']])
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
@@ -327,7 +327,7 @@ class TestProtocols(unittest.TestCase):
         row = TestModel.get_row(0)
         # The same message_id should not appear twice.
         self.assertEqual(row[COLUMN_INDICES['message_ids']],
-                         [['base', 'faker/than fake', '1234']])
+                         [['base', '1234', '1234']])
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})

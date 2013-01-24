@@ -110,7 +110,7 @@ Facebook UID: None
         self.assertEqual(TestModel.get_n_rows(), 4)
         self.assertEqual(list(TestModel.get_row(2)), [
             [['facebook',
-              'faker/than fake',
+              '1234',
               '117402931676347_386054134801436_3235476']],
             'reply_to/109',
             'Bruce Peart',
@@ -130,7 +130,7 @@ Facebook UID: None
             '',
             ''])
         self.assertEqual(list(TestModel.get_row(0)), [
-            [['facebook', 'faker/than fake', '108']],
+            [['facebook', '1234', '108']],
             'mentions',
             'Rush is a Band',
             '117402931676347',
@@ -149,7 +149,7 @@ Facebook UID: None
             'www.rushisaband.com',
             ''])
         self.assertEqual(list(TestModel.get_row(1)), [
-            [['facebook', 'faker/than fake', '109']],
+            [['facebook', '1234', '109']],
             'mentions',
             'Rush is a Band',
             '117402931676347',
