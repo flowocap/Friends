@@ -52,6 +52,7 @@ log = None
 
 def main():
     global log
+    global yappi
     # Initialize command line options.
     args = Options().parser.parse_args()
 
