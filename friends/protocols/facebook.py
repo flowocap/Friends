@@ -185,16 +185,19 @@ class Facebook(Base):
     def home(self, since=None):
         """Gather and publish public timeline messages."""
         self._get(ME_URL + '/home', 'messages', since)
+        return self._get_n_rows()
 
     @feature
     def wall(self, since=None):
         """Gather and publish messages written on user's wall."""
         self._get(ME_URL + '/feed', 'mentions', since)
+        return self._get_n_rows()
 
     @feature
     def receive(self):
         self.wall()
         self.home()
+        return self._get_n_rows()
 
     @feature
     def search(self, query):
@@ -210,6 +213,7 @@ class Facebook(Base):
         # https://developers.facebook.com/docs/reference/api/post/
         for entry in entries:
             self._publish_entry(entry, 'search/{}'.format(query))
+        return len(entries)
 
     def _like(self, obj_id, method):
         url = API_BASE.format(id=obj_id) + '/likes'
@@ -227,6 +231,7 @@ class Facebook(Base):
         This includes messages, statuses, wall posts, events, etc.
         """
         self._like(obj_id, 'POST')
+        return obj_id
 
     @feature
     def unlike(self, obj_id):
@@ -235,6 +240,7 @@ class Facebook(Base):
         This includes messages, statuses, wall posts, events, etc.
         """
         self._like(obj_id, 'DELETE')
+        return obj_id
 
     def _send(self, obj_id, message, endpoint):
         url = API_BASE.format(id=obj_id) + endpoint
@@ -282,6 +288,8 @@ class Facebook(Base):
             raise FriendsError('Failed to delete {} on Facebook'.format(obj_id))
         else:
             self._unpublish(obj_id)
+
+        return obj_id
 
     @feature
     def upload(self, picture_uri, description=''):
@@ -372,6 +380,8 @@ class Facebook(Base):
             full_contact = self._fetch_contact(contact['id'])
             eds_contact = self._create_contact(full_contact)
             self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact)
+
+        return len(contacts)
 
     def delete_contacts(self):
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)

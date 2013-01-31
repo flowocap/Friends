@@ -154,7 +154,7 @@ class _OperationThread(threading.Thread):
 
     def _retval_catcher(self, func, *args, **kwargs):
         """Call the success callback, but only if no exceptions were raised."""
-        self._success_callback(func(*args, **kwargs))
+        self._success_callback(str(func(*args, **kwargs)))
 
     def run(self):
         log.debug('{} is starting in a new thread.'.format(self._id))
@@ -312,6 +312,10 @@ class Base:
             args=args,
             kwargs=kwargs,
             ).start()
+
+    def _get_n_rows(self):
+        """Return the number of rows in the Dee.SharedModel."""
+        return len(Model)
 
     def _publish(self, message_id, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.

@@ -143,6 +143,7 @@ class Twitter(Base):
             'home') + '?count={}'.format(self._DOWNLOAD_LIMIT)
         for tweet in self._get_url(url):
             self._publish_tweet(tweet)
+        return self._get_n_rows()
 
 # https://dev.twitter.com/docs/api/1.1/get/statuses/mentions_timeline
     @feature
@@ -151,6 +152,7 @@ class Twitter(Base):
         url = self._mentions_timeline
         for tweet in self._get_url(url):
             self._publish_tweet(tweet, stream='mentions')
+        return self._get_n_rows()
 
 # https://dev.twitter.com/docs/api/1.1/get/statuses/user_timeline
     @feature
@@ -164,6 +166,7 @@ class Twitter(Base):
         stream = 'user/{}'.format(screen_name) if screen_name else 'messages'
         for tweet in self._get_url(url):
             self._publish_tweet(tweet, stream=stream)
+        return self._get_n_rows()
 
 # https://dev.twitter.com/docs/api/1.1/get/lists/statuses
     @feature
@@ -172,6 +175,7 @@ class Twitter(Base):
         url = self._lists.format(list_id)
         for tweet in self._get_url(url):
             self._publish_tweet(tweet, stream='list/{}'.format(list_id))
+        return self._get_n_rows()
 
 # https://dev.twitter.com/docs/api/1.1/get/lists/list
     @feature
@@ -180,6 +184,7 @@ class Twitter(Base):
         url = self._api_base.format(endpoint='lists/list')
         for twitlist in self._get_url(url):
             self.list(twitlist.get('id_str', ''))
+        return self._get_n_rows()
 
 # https://dev.twitter.com/docs/api/1.1/get/direct_messages
 # https://dev.twitter.com/docs/api/1.1/get/direct_messages/sent
@@ -193,6 +198,7 @@ class Twitter(Base):
         url = self._api_base.format(endpoint='direct_messages/sent')
         for tweet in self._get_url(url):
             self._publish_tweet(tweet, stream='private')
+        return self._get_n_rows()
 
     @feature
     def receive(self):
@@ -200,6 +206,7 @@ class Twitter(Base):
         self.home()
         self.mentions()
         self.private()
+        return self._get_n_rows()
 
     @feature
     def send_private(self, screen_name, message):
@@ -243,6 +250,7 @@ class Twitter(Base):
         # We can ignore the return value.
         self._get_url(url, dict(trim_user='true'))
         self._unpublish(message_id)
+        return message_id
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/retweet/%3Aid
     @feature
@@ -258,6 +266,7 @@ class Twitter(Base):
         """Stop following the given screen name."""
         url = self._api_base.format(endpoint='friendships/destroy')
         self._get_url(url, dict(screen_name=screen_name))
+        return screen_name
 
 # https://dev.twitter.com/docs/api/1.1/post/friendships/create
     @feature
@@ -265,6 +274,7 @@ class Twitter(Base):
         """Start following the given screen name."""
         url = self._api_base.format(endpoint='friendships/create')
         self._get_url(url, dict(screen_name=screen_name, follow='true'))
+        return screen_name
 
 # https://dev.twitter.com/docs/api/1.1/post/favorites/create
     @feature
@@ -272,6 +282,7 @@ class Twitter(Base):
         """Announce to the world your undying love for a tweet."""
         url = self._api_base.format(endpoint='favorites/create')
         self._get_url(url, dict(id=message_id))
+        return message_id
         # I don't think we need to publish this tweet because presumably the
         # user has clicked the 'favorite' button on the message that's already
         # in the stream.
@@ -282,12 +293,14 @@ class Twitter(Base):
         """Renounce your undying love for a tweet."""
         url = self._api_base.format(endpoint='favorites/destroy')
         self._get_url(url, dict(id=message_id))
+        return message_id
 
 # https://dev.twitter.com/docs/api/1.1/get/search/tweets
     @feature
     def tag(self, hashtag):
         """Return a list of some recent tweets mentioning hashtag."""
         self.search('#' + hashtag.lstrip('#'))
+        return self._get_n_rows()
 
 # https://dev.twitter.com/docs/api/1.1/get/search/tweets
     @feature
@@ -298,6 +311,7 @@ class Twitter(Base):
         response = self._get_url('{}?q={}'.format(url, quote(query, safe='')))
         for tweet in response.get(self._search_result_key, []):
             self._publish_tweet(tweet, stream='search/{}'.format(query))
+        return self._get_n_rows()
 
 # https://dev.twitter.com/docs/api/1.1/get/friends/ids
     def _getfriendsids(self):
@@ -359,6 +373,7 @@ class Twitter(Base):
             except FriendsError:
                 continue
             self._push_to_eds(TWITTER_ADDRESS_BOOK, eds_contact)
+        return len(contacts)
 
     def delete_contacts(self):
         source = self._get_eds_source(TWITTER_ADDRESS_BOOK)

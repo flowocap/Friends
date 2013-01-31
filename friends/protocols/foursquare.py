@@ -97,3 +97,4 @@ class FourSquare(Base):
                 url=CHECKIN_URL.format(access_token=token,
                                        checkin_id=checkin_id),
                 )
+        return self._get_n_rows()

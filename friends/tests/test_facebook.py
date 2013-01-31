@@ -106,7 +106,7 @@ Facebook UID: None
         # Receive the wall feed for a user.
         self.maxDiff = None
         self.account.access_token = 'abc'
-        self.protocol.receive()
+        self.assertEqual(self.protocol.receive(), 4)
         self.assertEqual(TestModel.get_n_rows(), 4)
         self.assertEqual(list(TestModel.get_row(2)), [
             [['facebook',
@@ -177,9 +177,12 @@ Facebook UID: None
         dload().get_json.return_value = dict(id='post_id')
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
-        publish = self.protocol._publish_entry = mock.Mock()
+        publish = self.protocol._publish_entry = mock.Mock(
+            return_value='http://facebook.com/post_id')
 
-        self.protocol.send('I can see the writing on my wall.')
+        self.assertEqual(
+            self.protocol.send('I can see the writing on my wall.'),
+            'http://facebook.com/post_id')
 
         token.assert_called_once_with()
         publish.assert_called_with({'id': 'post_id'})
@@ -202,10 +205,13 @@ Facebook UID: None
         dload().get_json.return_value = dict(id='post_id')
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
-        publish = self.protocol._publish_entry = mock.Mock()
+        publish = self.protocol._publish_entry = mock.Mock(
+            return_value='http://facebook.com/new_post_id')
 
-        self.protocol.send('I can see the writing on my friend\'s wall.',
-                           'friend_id')
+        self.assertEqual(
+            self.protocol.send('I can see the writing on my friend\'s wall.',
+                               'friend_id'),
+            'http://facebook.com/new_post_id')
 
         token.assert_called_once_with()
         publish.assert_called_with({'id': 'post_id'})
@@ -229,9 +235,12 @@ Facebook UID: None
         dload().get_json.return_value = dict(id='comment_id')
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
-        publish = self.protocol._publish_entry = mock.Mock()
+        publish = self.protocol._publish_entry = mock.Mock(
+            return_value='http://facebook.com/private_message_id')
 
-        self.protocol.send_thread('post_id', 'Some witty response!')
+        self.assertEqual(
+            self.protocol.send_thread('post_id', 'Some witty response!'),
+            'http://facebook.com/private_message_id')
 
         token.assert_called_once_with()
         publish.assert_called_with({'id': 'comment_id'})
@@ -321,7 +330,7 @@ Facebook UID: None
             return_value=['search results'])
         publish = self.protocol._publish_entry = mock.Mock()
 
-        self.protocol.search('hello')
+        self.assertEqual(self.protocol.search('hello'), 1)
 
         publish.assert_called_with('search results', 'search/hello')
         get_pages.assert_called_with(
@@ -334,7 +343,7 @@ Facebook UID: None
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
 
-        self.protocol.like('post_id')
+        self.assertEqual(self.protocol.like('post_id'), 'post_id')
 
         token.assert_called_once_with()
         dload.assert_called_with(
@@ -348,7 +357,7 @@ Facebook UID: None
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
 
-        self.protocol.unlike('post_id')
+        self.assertEqual(self.protocol.unlike('post_id'), 'post_id')
 
         token.assert_called_once_with()
         dload.assert_called_once_with(
@@ -363,7 +372,7 @@ Facebook UID: None
             return_value='face')
         unpublish = self.protocol._unpublish = mock.Mock()
 
-        self.protocol.delete('post_id')
+        self.assertEqual(self.protocol.delete('post_id'), 'post_id')
 
         token.assert_called_once_with()
         dload.assert_called_with(

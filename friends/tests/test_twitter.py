@@ -123,7 +123,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             ConsumerKey='key',
             ConsumerSecret='secret')
         self.assertEqual(0, TestModel.get_n_rows())
-        self.protocol.home()
+        self.assertEqual(self.protocol.home(), 3)
         self.assertEqual(3, TestModel.get_n_rows())
 
         # This test data was ripped directly from Twitter's API docs.
@@ -167,7 +167,9 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             ConsumerKey='key',
             ConsumerSecret='secret')
         self.assertEqual(0, TestModel.get_n_rows())
-        self.protocol.send('some message')
+        self.assertEqual(
+            self.protocol.send('some message'),
+            'https://twitter.com/oauth_dancer/status/240558470661799936')
         self.assertEqual(1, TestModel.get_n_rows())
 
         # This test data was ripped directly from Twitter's API docs.
@@ -180,62 +182,80 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_home_url(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
         publish = self.protocol._publish_tweet = mock.Mock()
 
-        self.protocol.home()
+        self.assertEqual(self.protocol.home(), 0)
 
         publish.assert_called_with('tweet')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/home_timeline.json?count=50')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_mentions(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
         publish = self.protocol._publish_tweet = mock.Mock()
 
-        self.protocol.mentions()
+        self.assertEqual(self.protocol.mentions(), 0)
 
         publish.assert_called_with('tweet', stream='mentions')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/mentions_timeline.json')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_user(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
         publish = self.protocol._publish_tweet = mock.Mock()
 
-        self.protocol.user()
+        self.assertEqual(self.protocol.user(), 0)
 
         publish.assert_called_with('tweet', stream='messages')
         get_url.assert_called_with(
         'https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_list(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
         publish = self.protocol._publish_tweet = mock.Mock()
 
-        self.protocol.list('some_list_id')
+        self.assertEqual(self.protocol.list('some_list_id'), 0)
 
         publish.assert_called_with('tweet', stream='list/some_list_id')
         get_url.assert_called_with(
         'https://api.twitter.com/1.1/lists/statuses.json?list_id=some_list_id')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_lists(self):
         get_url = self.protocol._get_url = mock.Mock(
             return_value=[dict(id_str='twitlist')])
         publish = self.protocol.list = mock.Mock()
 
-        self.protocol.lists()
+        self.assertEqual(self.protocol.lists(), 0)
 
         publish.assert_called_with('twitlist')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/lists/list.json')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_private(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
         publish = self.protocol._publish_tweet = mock.Mock()
 
-        self.protocol.private()
+        self.assertEqual(self.protocol.private(), 0)
 
         publish.assert_called_with('tweet', stream='private')
         self.assertEqual(
@@ -276,11 +296,17 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              mock.call('https://api.twitter.com/1.1/direct_messages/sent.json')
              ])
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_send_private(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
-        publish = self.protocol._publish_tweet = mock.Mock()
+        publish = self.protocol._publish_tweet = mock.Mock(
+            return_value='https://twitter.com/screen_name/status/tweet_id')
 
-        self.protocol.send_private('pumpichank', 'Are you mocking me?')
+        self.assertEqual(
+            self.protocol.send_private('pumpichank', 'Are you mocking me?'),
+            'https://twitter.com/screen_name/status/tweet_id')
 
         publish.assert_called_with('tweet', stream='private')
         get_url.assert_called_with(
@@ -301,9 +327,12 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
     def test_send(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
-        publish = self.protocol._publish_tweet = mock.Mock()
+        publish = self.protocol._publish_tweet = mock.Mock(
+            return_value='https://twitter.com/u/status/id')
 
-        self.protocol.send('Hello, twitterverse!')
+        self.assertEqual(
+            self.protocol.send('Hello, twitterverse!'),
+            'https://twitter.com/u/status/id')
 
         publish.assert_called_with('tweet')
         get_url.assert_called_with(
@@ -312,11 +341,14 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
     def test_send_thread(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
-        publish = self.protocol._publish_tweet = mock.Mock()
+        publish = self.protocol._publish_tweet = mock.Mock(
+            return_value='tweet permalink')
 
-        self.protocol.send_thread(
-            '1234',
-            'Why yes, I would love to respond to your tweet @pumpichank!')
+        self.assertEqual(
+            self.protocol.send_thread(
+                '1234',
+                'Why yes, I would love to respond to your tweet @pumpichank!'),
+            'tweet permalink')
 
         publish.assert_called_with('tweet')
         get_url.assert_called_with(
@@ -329,7 +361,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
         publish = self.protocol._unpublish = mock.Mock()
 
-        self.protocol.delete('1234')
+        self.assertEqual(self.protocol.delete('1234'), '1234')
 
         publish.assert_called_with('1234')
         get_url.assert_called_with(
@@ -338,9 +370,10 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
     def test_retweet(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
-        publish = self.protocol._publish_tweet = mock.Mock()
+        publish = self.protocol._publish_tweet = mock.Mock(
+            return_value='tweet permalink')
 
-        self.protocol.retweet('1234')
+        self.assertEqual(self.protocol.retweet('1234'), 'tweet permalink')
 
         publish.assert_called_with('tweet')
         get_url.assert_called_with(
@@ -350,7 +383,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_unfollow(self):
         get_url = self.protocol._get_url = mock.Mock()
 
-        self.protocol.unfollow('pumpichank')
+        self.assertEqual(self.protocol.unfollow('pumpichank'), 'pumpichank')
 
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/friendships/destroy.json',
@@ -359,7 +392,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_follow(self):
         get_url = self.protocol._get_url = mock.Mock()
 
-        self.protocol.follow('pumpichank')
+        self.assertEqual(self.protocol.follow('pumpichank'), 'pumpichank')
 
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/friendships/create.json',
@@ -368,7 +401,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_like(self):
         get_url = self.protocol._get_url = mock.Mock()
 
-        self.protocol.like('1234')
+        self.assertEqual(self.protocol.like('1234'), '1234')
 
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/favorites/create.json',
@@ -377,42 +410,49 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_unlike(self):
         get_url = self.protocol._get_url = mock.Mock()
 
-        self.protocol.unlike('1234')
+        self.assertEqual(self.protocol.unlike('1234'), '1234')
 
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/favorites/destroy.json',
             dict(id='1234'))
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_tag(self):
         get_url = self.protocol._get_url = mock.Mock(
             return_value=dict(statuses=['tweet']))
         publish = self.protocol._publish_tweet = mock.Mock()
 
-        self.protocol.tag('yegbike')
+        self.assertEqual(self.protocol.tag('yegbike'), 0)
 
         publish.assert_called_with('tweet', stream='search/#yegbike')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=%23yegbike')
 
-        self.protocol.tag('#yegbike')
+        self.assertEqual(self.protocol.tag('#yegbike'), 0)
 
         publish.assert_called_with('tweet', stream='search/#yegbike')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=%23yegbike')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
     def test_search(self):
         get_url = self.protocol._get_url = mock.Mock(
             return_value=dict(statuses=['tweet']))
         publish = self.protocol._publish_tweet = mock.Mock()
 
-        self.protocol.search('hello')
+        self.assertEqual(self.protocol.search('hello'), 0)
 
         publish.assert_called_with('tweet', stream='search/hello')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=hello')
 
     def test_getfriendsids(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value={"ids":[1,2,3]})
+        get_url = self.protocol._get_url = mock.Mock(
+            return_value={"ids":[1,2,3]})
         ids = self.protocol._getfriendsids()
 
         get_url.assert_called_with(
@@ -421,7 +461,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         self.assertEqual(ids, [1,2,3])
 
     def test_showuser(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value={"name":"Alice"})
+        get_url = self.protocol._get_url = mock.Mock(
+            return_value={"name":"Alice"})
         userdata = self.protocol._showuser(1)
 
         get_url.assert_called_with(

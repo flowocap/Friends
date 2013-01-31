@@ -116,12 +116,13 @@ class TestFlickr(unittest.TestCase):
         self.assertEqual(self.account.access_token, '123')
         self.assertEqual(self.account.secret_token, 'abc')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
     def test_get(self):
         # Make sure that the REST GET url looks right.
         token = self.protocol._get_access_token = mock.Mock()
         with mock.patch('friends.protocols.flickr.Downloader') as cm:
             cm.get_json.return_value = {}
-            self.protocol.receive()
+            self.assertEqual(self.protocol.receive(), 0)
         # Unpack the arguments that the mock was called with and test that the
         # arguments, especially to the GET are what we expected.
         all_call_args = cm.call_args_list
@@ -147,7 +148,7 @@ class TestFlickr(unittest.TestCase):
         with mock.patch.object(
             self.protocol, '_get_access_token', return_value='token'):
             # No photos are returned in the JSON data.
-            self.protocol.receive()
+            self.assertEqual(self.protocol.receive(), 0)
         self.assertEqual(TestModel.get_n_rows(), 0)
 
     @mock.patch('friends.utils.http.Soup.Message',
@@ -158,7 +159,7 @@ class TestFlickr(unittest.TestCase):
         self.account.id = 'lerxst'
         with mock.patch.object(self.protocol, '_get_access_token',
                                return_value='token'):
-            self.protocol.receive()
+            self.assertEqual(self.protocol.receive(), 3)
         self.assertEqual(TestModel.get_n_rows(), 3)
 
         self.assertEqual(

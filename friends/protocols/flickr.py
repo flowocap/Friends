@@ -120,3 +120,4 @@ class Flickr(Base):
                 link_url=img_url,
                 link_picture=img_src,
                 link_icon=img_thumb)
+        return self._get_n_rows()

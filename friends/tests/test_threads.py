@@ -86,7 +86,7 @@ class TestThreads(unittest.TestCase):
         # Wait for threads to exit, avoiding race condition.
         join_all_threads()
 
-        success.assert_called_once_with(2)
+        success.assert_called_once_with('2')
         self.assertEqual(failure.call_count, 0)
 
     def test_can_pass_args_to_operations(self):
@@ -104,7 +104,7 @@ class TestThreads(unittest.TestCase):
         # Wait for threads to exit, avoiding race condition.
         join_all_threads()
 
-        success.assert_called_once_with(12)
+        success.assert_called_once_with('12')
         self.assertEqual(failure.call_count, 0)
 
     def test_can_pass_kwargs_to_operations(self):
@@ -122,5 +122,5 @@ class TestThreads(unittest.TestCase):
         # Wait for threads to exit, avoiding race condition.
         join_all_threads()
 
-        success.assert_called_once_with(12)
+        success.assert_called_once_with('12')
         self.assertEqual(failure.call_count, 0)

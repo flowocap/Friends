@@ -90,7 +90,7 @@ class TestFourSquare(unittest.TestCase):
     def test_receive(self, *mocks):
         self.account.access_token = 'tokeny goodness'
         self.assertEqual(0, TestModel.get_n_rows())
-        self.protocol.receive()
+        self.assertEqual(self.protocol.receive(), 1)
         self.assertEqual(1, TestModel.get_n_rows())
         expected = [
             [['foursquare', '1234', '50574c9ce4b0a9a6e84433a0']],
