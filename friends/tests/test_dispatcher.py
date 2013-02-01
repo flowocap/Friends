@@ -44,28 +44,10 @@ class TestDispatcher(unittest.TestCase):
     def setUp(self, *mocks):
         self.log_mock = LogMock('friends.service.dispatcher',
                                 'friends.utils.account')
-        self.dispatcher = Dispatcher(mock.Mock(), mock.Mock(), 300)
-        self.dispatcher.Refresh.assert_called_once_with()
+        self.dispatcher = Dispatcher(mock.Mock(), mock.Mock())
 
     def tearDown(self):
         self.log_mock.stop()
-
-    @mock.patch('friends.service.dispatcher.GLib')
-    def test_connection_online_offline(self, glib_mock):
-        self.assertIsNotNone(self.dispatcher._timer_id)
-        self.assertTrue(self.dispatcher.online)
-
-        timer_id = self.dispatcher._timer_id
-        self.dispatcher._on_connection_offline()
-        self.assertIsNone(self.dispatcher._timer_id)
-        self.assertFalse(self.dispatcher.online)
-        glib_mock.source_remove.assert_called_once_with(timer_id)
-
-        self.dispatcher._on_connection_online()
-        self.assertIsNotNone(self.dispatcher._timer_id)
-        self.assertTrue(self.dispatcher.online)
-        glib_mock.timeout_add_seconds.assert_called_once_with(
-            300, self.dispatcher.Refresh)
 
     @mock.patch('friends.service.dispatcher.threading')
     def test_refresh(self, threading_mock):

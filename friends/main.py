@@ -33,7 +33,6 @@ from gi.repository import Gio, GLib, GObject
 
 GObject.threads_init(None)
 
-from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, initialize_caches
@@ -121,14 +120,12 @@ def main():
     # data for the purposes of faster duplicate checks.
     initialize_caches()
 
-    refresh_interval = max(gsettings.get_int('interval'), 5) * 60
-
     # Load up the various services.  We do it this way so that we retain
     # references to the service endpoints without pyflakes screaming at us
     # about unused local variables.
     class services:
         connection = ConnectionMonitor()
-        dispatcher = Dispatcher(gsettings, loop, refresh_interval)
+        dispatcher = Dispatcher(gsettings, loop)
 
     try:
         log.info('Starting friends-service main loop')
