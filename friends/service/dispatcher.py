@@ -65,12 +65,6 @@ class Dispatcher(dbus.service.Object):
         signaler.add_signal('ConnectionOffline', self._on_connection_offline)
         self._on_connection_online()
 
-        # TODO: Everything from this line to the end of this method
-        # will need to be removed from here if we ever move to an
-        # event-based, dbus-invocation style architecture, as opposed
-        # to the current long-running-process architecture.
-        self.Refresh()
-
         # Eventually, this bit will need to be moved into it's own
         # dbus method, such that some cron-like service can invoke
         # that method periodically. For now we are just doing it at
