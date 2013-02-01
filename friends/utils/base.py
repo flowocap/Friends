@@ -66,6 +66,9 @@ _seen_ids = {}
 # publishing new data into the SharedModel.
 _publish_lock = threading.Lock()
 
+# Avoid race condition during shut-down
+_exit_lock = threading.Lock()
+
 
 log = logging.getLogger(__name__)
 
@@ -174,9 +177,10 @@ class _OperationThread(threading.Thread):
 
         # If this is the last thread to exit, then the refresh is
         # completed and we should save the model, and then exit.
-        if threading.activeCount() < 3:
-            persist_model()
-            GLib.idle_add(self.shutdown)
+        with _exit_lock:
+            if threading.activeCount() < 3:
+                persist_model()
+                GLib.idle_add(self.shutdown)
 
 
 class Base:
