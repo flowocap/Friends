@@ -37,7 +37,7 @@ from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
 from friends.utils.avatar import Avatar
 from friends.utils.base import _OperationThread, Base, initialize_caches
 from friends.utils.logging import initialize
-from friends.utils.model import prune_model
+from friends.utils.model import Model, prune_model
 from friends.utils.options import Options
 
 
@@ -66,6 +66,9 @@ def main():
     # Set up the DBus main loop.
     DBusGMainLoop(set_as_default=True)
     loop = GLib.MainLoop()
+
+    # Our threading implementation needs to know how to quit the
+    # application once all threads have completed.
     _OperationThread.shutdown = loop.quit
 
     # Disallow multiple instances of friends-service
@@ -82,6 +85,11 @@ def main():
             pass
         else:
             yappi.start()
+
+    # Expire old Avatars. Without this we would never notice when
+    # somebody changes their avatar, we would just keep the stale old
+    # one forever.
+    Avatar.expire_old_avatars()
 
     # Initialize the logging subsystem.
     gsettings = Gio.Settings.new('com.canonical.friends')
@@ -102,11 +110,21 @@ def main():
             'private',
             )
 
-    # Expire old Avatars. Without this we would never notice when
-    # somebody changes their avatar, we would just keep the stale old
-    # one forever.
-    Avatar.expire_old_avatars()
+    # Don't initialize caches until the model is synchronized
+    Model.connect('notify::synchronized', setup, gsettings, loop)
 
+    try:
+        log.info('Starting friends-service main loop')
+        loop.run()
+    except KeyboardInterrupt:
+        log.info('Stopped friends-service main loop')
+
+    # This bit doesn't run until after the mainloop exits.
+    if args.performance and yappi is not None:
+        yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
+
+def setup(model, param, gsettings, loop):
+    """Continue friends-service initialization after the DeeModel has synced."""
     # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
     # size, because anything larger will have problems being transmitted
     # over DBus. I have conservatively calculated our average row length
@@ -121,21 +139,10 @@ def main():
     # data for the purposes of faster duplicate checks.
     initialize_caches()
 
-    # Load up the various services.  We do it this way so that we retain
-    # references to the service endpoints without pyflakes screaming at us
-    # about unused local variables.
+    # Startup the dispatcher. We assign it to an unused class in order
+    # to avoid pyflakes complaining about unused local variables.
     class services:
         dispatcher = Dispatcher(gsettings, loop)
-
-    try:
-        log.info('Starting friends-service main loop')
-        loop.run()
-    except KeyboardInterrupt:
-        log.info('Stopped friends-service main loop')
-
-    if args.performance and yappi is not None:
-        yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
-
 
 if __name__ == '__main__':
     # Use this with `python3 -m friends.main`
