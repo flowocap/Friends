@@ -35,7 +35,7 @@ GObject.threads_init(None)
 
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
 from friends.utils.avatar import Avatar
-from friends.utils.base import Base, initialize_caches
+from friends.utils.base import _OperationThread, Base, initialize_caches
 from friends.utils.logging import initialize
 from friends.utils.model import prune_model
 from friends.utils.options import Options
@@ -66,6 +66,7 @@ def main():
     # Set up the DBus main loop.
     DBusGMainLoop(set_as_default=True)
     loop = GLib.MainLoop()
+    _OperationThread.shutdown = loop.quit
 
     # Disallow multiple instances of friends-service
     bus = dbus.SessionBus()
@@ -124,7 +125,6 @@ def main():
     # references to the service endpoints without pyflakes screaming at us
     # about unused local variables.
     class services:
-        connection = ConnectionMonitor()
         dispatcher = Dispatcher(gsettings, loop)
 
     try:

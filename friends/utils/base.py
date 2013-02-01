@@ -31,7 +31,7 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import GObject, EDataServer, EBook
+from gi.repository import GLib, GObject, EDataServer, EBook
 
 from friends.errors import ContactsError
 from friends.utils.authentication import Authentication
@@ -136,6 +136,8 @@ def initialize_caches():
 
 class _OperationThread(threading.Thread):
     """Manage async callbacks, and log subthread exceptions."""
+    # main.py will replace this with a reference to the mainloop.quit method
+    shutdown = lambda: log.error('Failed to terminate friends-service main loop')
 
     def __init__(self, *args, id=None, success=STUB, failure=STUB, **kws):
         self._id = id
@@ -171,9 +173,10 @@ class _OperationThread(threading.Thread):
                 self._id, elapsed))
 
         # If this is the last thread to exit, then the refresh is
-        # completed and we should save the model.
+        # completed and we should save the model, and then exit.
         if threading.activeCount() < 3:
             persist_model()
+            GLib.idle_add(self.shutdown)
 
 
 class Base:
