@@ -32,6 +32,10 @@ class Options:
             description='The Friends backend dbus service.')
 
         self.parser.add_argument(
+            '-t', '--test',
+            action='store_true', default=False,
+            help='Replace friends-service daemon with a crash test dummy.')
+        self.parser.add_argument(
             '-d', '--debug',
             action='store_true', default=False,
             help='Enable debug level log messages.')

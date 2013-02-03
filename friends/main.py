@@ -63,6 +63,10 @@ def main():
             print(class_name)
         return
 
+    if args.test:
+        global Dispatcher
+        from friends.service.mock_service import Dispatcher
+
     # Set up the DBus main loop.
     DBusGMainLoop(set_as_default=True)
     loop = GLib.MainLoop()
