@@ -1,0 +1,9 @@
+usr/bin/friends-dispatcher
+usr/lib/python3/dist-packages/*.egg-info/*
+usr/lib/python3/dist-packages/friends/*.py
+usr/lib/python3/dist-packages/friends/protocols/__init__.py
+usr/lib/python3/dist-packages/friends/service/*
+usr/lib/python3/dist-packages/friends/shorteners/*
+usr/lib/python3/dist-packages/friends/utils/*
+usr/share/dbus-1/services/com.canonical.Friends.Service.service
+usr/share/dbus-1/services/com.canonical.Friends.Connection.service

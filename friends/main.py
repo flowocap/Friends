@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Main friends-service module.
+"""Main friends-dispatcher module.
 
 This gets turned into a script by `python3 setup.py install`.
 """
@@ -75,12 +75,12 @@ def main():
     # application once all threads have completed.
     _OperationThread.shutdown = loop.quit
 
-    # Disallow multiple instances of friends-service
+    # Disallow multiple instances of friends-dispatcher
     bus = dbus.SessionBus()
     obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
     iface = dbus.Interface(obj, 'org.freedesktop.DBus')
     if DBUS_INTERFACE in iface.ListNames():
-        sys.exit('friends-service is already running! Abort!')
+        sys.exit('friends-dispatcher is already running! Abort!')
 
     if args.performance:
         try:
@@ -101,6 +101,9 @@ def main():
                debug=args.debug or gsettings.get_boolean('debug'))
     log = logging.getLogger(__name__)
     log.info('Friends backend service starting')
+
+    # ensure friends-service is available to provide the Dee.SharedModel
+    #server = bus.get_object('com.canonical.Friends.Server', '/com/canonical/friends/Server')
 
     # Determine which messages to notify for.
     notify_level = gsettings.get_string('notifications')

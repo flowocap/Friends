@@ -132,14 +132,18 @@ public class Master
     {
         debug ("Interval is %d", interval);
         Timeout.add_seconds ((interval * 60), on_refresh);
-        dispatcher.Refresh ();
+        try {
+            dispatcher.Refresh ();
+        } catch (IOError e) {
+            warning ("Failed to refresh - %s", e.message);
+        }
         return false;
     }
 }
 
 void on_bus_aquired (DBusConnection conn) {
     try {
-        conn.register_object ("/com/canonical/Friends/Server", new Master ());
+        conn.register_object ("/com/canonical/friends/Server", new Master ());
     } catch (IOError e) {
         stderr.printf ("Could not register service\n");
     }
