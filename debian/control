@@ -28,6 +28,9 @@ Build-Depends: dbus-test-runner,
                python3-pkg-resources,
                python3-setuptools,
                shared-mime-info,
+               valac,
+               libdee-dev,
+               dh-autoreconf,
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/friends
 # If you aren't a member of ~super-friends but need to upload packaging changes,

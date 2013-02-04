@@ -1,3 +1,3 @@
 [D-BUS Service]
 Name=com.canonical.Friends.Service
-Exec={BINDIR}/friends-service {ARGS}
+Exec={BINDIR}/friends-dispatcher {ARGS}
