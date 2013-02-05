@@ -100,7 +100,7 @@ def main():
     initialize(console=args.console,
                debug=args.debug or gsettings.get_boolean('debug'))
     log = logging.getLogger(__name__)
-    log.info('Friends backend service starting')
+    log.info('Friends backend dispatcher starting')
 
     # ensure friends-service is available to provide the Dee.SharedModel
     #server = bus.get_object('com.canonical.Friends.Server', '/com/canonical/friends/Server')
@@ -121,17 +121,17 @@ def main():
     Model.connect('notify::synchronized', setup, gsettings, loop)
 
     try:
-        log.info('Starting friends-service main loop')
+        log.info('Starting friends-dispatcher main loop')
         loop.run()
     except KeyboardInterrupt:
-        log.info('Stopped friends-service main loop')
+        log.info('Stopped friends-dispatcher main loop')
 
     # This bit doesn't run until after the mainloop exits.
     if args.performance and yappi is not None:
         yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
 
 def setup(model, param, gsettings, loop):
-    """Continue friends-service initialization after the DeeModel has synced."""
+    """Continue friends-dispatcher init after the DeeModel has synced."""
     # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
     # size, because anything larger will have problems being transmitted
     # over DBus. I have conservatively calculated our average row length

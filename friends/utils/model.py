@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,11 +15,11 @@
 
 """The Dee.SharedModel interface layer.
 
-Dee.SharedModel is comparable to a Gtk.ListStore, except that it shares its
-state between processes using DBus.  When friends-service downloads new
-messages from a website, it inserts those messages into this SharedModel
-instance, which then triggers a callback in the Vala frontend, which knows to
-display the new messages there.
+Dee.SharedModel is comparable to a Gtk.ListStore, except that it
+shares its state between processes using DBus. When friends-dispatcher
+downloads new messages from a website, it inserts those messages into
+this SharedModel instance, which then triggers a callback in the Vala
+frontend, which knows to display the new messages there.
 """
 
 

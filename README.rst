@@ -25,24 +25,12 @@ Package requirements.
 Installation
 ============
 
-If you want to run the ``friends-service`` executable locally for testing
-purposes, you can do it in one of two ways.  To run the service as would
-typically happen once the system package was installed, create a Python
-virtual environment, and run the service from there.  Fortunately, the
-``Makefile`` makes this easy::
-
-    $ make venv
-    $ /tmp/friends/bin/friends-service
-
-When you make changes in the source, just run ``make venv`` again to refresh
-the virtual environment.
-
 It may be easier during development to run the service directly from the
 source directory.  This should generally be good enough for development
 purposes, but again, doesn't exactly mimic how the service will be installed
 by the system package::
 
-    $ ./friends-service.sh
+    $ ./dispatcher.sh
 
 This is a little bit more fragile, since you must be in the top-level source
 directory for this to work.
@@ -56,9 +44,7 @@ using a Dee.SharedModel.
 Testing
 =======
 
-You can run most of the test suite with the command ``make check``.  This will
-not include any dbus-enabled tests, which you can run with the command ``make
-check_all``.
+You can run the test suite with the command ``make check``.
 
 You can do some microblogging from the command line with::
 
