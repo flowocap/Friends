@@ -84,10 +84,6 @@ class Dispatcher(dbus.service.Object):
 
         log.debug('Refresh requested')
 
-        if threading.activeCount() > 1:
-            log.debug('Aborting refresh because previous refresh incomplete!')
-            return True
-
         # account.protocol() starts a new thread and then returns
         # immediately, so there is no delay or blocking during the
         # execution of this method.
@@ -97,9 +93,6 @@ class Dispatcher(dbus.service.Object):
             except NotImplementedError:
                 # If a protocol doesn't support receive then ignore it.
                 pass
-
-        # Always return True, or else GLib mainloop will stop invoking it.
-        return True
 
     @dbus.service.method(DBUS_INTERFACE)
     def ClearIndicators(self):
@@ -113,6 +106,7 @@ class Dispatcher(dbus.service.Object):
             service.ClearIndicators()
         """
         self.menu_manager.update_unread_count(0)
+        self.mainloop.quit()
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
@@ -294,22 +288,8 @@ class Dispatcher(dbus.service.Object):
             features = json.loads(service.GetFeatures('facebook'))
         """
         protocol = protocol_manager.protocols.get(protocol_name)
-        return json.dumps(protocol.get_features())
-
-    @dbus.service.method(DBUS_INTERFACE)
-    def Quit(self):
-        """Shutdown the service.
-
-        example:
-            import dbus
-            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
-            service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.Quit()
-        """
-        log.info('Friends Service is being shutdown')
-        logging.shutdown()
         self.mainloop.quit()
+        return json.dumps(protocol.get_features())
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def URLShorten(self, url):
@@ -325,6 +305,7 @@ class Dispatcher(dbus.service.Object):
             service = dbus.Interface(obj, DBUS_INTERFACE)
             short_url = service.URLShorten(url)
         """
+        self.mainloop.quit()
         service_name = self.settings.get_string('urlshorter')
         log.info('Shortening URL {} with {}'.format(url, service_name))
         if (lookup.is_shortened(url) or

@@ -56,31 +56,12 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.account_manager = mock.Mock()
         self.dispatcher.account_manager.get_all.return_value = [account]
 
-        self.assertTrue(self.dispatcher.Refresh())
-        threading_mock.activeCount.assert_called_once_with()
+        self.assertIsNone(self.dispatcher.Refresh())
 
         self.dispatcher.account_manager.get_all.assert_called_once_with()
         account.protocol.assert_called_once_with('receive')
 
         self.assertEqual(self.log_mock.empty(), 'Refresh requested\n')
-
-    @mock.patch('friends.service.dispatcher.threading')
-    def test_refresh_premature(self, threading_mock):
-        account = mock.Mock()
-        threading_mock.activeCount.return_value = 10
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get_all.return_value = [account]
-
-        self.assertTrue(self.dispatcher.Refresh())
-        threading_mock.activeCount.assert_called_once_with()
-
-        self.assertEqual(self.dispatcher.account_manager.get_all.call_count, 0)
-        self.assertEqual(account.protocol.call_count, 0)
-
-        self.assertEqual(
-            self.log_mock.empty(),
-            'Refresh requested\n' +
-            'Aborting refresh because previous refresh incomplete!\n')
 
     def test_clear_indicators(self):
         self.dispatcher.menu_manager = mock.Mock()
@@ -205,15 +186,6 @@ class TestDispatcher(unittest.TestCase):
                          ['receive'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('foursquare')),
                          ['receive'])
-
-    @mock.patch('friends.service.dispatcher.logging')
-    def test_quit(self, logging_mock):
-        self.dispatcher.Quit()
-        self.dispatcher.mainloop.quit.assert_called_once_with()
-        logging_mock.shutdown.assert_called_once_with()
-
-        self.assertEqual(self.log_mock.empty(),
-                         'Friends Service is being shutdown\n')
 
     @mock.patch('friends.service.dispatcher.logging')
     def test_urlshorten_already_shortened(self, logging_mock):

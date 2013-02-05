@@ -53,7 +53,7 @@ class Dispatcher(dbus.service.Object):
 
     @dbus.service.method(DBUS_INTERFACE)
     def ClearIndicators(self):
-        pass
+        self._succeed = False
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
@@ -95,10 +95,6 @@ class Dispatcher(dbus.service.Object):
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         return json.dumps(protocol_name.split())
-
-    @dbus.service.method(DBUS_INTERFACE)
-    def Quit(self):
-        self._succeed = False
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def URLShorten(self, url):
