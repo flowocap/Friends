@@ -121,11 +121,21 @@ public class Master
             debug ("Interval changed: %d\n", interval);
         });
 
-        dispatcher = Bus.get_proxy_sync (BusType.SESSION,
-                                         "com.canonical.Friends.Service",
-                                         "/com/canonical/friends/Service");
+        Bus.get_proxy.begin<Dispatcher>(BusType.SESSION,
+            "com.canonical.Friends.Service",
+            "/com/canonical/friends/Service",
+            DBusProxyFlags.NONE, null, on_proxy_cb);
+    }
 
-        var ret = on_refresh ();
+    private void on_proxy_cb (GLib.Object? obj, GLib.AsyncResult res) {
+        try {
+            dispatcher = Bus.get_proxy.end(res);
+            var ret = on_refresh ();
+        } catch (IOError e) {
+            warning ("Blah %s", e.message);
+        }
+
+
     }
 
     bool on_refresh () 
