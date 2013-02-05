@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""friends-service command line option parsing."""
+"""friends-dispatcher command line option parsing."""
 
 
 __all__ = [
@@ -34,7 +34,7 @@ class Options:
         self.parser.add_argument(
             '-t', '--test',
             action='store_true', default=False,
-            help='Replace friends-service daemon with a crash test dummy.')
+            help='Replace friends-dispatcher with a crash test dummy.')
         self.parser.add_argument(
             '-d', '--debug',
             action='store_true', default=False,

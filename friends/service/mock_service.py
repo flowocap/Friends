@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 
 
 class Dispatcher(dbus.service.Object):
-    """This object mocks the official friends-service dbus API."""
+    """This object mocks the official friends-dispatcher dbus API."""
     __dbus_object_path__ = '/com/canonical/friends/Service'
 
     def __init__(self, *ignore):
@@ -53,7 +53,7 @@ class Dispatcher(dbus.service.Object):
 
     @dbus.service.method(DBUS_INTERFACE)
     def ClearIndicators(self):
-        pass
+        self._succeed = False
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
@@ -95,10 +95,6 @@ class Dispatcher(dbus.service.Object):
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         return json.dumps(protocol_name.split())
-
-    @dbus.service.method(DBUS_INTERFACE)
-    def Quit(self):
-        self._succeed = False
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def URLShorten(self, url):
