@@ -38,13 +38,13 @@ from friends.shorteners import lookup
 
 log = logging.getLogger(__name__)
 
-DBUS_INTERFACE = 'com.canonical.Friends.Service'
+DBUS_INTERFACE = 'com.canonical.Friends.Dispatcher'
 STUB = lambda *ignore, **kwignore: None
 
 
 class Dispatcher(dbus.service.Object):
     """This is the primary handler of dbus method calls."""
-    __dbus_object_path__ = '/com/canonical/friends/Service'
+    __dbus_object_path__ = '/com/canonical/friends/Dispatcher'
 
     def __init__(self, settings, mainloop):
         self.settings = settings
@@ -101,7 +101,7 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.ClearIndicators()
         """
@@ -123,7 +123,7 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.Do('like', '3', 'post_id') # Likes that FB post.
             service.Do('search', '', 'search terms') # Searches all accounts.
@@ -166,7 +166,7 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.SendMessage('Your message')
         """
@@ -200,7 +200,7 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.SendReply('6', '34245645347345626', 'Your reply')
         """
@@ -240,7 +240,7 @@ class Dispatcher(dbus.service.Object):
             loop = GLib.MainLoop()
 
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
 
             def success(destination_url):
@@ -283,7 +283,7 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus, json
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             features = json.loads(service.GetFeatures('facebook'))
         """
@@ -301,7 +301,7 @@ class Dispatcher(dbus.service.Object):
             import dbus
             url = 'http://www.example.com/this/is/a/long/url'
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             short_url = service.URLShorten(url)
         """

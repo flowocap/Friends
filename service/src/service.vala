@@ -17,7 +17,7 @@
  */
 
 
-[DBus (name = "com.canonical.Friends.Service")]
+[DBus (name = "com.canonical.Friends.Dispatcher")]
 private interface Dispatcher : GLib.Object {
         public abstract void Refresh () throws GLib.IOError;
 }
@@ -99,7 +99,7 @@ public class Master
                     debug ("SYNCHRONIZED");
                     shared_model.flush_revision_queue();
                 }
-                if (shared_model.is_leader()) 
+                if (shared_model.is_leader())
                     debug ("LEADER");
                 else
                     debug ("NOT LEADER");
@@ -122,13 +122,13 @@ public class Master
         });
 
         dispatcher = Bus.get_proxy_sync (BusType.SESSION,
-                                         "com.canonical.Friends.Service",
-                                         "/com/canonical/friends/Service");
+                                         "com.canonical.Friends.Dispatcher",
+                                         "/com/canonical/friends/Dispatcher");
 
         var ret = on_refresh ();
     }
 
-    bool on_refresh () 
+    bool on_refresh ()
     {
         debug ("Interval is %d", interval);
         Timeout.add_seconds ((interval * 60), on_refresh);
