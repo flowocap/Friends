@@ -6,7 +6,7 @@ AM_SILENT_RULES([yes])
 
 AM_MAINTAINER_MODE
 
-AM_PROG_VALAC([0.17])
+AM_PROG_VALAC([0.16])
 AC_PROG_CC
 AM_PROG_CC_STDC
 AC_PROG_INSTALL
@@ -25,8 +25,8 @@ AC_SUBST(BASE_CFLAGS)
 AC_SUBST(BASE_LIBS)
 
 AC_CONFIG_FILES([
-	Makefile
-	src/Makefile
-	data/Makefile
+        Makefile
+        src/Makefile
+        data/Makefile
 ])
 AC_OUTPUT
