@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 class Dispatcher(dbus.service.Object):
     """This object mocks the official friends-dispatcher dbus API."""
-    __dbus_object_path__ = '/com/canonical/friends/Service'
+    __dbus_object_path__ = '/com/canonical/friends/Dispatcher'
 
     def __init__(self, *ignore):
         self.bus = dbus.SessionBus()
