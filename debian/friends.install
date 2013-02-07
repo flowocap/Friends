@@ -1,3 +1,3 @@
 usr/bin/friends-service
-usr/share/dbus-1/services/com.canonical.Friends.Server.service
+usr/share/dbus-1/services/com.canonical.Friends.Service.service
 usr/share/glib-2.0/schemas/com.canonical.friends.gschema.xml

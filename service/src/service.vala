@@ -22,7 +22,7 @@ private interface Dispatcher : GLib.Object {
         public abstract void Refresh () throws GLib.IOError;
 }
 
-[DBus (name = "com.canonical.Friends.Server")]
+[DBus (name = "com.canonical.Friends.Service")]
 public class Master
 {
     private Dee.Model model;
@@ -152,7 +152,7 @@ public class Master
 
 void on_bus_aquired (DBusConnection conn) {
     try {
-        conn.register_object ("/com/canonical/friends/Server", new Master ());
+        conn.register_object ("/com/canonical/friends/Service", new Master ());
     } catch (IOError e) {
         stderr.printf ("Could not register service\n");
     }
@@ -160,7 +160,7 @@ void on_bus_aquired (DBusConnection conn) {
 
 public static int main (string[] args)
 {
-    Bus.own_name (BusType.SESSION, "com.canonical.Friends.Server", BusNameOwnerFlags.NONE,
+    Bus.own_name (BusType.SESSION, "com.canonical.Friends.Service", BusNameOwnerFlags.NONE,
                   on_bus_aquired,
                   () => {},
                   () => stderr.printf ("Could not aquire name\n"));

@@ -103,7 +103,7 @@ def main():
     log.info('Friends backend dispatcher starting')
 
     # ensure friends-service is available to provide the Dee.SharedModel
-    #server = bus.get_object('com.canonical.Friends.Server', '/com/canonical/friends/Server')
+    server = bus.get_object('com.canonical.Friends.Service', '/com/canonical/friends/Service')
 
     # Determine which messages to notify for.
     notify_level = gsettings.get_string('notifications')
