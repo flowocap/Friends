@@ -1,26 +1,28 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-# Sample debian/rules that uses debhelper.
-# This file was originally written by Joey Hess and Craig Small.
-# As a special exception, when this file is copied by dh-make into a
-# dh-make output file, you may use that output file without restriction.
-# This special exception was added by Craig Small in version 0.37 of dh-make.
-
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
 override_dh_auto_clean:
 	python3 setup.py clean -a
+	dh_auto_clean -D service
+
+
+override_dh_auto_configure:
+	dh_auto_configure -D service
 
 override_dh_auto_build:
 	python3 setup.py build
+	dh_auto_build -D service
 
 override_dh_auto_install:
 	python3 setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
 	python3 setup.py install_service_files -d $(CURDIR)/debian/tmp/usr
+	dh_auto_install -D service
+	dh_install --list-missing
 
 override_dh_auto_test:
-	dbus-test-runner -t make -p check -m 60
+	#dbus-test-runner -t make -p check -m 60
 
 %:
-	dh $@ --with python3
+	dh $@ --with python3,autoreconf

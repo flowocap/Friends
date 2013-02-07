@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ import threading
 
 from datetime import datetime
 
-from gi.repository import GObject, EDataServer, EBook
+from gi.repository import GLib, GObject, EDataServer, EBook
 
 from friends.errors import ContactsError
 from friends.utils.authentication import Authentication
@@ -65,6 +65,9 @@ _seen_ids = {}
 # Protocol __call__() methods run in threads, so we need to serialize
 # publishing new data into the SharedModel.
 _publish_lock = threading.Lock()
+
+# Avoid race condition during shut-down
+_exit_lock = threading.Lock()
 
 
 log = logging.getLogger(__name__)
@@ -136,6 +139,8 @@ def initialize_caches():
 
 class _OperationThread(threading.Thread):
     """Manage async callbacks, and log subthread exceptions."""
+    # main.py will replace this with a reference to the mainloop.quit method
+    shutdown = lambda: log.error('Failed to exit friends-dispatcher main loop')
 
     def __init__(self, *args, id=None, success=STUB, failure=STUB, **kws):
         self._id = id
@@ -148,9 +153,6 @@ class _OperationThread(threading.Thread):
         kws['target'] = self._retval_catcher
 
         super().__init__(*args, **kws)
-
-    # Don't block friends-service from exiting if subthreads are still running.
-    daemon = True
 
     def _retval_catcher(self, func, *args, **kwargs):
         """Call the success callback, but only if no exceptions were raised."""
@@ -171,9 +173,11 @@ class _OperationThread(threading.Thread):
                 self._id, elapsed))
 
         # If this is the last thread to exit, then the refresh is
-        # completed and we should save the model.
-        if threading.activeCount() < 3:
-            persist_model()
+        # completed and we should save the model, and then exit.
+        with _exit_lock:
+            if threading.activeCount() < 3:
+                persist_model()
+                GLib.idle_add(self.shutdown)
 
 
 class Base:
@@ -253,23 +257,22 @@ class Base:
         initiate only a single login attempt (all subsequent calls
         return the cached access token without re-authenticating).
 
-        The Friends-service daemon will invoke these methods
+        The Friends-dispatcher will invoke these methods
         asynchronously, in a sub-thread, but we have designed the
         threading architecture in a very orthogonal way, so it should
         be very easy for you to write the methods in a straightforward
         synchronous way. If you need to indicate that there is an
         error condition (any error condition at all), just raise an
         exception (any exception will do, as long as it is a subclass
-        of the builtin Exception class). Friends-service will
+        of the builtin Exception class). Friends-dispatcher will
         automatically log the exception and indicate the error
         condition to the user. If you need to return a value (such as
         the destination URL that a successfully uploaded photo has
         been uploaded to), you can simply return the value, and
-        Friends-service will catch that return value and invoke a
+        Friends-dispatcher will catch that return value and invoke a
         callback in the calling code for you automatically. Only a
-        single return value is supported, but it can be any Python
-        object you like, so feel free to return lists or tuples or
-        dicts if you need to return more than one value.
+        single return value is supported, and it must be converted
+        into a string to be sent over DBus.
         """
         raise NotImplementedError(
             '{} protocol has no receive() method.'.format(
@@ -281,7 +284,7 @@ class Base:
         If a protocol method raises an exception, that will be caught
         and passed to the failure callback; if no exception is raised,
         then the return value of the method will be passed to the
-        success callback. Programs communicating with friends-service
+        success callback. Programs communicating with friends-dispatcher
         via DBus should therefore specify success & failure callbacks
         in order to be notified of the results of their DBus method
         calls.

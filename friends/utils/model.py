@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,11 +15,11 @@
 
 """The Dee.SharedModel interface layer.
 
-Dee.SharedModel is comparable to a Gtk.ListStore, except that it shares its
-state between processes using DBus.  When friends-service downloads new
-messages from a website, it inserts those messages into this SharedModel
-instance, which then triggers a callback in the Vala frontend, which knows to
-display the new messages there.
+Dee.SharedModel is comparable to a Gtk.ListStore, except that it
+shares its state between processes using DBus. When friends-dispatcher
+downloads new messages from a website, it inserts those messages into
+this SharedModel instance, which then triggers a callback in the Vala
+frontend, which knows to display the new messages there.
 """
 
 
@@ -88,49 +88,23 @@ COLUMN_NAMES, COLUMN_TYPES = zip(*SCHEMA)
 COLUMN_INDICES = {name: i for i, name in enumerate(COLUMN_NAMES)}
 # This defines default values for the different data types
 DEFAULTS = {
-    'as': [],
     'b': False,
     's': '',
     'd': 0,
     }
 
 
-_shared_model = None
 MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'
-_resource_manager = Dee.ResourceManager.get_default()
-Model = _resource_manager.load(MODEL_DBUS_NAME)
-
-first_run = Model is None
-if not first_run:
-    stale_schema = Model.get_schema() != list(COLUMN_TYPES)
-else:
-    stale_schema = True
+Model = Dee.SharedModel.new(MODEL_DBUS_NAME)
 
 
 def persist_model():
     """Write our Dee.SharedModel instance to disk."""
-    log.debug('Saving Dee.SharedModel with {} rows.'.format(len(Model)))
-    if _shared_model is not None:
-        _shared_model.flush_revision_queue()
-    _resource_manager.store(Model, MODEL_DBUS_NAME)
+    log.debug('Trying to save Dee.SharedModel with {} rows.'.format(len(Model)))
+    if Model is not None and Model.is_synchronized():
+        log.debug('Saving Dee.SharedModel with {} rows.'.format(len(Model)))
+        Model.flush_revision_queue()
 
-
-# If this is first run, or the schema has changed since last run,
-# we'll need to make a new, empty Model.
-if first_run or stale_schema:
-    log.debug('Starting a new, empty Dee.SharedModel.')
-    Model = Dee.SequenceModel()
-    Model.set_schema_full(COLUMN_TYPES)
-
-    # Calling this from here ensures that schema changes are persisted
-    # ASAP, but we also call it periodically in the dispatcher in
-    # order to ensure data is saved often in case of power loss.
-    persist_model()
-
-_shared_model = Dee.SharedModel(
-    access_mode=Dee.SharedModelAccessMode.LEADER_WRITABLE,
-    peer=Dee.Peer(swarm_name=MODEL_DBUS_NAME, swarm_owner=True),
-    back_end=Model)
 
 def prune_model(maximum):
     """If there are more than maximum rows, remove the oldest ones."""

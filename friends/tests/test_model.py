@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ __all__ = [
 
 import unittest
 
-from friends.utils.model import Model, first_run, stale_schema
+from friends.utils.model import Model
 from friends.utils.model import prune_model, persist_model
 from friends.tests.mocks import LogMock, mock
 from gi.repository import Dee
@@ -40,22 +40,6 @@ class TestModel(unittest.TestCase):
 
     def tearDown(self):
         self.log_mock.stop()
-
-    def test_basic_properties(self):
-        self.assertIsInstance(Model, Dee.SequenceModel)
-        self.assertEqual(Model.get_n_columns(), 18)
-        self.assertEqual(Model.get_schema(),
-                         ['aas', 's', 's', 's', 's', 'b', 's', 's', 's', 's',
-                          'd', 'b', 's', 's', 's', 's', 's', 's'])
-        if first_run or stale_schema:
-            # Then the Model should be brand-new and empty
-            self.assertEqual(Model.get_n_rows(), 0)
-
-    @mock.patch('friends.utils.model._resource_manager')
-    def test_persistence(self, resource_manager):
-        persist_model()
-        resource_manager.store.assert_called_once_with(
-            Model, 'com.canonical.Friends.Streams')
 
     @mock.patch('friends.utils.model.Model')
     @mock.patch('friends.utils.model.persist_model')

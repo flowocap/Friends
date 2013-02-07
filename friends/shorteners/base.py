@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify

@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,6 @@ from gi.repository import GLib
 
 from friends.utils.account import AccountManager
 from friends.utils.manager import protocol_manager
-from friends.utils.signaler import signaler
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model
 from friends.shorteners import lookup
@@ -39,42 +38,36 @@ from friends.shorteners import lookup
 
 log = logging.getLogger(__name__)
 
-DBUS_INTERFACE = 'com.canonical.Friends.Service'
+DBUS_INTERFACE = 'com.canonical.Friends.Dispatcher'
 STUB = lambda *ignore, **kwignore: None
 
 
 class Dispatcher(dbus.service.Object):
     """This is the primary handler of dbus method calls."""
-    __dbus_object_path__ = '/com/canonical/friends/Service'
+    __dbus_object_path__ = '/com/canonical/friends/Dispatcher'
 
-    def __init__(self, settings, mainloop, interval):
+    def __init__(self, settings, mainloop):
         self.settings = settings
         self.bus = dbus.SessionBus()
         bus_name = dbus.service.BusName(DBUS_INTERFACE, bus=self.bus)
         super().__init__(bus_name, self.__dbus_object_path__)
         self.mainloop = mainloop
-        self._interval = interval
         self.account_manager = AccountManager()
 
         self._unread_count = 0
         self.menu_manager = MenuManager(self.Refresh, self.mainloop.quit)
         Model.connect('row-added', self._increment_unread_count)
 
-        self._timer_id = None
-        signaler.add_signal('ConnectionOnline', self._on_connection_online)
-        signaler.add_signal('ConnectionOffline', self._on_connection_offline)
-        self._on_connection_online()
+    def _increment_unread_count(self, model, itr):
+        self._unread_count += 1
+        self.menu_manager.update_unread_count(self._unread_count)
 
-        # TODO: Everything from this line to the end of this method
-        # will need to be removed from here if we ever move to an
-        # event-based, dbus-invocation style architecture, as opposed
-        # to the current long-running-process architecture.
-        self.Refresh()
+    @dbus.service.method(DBUS_INTERFACE)
+    def Contacts(self):
+        """Download the friends list from each connected protocol.
 
-        # Eventually, this bit will need to be moved into it's own
-        # dbus method, such that some cron-like service can invoke
-        # that method periodically. For now we are just doing it at
-        # startup.
+        These are then stored in EDS.
+        """
         for account in self.account_manager.get_all():
             try:
                 account.protocol('contacts')
@@ -84,36 +77,12 @@ class Dispatcher(dbus.service.Object):
             else:
                 log.debug('{}: Fetched contacts.'.format(account.id))
 
-    def _on_connection_online(self):
-        if self._timer_id is None:
-            self._timer_id = GLib.timeout_add_seconds(
-                self._interval, self.Refresh)
-
-    def _on_connection_offline(self):
-        if self._timer_id is not None:
-            GLib.source_remove(self._timer_id)
-            self._timer_id = None
-
-    @property
-    def online(self):
-        return self._timer_id is not None
-
-    def _increment_unread_count(self, model, itr):
-        self._unread_count += 1
-        self.menu_manager.update_unread_count(self._unread_count)
-
     @dbus.service.method(DBUS_INTERFACE)
     def Refresh(self):
+        """Download new messages from each connected protocol."""
         self._unread_count = 0
 
         log.debug('Refresh requested')
-
-        if threading.activeCount() > 1:
-            log.debug('Aborting refresh because previous refresh incomplete!')
-            return True
-
-        if not self.online:
-            return
 
         # account.protocol() starts a new thread and then returns
         # immediately, so there is no delay or blocking during the
@@ -125,9 +94,6 @@ class Dispatcher(dbus.service.Object):
                 # If a protocol doesn't support receive then ignore it.
                 pass
 
-        # Always return True, or else GLib mainloop will stop invoking it.
-        return True
-
     @dbus.service.method(DBUS_INTERFACE)
     def ClearIndicators(self):
         """Indicate that messages have been read.
@@ -135,11 +101,12 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.ClearIndicators()
         """
         self.menu_manager.update_unread_count(0)
+        self.mainloop.quit()
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
@@ -156,15 +123,12 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.Do('like', '3', 'post_id') # Likes that FB post.
             service.Do('search', '', 'search terms') # Searches all accounts.
             service.Do('list', '6', 'list_id') # Fetch a single list.
         """
-        if not self.online:
-            failure('No internet connection available.')
-            return
         if account_id:
             accounts = [self.account_manager.get(account_id)]
             if accounts == [None]:
@@ -202,13 +166,10 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.SendMessage('Your message')
         """
-        if not self.online:
-            failure('No internet connection available.')
-            return
         sent = False
         for account in self.account_manager.get_all():
             if account.send_enabled:
@@ -239,13 +200,10 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             service.SendReply('6', '34245645347345626', 'Your reply')
         """
-        if not self.online:
-            failure('No internet connection available.')
-            return
         log.debug('Replying to {}, {}'.format(account_id, message_id))
         account = self.account_manager.get(account_id)
         if account is not None:
@@ -282,7 +240,7 @@ class Dispatcher(dbus.service.Object):
             loop = GLib.MainLoop()
 
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
 
             def success(destination_url):
@@ -303,9 +261,6 @@ class Dispatcher(dbus.service.Object):
         Note also that the callbacks are actually optional; you are
         free to ignore error conditions at your peril.
         """
-        if not self.online:
-            failure('No internet connection available.')
-            return
         log.debug('Uploading {} to {}'.format(uri, account_id))
         account = self.account_manager.get(account_id)
         if account is not None:
@@ -328,27 +283,13 @@ class Dispatcher(dbus.service.Object):
         example:
             import dbus, json
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             features = json.loads(service.GetFeatures('facebook'))
         """
         protocol = protocol_manager.protocols.get(protocol_name)
-        return json.dumps(protocol.get_features())
-
-    @dbus.service.method(DBUS_INTERFACE)
-    def Quit(self):
-        """Shutdown the service.
-
-        example:
-            import dbus
-            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
-            service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.Quit()
-        """
-        log.info('Friends Service is being shutdown')
-        logging.shutdown()
         self.mainloop.quit()
+        return json.dumps(protocol.get_features())
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def URLShorten(self, url):
@@ -360,10 +301,11 @@ class Dispatcher(dbus.service.Object):
             import dbus
             url = 'http://www.example.com/this/is/a/long/url'
             obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/Friends/Service')
+                '/com/canonical/friends/Dispatcher')
             service = dbus.Interface(obj, DBUS_INTERFACE)
             short_url = service.URLShorten(url)
         """
+        self.mainloop.quit()
         service_name = self.settings.get_string('urlshorter')
         log.info('Shortening URL {} with {}'.format(url, service_name))
         if (lookup.is_shortened(url) or

@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -12,9 +12,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-#import setuptools
-#setuptools.use_setuptools()
 
 import sys
 
@@ -38,7 +35,7 @@ setup(
          ['data/com.canonical.friends.gschema.xml'])
         ],
     entry_points = {
-        'console_scripts': ['friends-service = friends.main:main'],
+        'console_scripts': ['friends-dispatcher = friends.main:main'],
         'distutils.commands': [
             'install_service_files = '
                 'friends.utils.install:install_service_files',

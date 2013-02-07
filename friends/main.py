@@ -1,4 +1,4 @@
-# friends-service -- send & receive messages from any social network
+# friends-dispatcher -- send & receive messages from any social network
 # Copyright (C) 2012  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Main friends-service module.
+"""Main friends-dispatcher module.
 
 This gets turned into a script by `python3 setup.py install`.
 """
@@ -33,12 +33,11 @@ from gi.repository import Gio, GLib, GObject
 
 GObject.threads_init(None)
 
-from friends.service.connection import ConnectionMonitor
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
 from friends.utils.avatar import Avatar
-from friends.utils.base import Base, initialize_caches
+from friends.utils.base import _OperationThread, Base, initialize_caches
 from friends.utils.logging import initialize
-from friends.utils.model import prune_model
+from friends.utils.model import Model, prune_model
 from friends.utils.options import Options
 
 
@@ -64,16 +63,24 @@ def main():
             print(class_name)
         return
 
+    if args.test:
+        global Dispatcher
+        from friends.service.mock_service import Dispatcher
+
     # Set up the DBus main loop.
     DBusGMainLoop(set_as_default=True)
     loop = GLib.MainLoop()
 
-    # Disallow multiple instances of friends-service
+    # Our threading implementation needs to know how to quit the
+    # application once all threads have completed.
+    _OperationThread.shutdown = loop.quit
+
+    # Disallow multiple instances of friends-dispatcher
     bus = dbus.SessionBus()
     obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
     iface = dbus.Interface(obj, 'org.freedesktop.DBus')
     if DBUS_INTERFACE in iface.ListNames():
-        sys.exit('friends-service is already running! Abort!')
+        sys.exit('friends-dispatcher is already running! Abort!')
 
     if args.performance:
         try:
@@ -83,12 +90,20 @@ def main():
         else:
             yappi.start()
 
+    # Expire old Avatars. Without this we would never notice when
+    # somebody changes their avatar, we would just keep the stale old
+    # one forever.
+    Avatar.expire_old_avatars()
+
     # Initialize the logging subsystem.
     gsettings = Gio.Settings.new('com.canonical.friends')
     initialize(console=args.console,
                debug=args.debug or gsettings.get_boolean('debug'))
     log = logging.getLogger(__name__)
-    log.info('Friends backend service starting')
+    log.info('Friends backend dispatcher starting')
+
+    # ensure friends-service is available to provide the Dee.SharedModel
+    server = bus.get_object('com.canonical.Friends.Service', '/com/canonical/friends/Service')
 
     # Determine which messages to notify for.
     notify_level = gsettings.get_string('notifications')
@@ -102,11 +117,21 @@ def main():
             'private',
             )
 
-    # Expire old Avatars. Without this we would never notice when
-    # somebody changes their avatar, we would just keep the stale old
-    # one forever.
-    Avatar.expire_old_avatars()
+    # Don't initialize caches until the model is synchronized
+    Model.connect('notify::synchronized', setup, gsettings, loop)
 
+    try:
+        log.info('Starting friends-dispatcher main loop')
+        loop.run()
+    except KeyboardInterrupt:
+        log.info('Stopped friends-dispatcher main loop')
+
+    # This bit doesn't run until after the mainloop exits.
+    if args.performance and yappi is not None:
+        yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
+
+def setup(model, param, gsettings, loop):
+    """Continue friends-dispatcher init after the DeeModel has synced."""
     # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
     # size, because anything larger will have problems being transmitted
     # over DBus. I have conservatively calculated our average row length
@@ -121,24 +146,10 @@ def main():
     # data for the purposes of faster duplicate checks.
     initialize_caches()
 
-    refresh_interval = max(gsettings.get_int('interval'), 5) * 60
-
-    # Load up the various services.  We do it this way so that we retain
-    # references to the service endpoints without pyflakes screaming at us
-    # about unused local variables.
+    # Startup the dispatcher. We assign it to an unused class in order
+    # to avoid pyflakes complaining about unused local variables.
     class services:
-        connection = ConnectionMonitor()
-        dispatcher = Dispatcher(gsettings, loop, refresh_interval)
-
-    try:
-        log.info('Starting friends-service main loop')
-        loop.run()
-    except KeyboardInterrupt:
-        log.info('Stopped friends-service main loop')
-
-    if args.performance and yappi is not None:
-        yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
-
+        dispatcher = Dispatcher(gsettings, loop)
 
 if __name__ == '__main__':
     # Use this with `python3 -m friends.main`

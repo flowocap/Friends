@@ -28,6 +28,9 @@ Build-Depends: dbus-test-runner,
                python3-pkg-resources,
                python3-setuptools,
                shared-mime-info,
+               valac,
+               libdee-dev,
+               dh-autoreconf,
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/friends
 # If you aren't a member of ~super-friends but need to upload packaging changes,
@@ -36,6 +39,14 @@ Vcs-Bzr: https://code.launchpad.net/~super-friends/friends/trunk
 XS-Testsuite: autopkgtest
 
 Package: friends
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         friends-dispatcher,
+Description: Social integration with the desktop
+ Provides social networking integration with the desktop
+
+Package: friends-dispatcher
 Architecture: all
 Depends: gir1.2-dee-1.0,
          gir1.2-ebook-1.2,
