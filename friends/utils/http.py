@@ -104,9 +104,8 @@ class HTTP:
         if not payload:
             raise FriendsError('Got zero-length response from server.')
 
-        if len(payload) < 4:
-            # This doesn't even seem to be a valid JSON response.
-            raise FriendsError('Server response did not contain valid JSON.')
+        if len(payload) < 4 and charset is None:
+            charset = 'utf-8' # Safest assumption
 
         # RFC 4627 $3.  JSON text SHALL be encoded in Unicode.  The default
         # encoding is UTF-8.  Since the first two characters of a JSON text
