@@ -44,10 +44,6 @@ class Dispatcher(dbus.service.Object):
         self._succeed = True
 
     @dbus.service.method(DBUS_INTERFACE)
-    def Contacts(self):
-        pass
-
-    @dbus.service.method(DBUS_INTERFACE)
     def Refresh(self):
         pass
 

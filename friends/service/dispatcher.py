@@ -63,21 +63,6 @@ class Dispatcher(dbus.service.Object):
         self.menu_manager.update_unread_count(self._unread_count)
 
     @dbus.service.method(DBUS_INTERFACE)
-    def Contacts(self):
-        """Download the friends list from each connected protocol.
-
-        These are then stored in EDS.
-        """
-        for account in self.account_manager.get_all():
-            try:
-                account.protocol('contacts')
-            except NotImplementedError:
-                # Not all protocols are expected to implement this.
-                pass
-            else:
-                log.debug('{}: Fetched contacts.'.format(account.id))
-
-    @dbus.service.method(DBUS_INTERFACE)
     def Refresh(self):
         """Download new messages from each connected protocol."""
         self._unread_count = 0
