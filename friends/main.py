@@ -28,8 +28,31 @@ import sys
 import dbus
 import logging
 
+
+# Set up the DBus main loop.
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import Gio, GLib, GObject
+from gi.repository import GLib
+
+DBusGMainLoop(set_as_default=True)
+loop = GLib.MainLoop()
+
+
+# Short-circuit everything else if we are going to enter test-mode.
+from friends.utils.options import Options
+args = Options().parser.parse_args()
+
+if args.test:
+    from friends.service.mock_service import Dispatcher
+    Dispatcher()
+    try:
+        loop.run()
+    except KeyboardInterrupt:
+        pass
+    sys.exit(0)
+
+
+# Continue with normal loading...
+from gi.repository import Gio, GObject
 
 GObject.threads_init(None)
 
@@ -38,7 +61,6 @@ from friends.utils.avatar import Avatar
 from friends.utils.base import _OperationThread, Base, initialize_caches
 from friends.utils.logging import initialize
 from friends.utils.model import Model, prune_model
-from friends.utils.options import Options
 
 
 # Optional performance profiling module.
@@ -52,8 +74,6 @@ log = None
 def main():
     global log
     global yappi
-    # Initialize command line options.
-    args = Options().parser.parse_args()
 
     if args.list_protocols:
         from friends.utils.manager import protocol_manager
@@ -62,14 +82,6 @@ def main():
             package, dot, class_name = cls.__name__.rpartition('.')
             print(class_name)
         return
-
-    if args.test:
-        global Dispatcher
-        from friends.service.mock_service import Dispatcher
-
-    # Set up the DBus main loop.
-    DBusGMainLoop(set_as_default=True)
-    loop = GLib.MainLoop()
 
     # Our threading implementation needs to know how to quit the
     # application once all threads have completed.
@@ -103,7 +115,9 @@ def main():
     log.info('Friends backend dispatcher starting')
 
     # ensure friends-service is available to provide the Dee.SharedModel
-    server = bus.get_object('com.canonical.Friends.Service', '/com/canonical/friends/Service')
+    server = bus.get_object(
+        'com.canonical.Friends.Service',
+        '/com/canonical/friends/Service')
 
     # Determine which messages to notify for.
     notify_level = gsettings.get_string('notifications')
@@ -130,6 +144,7 @@ def main():
     if args.performance and yappi is not None:
         yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
 
+
 def setup(model, param, gsettings, loop):
     """Continue friends-dispatcher init after the DeeModel has synced."""
     # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
@@ -146,10 +161,8 @@ def setup(model, param, gsettings, loop):
     # data for the purposes of faster duplicate checks.
     initialize_caches()
 
-    # Startup the dispatcher. We assign it to an unused class in order
-    # to avoid pyflakes complaining about unused local variables.
-    class services:
-        dispatcher = Dispatcher(gsettings, loop)
+    Dispatcher(gsettings, loop)
+
 
 if __name__ == '__main__':
     # Use this with `python3 -m friends.main`
