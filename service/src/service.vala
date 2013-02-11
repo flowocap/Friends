@@ -23,13 +23,13 @@ private interface Dispatcher : GLib.Object {
 }
 
 [DBus (name = "com.canonical.Friends.Service")]
-public class Master
+public class Master : Object
 {
     private Dee.Model model;
     private Dee.SharedModel shared_model;
     private unowned Dee.ResourceManager resources;
-    private int interval;
     private Dispatcher dispatcher;
+    public int interval { get; set; }
 
     public Master ()
     {
@@ -114,12 +114,7 @@ public class Master
         }
 
         var settings = new Settings ("com.canonical.friends");
-        interval = settings.get_int ("interval").clamp (5,30);
-
-        settings.changed["interval"].connect (() => {
-            interval = settings.get_int ("interval").clamp (5,30);
-            debug ("Interval changed: %d\n", interval);
-        });
+        settings.bind("interval", this, "interval", 0);
 
         Bus.get_proxy.begin<Dispatcher>(BusType.SESSION,
             "com.canonical.Friends.Dispatcher",
