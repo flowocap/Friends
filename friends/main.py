@@ -152,10 +152,10 @@ def setup(model, param, gsettings, loop):
     # over DBus. I have conservatively calculated our average row length
     # to be 500 bytes, which means that we shouldn't let our model exceed
     # approximately 16,000 rows. However, that seems like a lot to me, so
-    # I'm going to set it to 8,000 for now and we can tweak this later if
-    # necessary. Do you really need more than 8,000 tweets in memory at
+    # I'm going to set it to 2,000 for now and we can tweak this later if
+    # necessary. Do you really need more than 2,000 tweets in memory at
     # once? What are you doing with all these tweets?
-    prune_model(8000)
+    prune_model(2000)
 
     # This builds two different indexes of our persisted Dee.Model
     # data for the purposes of faster duplicate checks.
