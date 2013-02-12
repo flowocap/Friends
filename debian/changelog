@@ -1,3 +1,10 @@
+friends (0.1.1bzr13.02.12-0raring2) raring; urgency=low
+
+  * debian/control
+    - Make friends-dispatcher Conflicts/Breaks friends << 0.1.1bzr13.02.12
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 12 Feb 2013 12:58:48 -0500
+
 friends (0.1.1bzr13.02.12-0raring1) raring; urgency=low
 
   * New snapshot

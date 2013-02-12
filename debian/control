@@ -48,6 +48,8 @@ Description: Social integration with the desktop
 
 Package: friends-dispatcher
 Architecture: all
+Breaks: friends (<< 0.1.1bzr13.02.12)
+Conflicts: friends (<< 0.1.1bzr13.02.12)
 Depends: gir1.2-dee-1.0,
          gir1.2-ebook-1.2,
          gir1.2-edataserver-1.2,
