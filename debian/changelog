@@ -1,4 +1,10 @@
-friends (0.1.1bzr13.01.16-0ubuntu1) UNRELEASED; urgency=low
+friends (0.1.1bzr13.02.12-0raring1) raring; urgency=low
+
+  * New snapshot
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 12 Feb 2013 11:52:25 -0500
+
+friends (0.1.1bzr13.01.16-0ubuntu1) raring; urgency=low
 
   * Version bump to fix launchpad recipe builds.
 
