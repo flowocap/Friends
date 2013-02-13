@@ -22,7 +22,7 @@ override_dh_auto_install:
 	dh_install --list-missing
 
 override_dh_auto_test:
-	dbus-test-runner -t make -p check -m 60
+	dbus-test-runner -t make -p check -m 300
 
 %:
 	dh $@ --with python3,autoreconf

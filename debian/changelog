@@ -1,3 +1,10 @@
+friends (0.1.1bzr13.02.13-0raring1) raring; urgency=low
+
+  * debian/rules
+    - increase dbus-test-runner timeout to 300 
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 13 Feb 2013 00:17:27 -0500
+
 friends (0.1.1bzr13.02.12-0raring2) raring; urgency=low
 
   * debian/control
