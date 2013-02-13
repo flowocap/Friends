@@ -1,5 +1,5 @@
 # friends-dispatcher -- send & receive messages from any social network
-# Copyright (C) 2012  Canonical Ltd
+# Copyright (C) 2013  Canonical Ltd
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,28 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""snipurl.com URL shortener for Friends
-
-macno (Michele Azzolari) - 02/13/2008
-"""
+"""linkee.com URL shortener for Friends"""
 
 __all__ = [
-    'PROTOCOL_INFO',
     'URLShortener',
     ]
 
 
-from friends.shorteners.base import ProtocolBase, ShortenerBase
-
-
-class _PROTOCOL_INFO(ProtocolBase):
-    name = 'snipurl.com'
-    version = 0.1
-    fqdn = 'http://snipr.com'
-
-
-PROTOCOL_INFO = _PROTOCOL_INFO()
+from friends.shorteners.base import ShortenerBase
 
 
 class URLShortener(ShortenerBase):
-    URL_TEMPLATE = 'http://snipr.com/site/snip?r=simple&link={}'
+    URL_TEMPLATE = 'http://api.linkee.com/1.0/shorten?format=text&input={}'
+    fqdn = 'http://linkee.com'
+    name = 'linkee.com'

@@ -16,31 +16,17 @@
 """Convenient base class for URL shorteners."""
 
 __all__ = [
-    'ProtocolBase',
     'ShortenerBase',
     ]
 
 
-from urllib.request import urlopen
-
-
-class ProtocolBase:
-    """Base class for PROTOCOL_INFO."""
-
-    name = None
-    version = None
-    fqdn = None
-
-    def __getitem__(self, name):
-        try:
-            return getattr(self, name)
-        except AttributeError as error:
-            raise KeyError from error
+from friends.utils.http import Downloader
 
 
 class ShortenerBase:
     URL_TEMPLATE = None
+    name = None
+    fqdn = None
 
     def shorten(self, url):
-        with urlopen(self.URL_TEMPLATE.format(url)) as page:
-            return page.read()
+        return Downloader(self.URL_TEMPLATE.format(url)).get_string().rstrip()

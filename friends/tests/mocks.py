@@ -19,7 +19,6 @@
 __all__ = [
     'FakeAuth',
     'FakeAccount',
-    'FakeOpen',
     'FakeSoupMessage',
     'LogMock',
     'SettingsIterMock',
@@ -129,31 +128,6 @@ class FakeSoupMessage:
         self.method = method
         self.url = url
         return self
-
-
-# A test double which shortens the given URL by returning the hex hash of the
-# source URL.
-class FakeOpen:
-    """Mimic the object returned from urlopen()."""
-
-    def __init__(self, url):
-        # hashlib requires the input to be bytes.
-        if isinstance(url, str):
-            self.url = url.encode('utf-8')
-        else:
-            assert isinstance(url, bytes)
-            self.url = url
-
-    def read(self):
-        return hashlib.md5(self.url).hexdigest()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args, **kws):
-        # This must pretend to be a context manager, but there's no resource
-        # that needs closing.
-        pass
 
 
 class SettingsIterMock:

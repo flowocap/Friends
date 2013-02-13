@@ -23,21 +23,14 @@ __all__ = [
     ]
 
 
-from friends.shorteners import cligs
-from friends.shorteners import isgd
-#from friends.shorteners import snipurlcom
-from friends.shorteners import tinyurlcom
-from friends.shorteners import ur1ca
-#from friends.shorteners import zima
+from friends.shorteners import isgd, ougd, tinyurlcom, linkeecom
 
 
 PROTOCOLS = {
-    'cli.gs': cligs,
     'is.gd': isgd,
-    #'snipurl.com': snipurlcom,
+    'ou.gd': ougd,
+    'linkee.com': linkeecom,
     'tinyurl.com': tinyurlcom,
-    'ur1.ca': ur1ca,
-    #'zi.ma': zima,
     }
 
 
@@ -49,8 +42,9 @@ class NoShortener:
     unchanged.
     """
 
-    def shorten(self, url):
-        return url
+    class URLShortener:
+        def shorten(self, url):
+            return url
 
 
 def lookup(name):
@@ -60,16 +54,13 @@ def lookup(name):
     :type name: string
     :return: An object supporting the `shorten(url)` method.
     """
-    module = PROTOCOLS.get(name)
-    if module is None:
-        return NoShortener()
-    return module.URLShortener()
+    return PROTOCOLS.get(name, NoShortener).URLShortener()
 
 
 def is_shortened(url):
     """True if the URL has been shortened by a known shortener."""
     # What if we tried to URL shorten http://tinyurl.com/something???
     for module in PROTOCOLS.values():
-        if url.startswith(module.PROTOCOL_INFO.fqdn):
+        if url.startswith(module.URLShortener.fqdn):
             return True
     return False

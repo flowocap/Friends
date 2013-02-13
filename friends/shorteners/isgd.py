@@ -19,22 +19,14 @@ macno (Michele Azzolari) - 02/13/2008
 """
 
 __all__ = [
-    'PROTOCOL_INFO',
     'URLShortener',
     ]
 
 
-from friends.shorteners.base import ProtocolBase, ShortenerBase
-
-
-class _PROTOCOL_INFO(ProtocolBase):
-    name = 'is.gd'
-    version = 0.1
-    fqdn = 'http://is.gd'
-
-
-PROTOCOL_INFO = _PROTOCOL_INFO()
+from friends.shorteners.base import ShortenerBase
 
 
 class URLShortener(ShortenerBase):
     URL_TEMPLATE = 'http://is.gd/api.php?longurl={}'
+    fqdn = 'http://is.gd'
+    name = 'is.gd'

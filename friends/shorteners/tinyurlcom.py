@@ -19,22 +19,14 @@ macno (Michele Azzolari) - 02/13/2008
 """
 
 __all__ = [
-    'PROTOCOL_INFO',
     'URLShortener',
     ]
 
 
-from friends.shorteners.base import ProtocolBase, ShortenerBase
-
-
-class _PROTOCOL_INFO(ProtocolBase):
-    name = 'tinyurl.com'
-    version = 0.1
-    fqdn = 'http://tinyurl.com'
-
-
-PROTOCOL_INFO = _PROTOCOL_INFO()
+from friends.shorteners.base import ShortenerBase
 
 
 class URLShortener(ShortenerBase):
     URL_TEMPLATE = 'http://tinyurl.com/api-create.php?url={}'
+    fqdn = 'http://tinyurl.com'
+    name = 'tinyurl.com'
