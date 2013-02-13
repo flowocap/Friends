@@ -487,6 +487,10 @@ Facebook UID: None
         result = self.protocol._get_eds_source('test-facebook-contacts')
         self.assertEqual(result, 1345245)
 
+    @mock.patch('friends.utils.base.Base._get_eds_source_registry',
+                mock.Mock())
+    @mock.patch('friends.utils.base.Base._source_registry',
+                mock.Mock(**{'list_sources.return_value': []}))
     def test_unsuccessful_get_eds_source(self, *mocks):
         result = self.protocol._get_eds_source('test-incorrect-contacts')
         self.assertIsNone(result)

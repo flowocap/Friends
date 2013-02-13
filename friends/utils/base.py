@@ -33,7 +33,7 @@ from datetime import datetime
 
 from gi.repository import GLib, GObject, EDataServer, EBook
 
-from friends.errors import ContactsError
+from friends.errors import FriendsError, ContactsError
 from friends.utils.authentication import Authentication
 from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
 from friends.utils.model import Model, persist_model
@@ -199,6 +199,9 @@ class Base:
     The code in this class has been tested against Facebook, Twitter,
     Flickr, Identica, and Foursquare, and works well with all of them.
     """
+    # Used for EDS stuff.
+    _source_registry = None
+
     # This number serves a guideline (not a hard limit) for the protocol
     # subclasses to download in each refresh.
     _DOWNLOAD_LIMIT = 50
@@ -208,7 +211,6 @@ class Base:
     _do_notify = lambda protocol, stream: False
 
     def __init__(self, account):
-        self._source_registry = EDataServer.SourceRegistry.new_sync(None)
         self._account = account
 
     def _whoami(self, result):
@@ -535,7 +537,12 @@ class Base:
         if not success:
             raise ContactsError('Failed to save contact {!r}', contact)
 
+    def _get_eds_source_registry(self):
+        if self._source_registry is None:
+            self._source_registry = EDataServer.SourceRegistry.new_sync(None)
+
     def _create_eds_source(self, online_service):
+        self._get_eds_source_registry()
         source = EDataServer.Source.new(None, None)
         source.set_display_name(online_service)
         source.set_parent('local-stub')
@@ -552,6 +559,7 @@ class Base:
             return self._source_registry.ref_source(source.get_uid())
 
     def _get_eds_source(self, online_service):
+        self._get_eds_source_registry()
         for previous_source in self._source_registry.list_sources(None):
             if previous_source.get_display_name() == online_service:
                 return self._source_registry.ref_source(
