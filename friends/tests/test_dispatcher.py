@@ -183,7 +183,7 @@ class TestDispatcher(unittest.TestCase):
                           'private', 'receive', 'retweet', 'search', 'send',
                           'send_private', 'send_thread', 'unfollow', 'user'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('flickr')),
-                         ['receive'])
+                         ['receive', 'upload'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('foursquare')),
                          ['receive'])
 

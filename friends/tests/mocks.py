@@ -64,6 +64,7 @@ class FakeAccount:
     def __init__(self, service=None):
         self.access_token = None
         self.secret_token = None
+        self.user_full_name = None
         self.user_name = None
         self.user_id = None
         self.auth = FakeAuth()

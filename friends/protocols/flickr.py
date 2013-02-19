@@ -15,17 +15,21 @@
 
 """Flickr plugin."""
 
+
 __all__ = [
     'Flickr',
     ]
 
 
+import re
+import time
 import logging
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.http import Downloader
+from friends.utils.http import Downloader, Uploader
 from friends.utils.time import iso8601utc, parsetime
+from friends.errors import FriendsError
 
 
 log = logging.getLogger(__name__)
@@ -33,6 +37,9 @@ log = logging.getLogger(__name__)
 
 # http://www.flickr.com/services/api/request.rest.html
 REST_SERVER = 'http://api.flickr.com/services/rest'
+
+# http://www.flickr.com/services/api/upload.api.html
+UPLOAD_SERVER = 'http://api.flickr.com/services/upload'
 
 # http://www.flickr.com/services/api/misc.buddyicons.html
 FARM = 'http://farm{farm}.static.flickr.com/{server}/'
@@ -42,12 +49,17 @@ IMAGE_PAGE_URL = 'http://www.flickr.com/photos/{owner}/{nsid}'
 PEOPLE_URL = 'http://www.flickr.com/people/{owner}'
 
 
+# Some regex for parsing XML when JSON is not available.
+PHOTOID = re.compile('<photoid>(\d+)</photoid>').search
+
+
 class Flickr(Base):
     def _whoami(self, authdata):
         """Identify the authenticating user."""
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('user_nsid')
         self._account.user_name = authdata.get('username')
+        self._account.user_full_name = authdata.get('fullname')
 
     def _get_url(self, params=None):
         """Access the Flickr API with correct OAuth signed headers."""
@@ -65,7 +77,7 @@ class Flickr(Base):
             method=method,
             ).get_json()
 
-# http://www.flickr.com/services/api/flickr.photos.getContactsPublicPhotos.html
+# http://www.flickr.com/services/api/flickr.photos.getContactsPhotos.html
     @feature
     def receive(self):
         """Download all of a user's public photos."""
@@ -132,3 +144,55 @@ class Flickr(Base):
                 link_picture=img_src,
                 link_icon=img_thumb)
         return self._get_n_rows()
+
+# http://www.flickr.com/services/api/upload.api.html
+    @feature
+    def upload(self, picture_uri, title=''):
+        """Upload local or remote image or video to album."""
+        self._get_access_token()
+
+        args = dict(
+            api_key=self._account.auth.parameters.get('ConsumerKey'),
+            title=title,
+            )
+
+        headers = self._get_oauth_headers(
+            method='POST',
+            url=UPLOAD_SERVER,
+            data=args,
+            )
+
+        response = Uploader(
+            UPLOAD_SERVER,
+            picture_uri,
+            picture_key='photo',
+            headers=headers,
+            **args
+            ).get_string()
+
+        try:
+            post_id = PHOTOID(response).group(1)
+        except AttributeError:
+            raise FriendsError(response)
+        else:
+            destination_url = IMAGE_PAGE_URL.format(
+                owner=self._account.user_name,
+                nsid=post_id,
+                )
+            self._publish(
+                from_me=True,
+                stream='images',
+                message_id=post_id,
+                message=title,
+                sender=self._account.user_full_name,
+                sender_id=self._account.user_id,
+                sender_nick=self._account.user_name,
+                timestamp=iso8601utc(int(time.time())),
+                url=destination_url,
+                # FIXME: need to figure out farm & server from Flickr,
+                # This will require a new HTTP request because it's
+                # not in the XML.
+                # icon_uri=Avatar.get_image(
+                #     BUDDY_ICON_URL.format(nsid=self._account.user_id)),
+                )
+            return destination_url

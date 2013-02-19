@@ -151,10 +151,9 @@ class Downloader(HTTP):
                  headers=None, rate_limiter=None):
         self.url = url
         self.method = method
-        self.params = ({} if params is None else params)
-        self.headers = ({} if headers is None else headers)
-        self._rate_limiter = (BaseRateLimiter() if rate_limiter is None
-                              else rate_limiter)
+        self.params = params or {}
+        self.headers = headers or {}
+        self._rate_limiter = rate_limiter or BaseRateLimiter()
 
     def _build_request(self):
         """Return a libsoup message, with all the right headers.
@@ -192,12 +191,14 @@ class Downloader(HTTP):
 class Uploader(HTTP):
     """Convenient uploading wrapper."""
 
-    def __init__(self, url, filename, desc, picture_key, desc_key, **kwargs):
+    def __init__(self, url, filename, desc='', picture_key=None, desc_key=None,
+                 headers=None, **kwargs):
         self.url = url
         self.filename = filename
         self.description = desc
         self.picture_key = picture_key
         self.description_key = desc_key
+        self.headers = headers or {}
         self.extra_keys = kwargs
         self._rate_limiter = BaseRateLimiter()
 
@@ -209,8 +210,11 @@ class Uploader(HTTP):
         multipart = Soup.Multipart.new('multipart/form-data')
         for key, value in self.extra_keys.items():
             multipart.append_form_string(key, value)
-        multipart.append_form_string(self.description_key, self.description)
+        if self.description and self.description_key:
+            multipart.append_form_string(self.description_key, self.description)
         multipart.append_form_file(
            self.picture_key, self.filename, 'application/octet-stream', body)
         message = Soup.form_request_new_from_multipart(self.url, multipart)
+        for header, value in self.headers.items():
+            message.request_headers.append(header, value)
         return message
