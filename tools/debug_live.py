@@ -40,11 +40,13 @@ log = logging.getLogger('friends.debug_live')
 
 loop = GLib.MainLoop()
 
+
 def row_added(model, itr):
     row = model.get_row(itr)
     print(row)
     log.info('ROWS: {}'.format(len(model)))
     print()
+
 
 def setup(model, signal, protocol, args):
     _OperationThread.shutdown = loop.quit
@@ -64,6 +66,7 @@ def setup(model, signal, protocol, args):
     if not found:
         log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
         loop.quit()
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
