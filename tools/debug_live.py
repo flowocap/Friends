@@ -31,11 +31,14 @@ from friends.utils.logging import initialize
 initialize(debug=True, console=True)
 
 from friends.utils.account import AccountManager
-from friends.utils.base import initialize_caches
+from friends.utils.base import initialize_caches, _OperationThread
 from friends.utils.model import Model
 
 
 log = logging.getLogger('friends.debug_live')
+
+
+loop = GLib.MainLoop()
 
 
 def row_added(model, itr):
@@ -45,28 +48,32 @@ def row_added(model, itr):
     print()
 
 
-if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        sys.exit(__doc__)
+def setup(model, signal, protocol, args):
+    _OperationThread.shutdown = loop.quit
 
     initialize_caches()
-
-    protocol = sys.argv[1]
-    args = sys.argv[2:]
 
     found = False
     a = AccountManager()
 
     Model.connect('row-added', row_added)
 
-    for account_id, account in a._accounts.items():
-        if account_id.endswith(protocol):
+    for account in a._accounts.values():
+        if account.protocol.__class__.__name__.lower() == protocol.lower():
             found = True
             account.protocol(*args)
 
     if not found:
         log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
-    else:
-        loop = GLib.MainLoop()
-        GLib.timeout_add_seconds(10, loop.quit)
-        loop.run()
+        loop.quit()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        sys.exit(__doc__)
+
+    protocol = sys.argv[1]
+    args = sys.argv[2:]
+
+    Model.connect('notify::synchronized', setup, protocol, args)
+    loop.run()
