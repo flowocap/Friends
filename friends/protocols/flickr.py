@@ -31,10 +31,6 @@ from friends.utils.time import iso8601utc, parsetime
 log = logging.getLogger(__name__)
 
 
-# This is contact information for the Flickr REST service.
-# http://www.flickr.com/services/api/
-API_KEY = '36f660117e6555a9cbda4309cfaf72d0'
-
 # http://www.flickr.com/services/api/request.rest.html
 REST_SERVER = 'http://api.flickr.com/services/rest'
 
@@ -52,6 +48,7 @@ class Flickr(Base):
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('user_nsid')
         self._account.user_name = authdata.get('username')
+        self._account.api_key = self._account.auth.parameters.get('ConsumerKey')
 
 # http://www.flickr.com/services/api/flickr.photos.getContactsPublicPhotos.html
     @feature
@@ -61,7 +58,7 @@ class Flickr(Base):
         self._get_access_token()
 
         GET_arguments = dict(
-            api_key         = API_KEY,
+            api_key         = self._account.api_key,
             user_id         = self._account.user_id,
             method          = 'flickr.photos.getContactsPublicPhotos',
             format          = 'json',
