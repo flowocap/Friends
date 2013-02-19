@@ -48,25 +48,39 @@ class Flickr(Base):
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('user_nsid')
         self._account.user_name = authdata.get('username')
-        self._account.api_key = self._account.auth.parameters.get('ConsumerKey')
+
+    def _get_url(self, params=None):
+        """Access the Flickr API with correct OAuth signed headers."""
+        method = 'GET'
+        headers = self._get_oauth_headers(
+            method=method,
+            url=REST_SERVER,
+            data=params or {},
+            )
+
+        return Downloader(
+            REST_SERVER,
+            params=params,
+            headers=headers,
+            method=method,
+            ).get_json()
 
 # http://www.flickr.com/services/api/flickr.photos.getContactsPublicPhotos.html
     @feature
     def receive(self):
         """Download all of a user's public photos."""
-        # This triggers logging in, if necessary.
+        # Trigger loggin in.
         self._get_access_token()
 
-        GET_arguments = dict(
-            api_key         = self._account.api_key,
-            user_id         = self._account.user_id,
-            method          = 'flickr.photos.getContactsPublicPhotos',
-            format          = 'json',
-            nojsoncallback  = '1',
-            extras          = 'date_upload,owner_name,icon_server',
+        args = dict(
+            api_key=self._account.auth.parameters.get('ConsumerKey'),
+            method='flickr.photos.getContactsPhotos',
+            format='json',
+            nojsoncallback='1',
+            extras='date_upload,owner_name,icon_server',
             )
 
-        response = Downloader(REST_SERVER, GET_arguments).get_json()
+        response = self._get_url(args)
         for data in response.get('photos', {}).get('photo', []):
             # Pre-calculate some values to publish.
             username = data.get('username', '')

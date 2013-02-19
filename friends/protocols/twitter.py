@@ -25,7 +25,6 @@ __all__ = [
 import time
 import logging
 
-from oauthlib.oauth1 import Client
 from urllib.parse import quote
 
 from friends.utils.avatar import Avatar
@@ -79,24 +78,11 @@ class Twitter(Base):
         do_post = data is not None
         method = 'POST' if do_post else 'GET'
 
-        # "Client" == "Consumer" in oauthlib parlance.
-        client_key = self._account.auth.parameters['ConsumerKey']
-        client_secret = self._account.auth.parameters['ConsumerSecret']
-
-        # "resource_owner" == secret and token.
-        resource_owner_key = self._get_access_token()
-        resource_owner_secret = self._account.secret_token
-        oauth_client = Client(client_key, client_secret,
-                              resource_owner_key, resource_owner_secret)
-
-        headers = {}
-        if do_post:
-            headers['Content-Type'] = 'application/x-www-form-urlencoded'
-
-        # All we care about is the headers, which will contain the
-        # Authorization header necessary to satisfy OAuth.
-        uri, headers, body = oauth_client.sign(
-            url, body=data, headers=headers, http_method=method)
+        headers = self._get_oauth_headers(
+            method=method,
+            url=url,
+            data=data,
+            )
 
         return Downloader(
             url, params=data, headers=headers, method=method,

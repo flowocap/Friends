@@ -45,6 +45,7 @@ class TestFlickr(unittest.TestCase):
         self.maxDiff = None
         self.account = FakeAccount()
         self.protocol = Flickr(self.account)
+        self.protocol._get_oauth_headers = lambda *ignore, **kwignore: {}
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.flickr')
 
@@ -129,16 +130,17 @@ class TestFlickr(unittest.TestCase):
         token.assert_called_once_with()
         # GET was called once.
         self.assertEqual(len(all_call_args), 1)
-        url, GET_args = all_call_args[0][0]
-        self.assertEqual(url, 'http://api.flickr.com/services/rest')
-        self.assertEqual(GET_args, dict(
-            extras='date_upload,owner_name,icon_server',
-            user_id=None,
-            format='json',
-            nojsoncallback='1',
-            api_key='36f660117e6555a9cbda4309cfaf72d0',
-            method='flickr.photos.getContactsPublicPhotos',
-            ))
+        cm.assert_called_once_with(
+            'http://api.flickr.com/services/rest',
+            method='GET',
+            params=dict(
+                extras='date_upload,owner_name,icon_server',
+                format='json',
+                nojsoncallback='1',
+                api_key='fake',
+                method='flickr.photos.getContactsPhotos',
+                ),
+            headers={})
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
