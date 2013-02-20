@@ -50,31 +50,56 @@ public class Master : Object
             debug ("Failed to load model from resource manager: %s", e.message);
         }
 
-        if (_m is Dee.Model)
+        string[] SCHEMA = {"aas",
+                           "s",
+                           "s",
+                           "s",
+                           "s",
+                           "b",
+                           "s",
+                           "s",
+                           "s",
+                           "s",
+                           "d",
+                           "b",
+                           "s",
+                           "s",
+                           "s",
+                           "s",
+                           "s",
+                           "s"};
+
+        bool schemaReset = false;
+
+        if (_m is Dee.Model && !schemaReset)
         {
             debug ("Got a valid model");
-            model = _m;
+            // Compare columns from cached model's schema
+            string[] _SCHEMA = _m.get_schema ();
+            if (_SCHEMA.length != SCHEMA.length)
+                schemaReset = true; 
+            else
+            {
+                for (int i=0; i < _SCHEMA.length;i++ )
+                {
+                    if (_SCHEMA[i] != SCHEMA[i])
+                    {
+                        debug ("SCHEMA MISMATCH");
+                        schemaReset = true;
+                    }
+                  
+                }
+            }
+            if (!schemaReset)
+                model = _m;
+            else
+            {
+                debug ("Setting schema");
+                model.set_schema_full (SCHEMA);
+            }
         } else {
             debug ("Setting schema for a new model");
-            model.set_schema (
-                              "aas",
-                              "s",
-                              "s",
-                              "s",
-                              "s",
-                              "b",
-                              "s",
-                              "s",
-                              "s",
-                              "s",
-                              "d",
-                              "b",
-                              "s",
-                              "s",
-                              "s",
-                              "s",
-                              "s",
-                              "s");
+            model.set_schema_full (SCHEMA);
         }
 
         if (model is Dee.Model)
