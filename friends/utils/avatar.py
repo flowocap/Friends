@@ -83,6 +83,7 @@ class Avatar:
     @staticmethod
     def expire_old_avatars():
         """Evict old files from the cache."""
+        log.debug('Checking if anything needs to expire.')
         limit = date.today() - CACHE_AGE
         for filename in os.listdir(CACHE_DIR):
             path = os.path.join(CACHE_DIR, filename)

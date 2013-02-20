@@ -102,11 +102,6 @@ def main():
         else:
             yappi.start()
 
-    # Expire old Avatars. Without this we would never notice when
-    # somebody changes their avatar, we would just keep the stale old
-    # one forever.
-    Avatar.expire_old_avatars()
-
     # Initialize the logging subsystem.
     gsettings = Gio.Settings.new('com.canonical.friends')
     initialize(console=args.console,

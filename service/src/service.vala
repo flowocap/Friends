@@ -20,6 +20,13 @@
 [DBus (name = "com.canonical.Friends.Dispatcher")]
 private interface Dispatcher : GLib.Object {
         public abstract void Refresh () throws GLib.IOError;
+        public abstract void ExpireAvatars () throws GLib.IOError;
+        public abstract async void Do (
+            string action,
+            string account_id,
+            string message_id,
+            out string result
+            ) throws GLib.IOError;
 }
 
 [DBus (name = "com.canonical.Friends.Service")]
@@ -109,7 +116,7 @@ public class Master : Object
                 shared_model.flush_revision_queue();
                 debug ("Storing model with %u rows", model.get_n_rows());
                 resources.store ((Dee.SequenceModel)model, "com.canonical.Friends.Streams");
-                return true;
+                return false;
             });
         }
 
@@ -126,6 +133,8 @@ public class Master : Object
     {
         try {
             dispatcher = Bus.get_proxy.end(res);
+            Timeout.add_seconds (120, fetch_contacts);
+            Timeout.add_seconds (300, expire_avatars);
             var ret = on_refresh ();
         } catch (IOError e) {
             warning (e.message);
@@ -135,11 +144,41 @@ public class Master : Object
     bool on_refresh ()
     {
         debug ("Interval is %d", interval);
+        // By default, this happens immediately on startup, and then
+        // every 15 minutes thereafter.
         Timeout.add_seconds ((interval * 60), on_refresh);
         try {
             dispatcher.Refresh ();
         } catch (IOError e) {
             warning ("Failed to refresh - %s", e.message);
+        }
+        return false;
+    }
+
+    bool fetch_contacts ()
+    {
+        debug ("Fetching contacts...");
+        // By default, this happens 2 minutes after startup, and then
+        // every 24 hours thereafter.
+        Timeout.add_seconds (86400, fetch_contacts);
+        try {
+            dispatcher.Do ("contacts", "", "");
+        } catch (IOError e) {
+            warning ("Failed to fetch contacts - %s", e.message);
+        }
+        return false;
+    }
+
+    bool expire_avatars ()
+    {
+        debug ("Expiring old avatars...");
+        // By default, this happens 5 minutes after startup, and then
+        // every 7 days thereafter.
+        Timeout.add_seconds (604800, expire_avatars);
+        try {
+            dispatcher.ExpireAvatars ();
+        } catch (IOError e) {
+            warning ("Failed to expire avatars - %s", e.message);
         }
         return false;
     }

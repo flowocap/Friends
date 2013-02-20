@@ -29,6 +29,7 @@ import dbus.service
 
 from gi.repository import GLib
 
+from friends.utils.avatar import Avatar
 from friends.utils.account import AccountManager
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
@@ -91,7 +92,7 @@ class Dispatcher(dbus.service.Object):
             service.ClearIndicators()
         """
         self.menu_manager.update_unread_count(0)
-        self.mainloop.quit()
+        GLib.idle_add(self.mainloop.quit)
 
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
@@ -273,7 +274,7 @@ class Dispatcher(dbus.service.Object):
             features = json.loads(service.GetFeatures('facebook'))
         """
         protocol = protocol_manager.protocols.get(protocol_name)
-        self.mainloop.quit()
+        GLib.idle_add(self.mainloop.quit)
         return json.dumps(protocol.get_features())
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
@@ -290,7 +291,7 @@ class Dispatcher(dbus.service.Object):
             service = dbus.Interface(obj, DBUS_INTERFACE)
             short_url = service.URLShorten(url)
         """
-        self.mainloop.quit()
+        GLib.idle_add(self.mainloop.quit)
         service_name = self.settings.get_string('urlshorter')
         log.info('Shortening URL {} with {}'.format(url, service_name))
         if (lookup.is_shortened(url) or
@@ -303,3 +304,8 @@ class Dispatcher(dbus.service.Object):
         except Exception:
             log.exception('URL shortening class: {}'.format(service))
             return url
+
+    @dbus.service.method(DBUS_INTERFACE)
+    def ExpireAvatars(self):
+        Avatar.expire_old_avatars()
+        GLib.idle_add(self.mainloop.quit)
