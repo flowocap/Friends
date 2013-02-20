@@ -54,7 +54,7 @@ NEWLINE = '\n'
 class FakeAuth:
     id = 'fakeauth id'
     method = 'fakeauth method'
-    parameters = 'fakeauth parameters'
+    parameters = {'ConsumerKey': 'fake', 'ConsumerSecret': 'alsofake'}
     mechanism = 'fakeauth mechanism'
 
 
@@ -63,6 +63,8 @@ class FakeAccount:
 
     def __init__(self, service=None):
         self.access_token = None
+        self.secret_token = None
+        self.user_full_name = None
         self.user_name = None
         self.user_id = None
         self.auth = FakeAuth()

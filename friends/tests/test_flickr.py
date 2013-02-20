@@ -24,7 +24,7 @@ import unittest
 
 from gi.repository import Dee
 
-from friends.errors import AuthorizationError
+from friends.errors import AuthorizationError, FriendsError
 from friends.protocols.flickr import Flickr
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
@@ -45,6 +45,7 @@ class TestFlickr(unittest.TestCase):
         self.maxDiff = None
         self.account = FakeAccount()
         self.protocol = Flickr(self.account)
+        self.protocol._get_oauth_headers = lambda *ignore, **kwignore: {}
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.flickr')
 
@@ -55,7 +56,7 @@ class TestFlickr(unittest.TestCase):
 
     def test_features(self):
         # The set of public features.
-        self.assertEqual(Flickr.get_features(), ['receive'])
+        self.assertEqual(Flickr.get_features(), ['receive', 'upload'])
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -129,16 +130,17 @@ class TestFlickr(unittest.TestCase):
         token.assert_called_once_with()
         # GET was called once.
         self.assertEqual(len(all_call_args), 1)
-        url, GET_args = all_call_args[0][0]
-        self.assertEqual(url, 'http://api.flickr.com/services/rest')
-        self.assertEqual(GET_args, dict(
-            extras='date_upload,owner_name,icon_server',
-            user_id=None,
-            format='json',
-            nojsoncallback='1',
-            api_key='36f660117e6555a9cbda4309cfaf72d0',
-            method='flickr.photos.getContactsPublicPhotos',
-            ))
+        cm.assert_called_once_with(
+            'http://api.flickr.com/services/rest',
+            method='GET',
+            params=dict(
+                extras='date_upload,owner_name,icon_server',
+                format='json',
+                nojsoncallback='1',
+                api_key='fake',
+                method='flickr.photos.getContactsPhotos',
+                ),
+            headers={})
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
@@ -227,3 +229,52 @@ class TestFlickr(unittest.TestCase):
              'cat',
              'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg',
              ])
+
+    @mock.patch('friends.utils.http.Soup.form_request_new_from_multipart',
+                lambda *ignore: FakeSoupMessage('friends.tests.data',
+                                                'flickr-xml.dat'))
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Gio.File')
+    @mock.patch('friends.protocols.flickr.time.time', lambda: 1361292793)
+    def test_upload(self, gfile):
+        self.account.user_name = 'freddyjimbobjones'
+        gfile.new_for_uri().load_contents.return_value = [True, 'data'.encode()]
+        token = self.protocol._get_access_token = mock.Mock()
+        publish = self.protocol._publish = mock.Mock()
+
+        self.assertEqual(
+            self.protocol.upload(
+                'file:///path/to/some.jpg',
+                'Beautiful photograph!'),
+            'http://www.flickr.com/photos/freddyjimbobjones/8488552823')
+
+        token.assert_called_with()
+        publish.assert_called_with(
+            message='Beautiful photograph!',
+            timestamp='2013-02-19T16:53:13Z',
+            stream='images',
+            message_id='8488552823',
+            from_me=True,
+            sender=None,
+            sender_nick='freddyjimbobjones',
+            url='http://www.flickr.com/photos/freddyjimbobjones/8488552823',
+            sender_id=None)
+
+    @mock.patch('friends.utils.http.Soup.form_request_new_from_multipart',
+                lambda *ignore: FakeSoupMessage('friends.tests.data',
+                                                'flickr-xml-error.dat'))
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Gio.File')
+    def test_failing_upload(self, gfile):
+        gfile.new_for_uri().load_contents.return_value = [True, 'data'.encode()]
+        token = self.protocol._get_access_token = mock.Mock()
+        publish = self.protocol._publish = mock.Mock()
+
+        self.assertRaises(
+            FriendsError,
+            self.protocol.upload,
+            'file:///path/to/some.jpg',
+            'Beautiful photograph!')
+
+        token.assert_called_with()
+        self.assertEqual(publish.call_count, 0)

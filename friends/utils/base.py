@@ -30,6 +30,7 @@ import logging
 import threading
 
 from datetime import datetime
+from oauthlib.oauth1 import Client
 
 from gi.repository import GLib, GObject, EDataServer, EBook
 
@@ -520,6 +521,29 @@ class Base:
         self._account.access_token = result.get('AccessToken')
         self._whoami(result)
         log.debug('{} UID: {}'.format(protocol, self._account.user_id))
+
+    def _get_oauth_headers(self, method, url, data=None, headers=None):
+        """Basic wrapper around oauthlib that we use for Twitter and Flickr."""
+        # "Client" == "Consumer" in oauthlib parlance.
+        client_key = self._account.auth.parameters['ConsumerKey']
+        client_secret = self._account.auth.parameters['ConsumerSecret']
+
+        # "resource_owner" == secret and token.
+        resource_owner_key = self._get_access_token()
+        resource_owner_secret = self._account.secret_token
+        oauth_client = Client(client_key, client_secret,
+                              resource_owner_key, resource_owner_secret)
+
+        headers = headers or {}
+        if data is not None:
+            headers['Content-Type'] = 'application/x-www-form-urlencoded'
+
+        # All we care about is the headers, which will contain the
+        # Authorization header necessary to satisfy OAuth.
+        uri, headers, body = oauth_client.sign(
+            url, body=data, headers=headers or {}, http_method=method)
+
+        return headers
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)
