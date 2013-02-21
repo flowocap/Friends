@@ -1,3 +1,9 @@
+friends (0.1.1bzr13.02.21-0ubuntu1) raring; urgency=low
+
+  * Upload for Ubuntu
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Thu, 21 Feb 2013 22:56:54 +0000
+
 friends (0.1.1bzr13.02.21-0raring1) raring; urgency=low
 
   * Snapshot from Feb 21st.
