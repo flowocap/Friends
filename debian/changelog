@@ -1,3 +1,9 @@
+friends (0.1.1bzr13.02.21-0ubuntu2) UNRELEASED; urgency=low
+
+  * Added depends for python3-gi and python3-oauthlib
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Fri, 22 Feb 2013 00:06:16 +0000
+
 friends (0.1.1bzr13.02.21-0ubuntu1) raring; urgency=low
 
   * Upload for Ubuntu
