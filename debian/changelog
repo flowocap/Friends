@@ -1,4 +1,4 @@
-friends (0.1.1bzr13.02.21-0ubuntu2) UNRELEASED; urgency=low
+friends (0.1.1bzr13.02.25-0ubuntu1) raring; urgency=low
 
   * Added depends for python3-gi and python3-oauthlib
 
