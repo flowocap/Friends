@@ -9,8 +9,9 @@ It is not intended for use with an installed friends package.
 """
 
 from gi.repository import Dee
-from gi.repository import GObject
+from gi.repository import GLib
 
+from friends.utils.model import COLUMN_NAMES
 
 class Slave:
     def __init__(self):
@@ -21,10 +22,12 @@ class Slave:
 
     def on_row_added(self, model, itr):
         row = self.model.get_row(itr)
-        print(row)
+        print('\n' * 5)
+        for i, col in enumerate(row):
+            print('{:12}: {}'.format(COLUMN_NAMES[i], col))
         print('ROWS: ', len(self.model))
 
 
 if __name__ == '__main__':
     s = Slave()
-    GObject.MainLoop().run()
+    GLib.MainLoop().run()
