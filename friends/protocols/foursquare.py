@@ -94,7 +94,6 @@ class FourSquare(Base):
                 message=checkin.get('shout', ''),
                 likes=checkin.get('likes', {}).get('count', 0),
                 icon_uri=Avatar.get_image(avatar_url),
-                url=CHECKIN_URL.format(access_token=token,
-                                       checkin_id=checkin_id),
+                url=checkin.get('venue', {}).get('canonicalUrl', ''),
                 )
         return self._get_n_rows()
