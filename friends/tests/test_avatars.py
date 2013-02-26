@@ -118,8 +118,8 @@ class TestAvatars(unittest.TestCase):
             path = Avatar.get_image('http://example.com')
         # The image must have been downloaded at least once.
         pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
-        self.assertEqual(pixbuf.get_height(), 100)
-        self.assertEqual(pixbuf.get_width(), 100)
+        self.assertEqual(pixbuf.get_height(), 285)
+        self.assertEqual(pixbuf.get_width(), 285)
         # Confirm that the resulting cache image is actually a PNG.
         with open(path, 'rb') as raw:
             # This is the PNG file format magic number, living in the first 8

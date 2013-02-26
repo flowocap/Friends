@@ -23,7 +23,7 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
+from gi.repository import GLib, Dee
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
@@ -130,7 +130,9 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         expected = [
             [[['twitter', '1234', '240558470661799936']],
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
-             '2012-08-28T21:16:23Z', 'just another test', '',
+             '2012-08-28T21:16:23Z', 'just another test',
+             GLib.get_user_cache_dir() +
+             '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
              'https://twitter.com/oauth_dancer/status/240558470661799936',
              0.0, False, '', '', '', '', '', '',
              ],
@@ -138,14 +140,18 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data ' +
              'with twitter" class at @cal with @othman  http://t.co/bfj7zkDJ',
-             '', 'https://twitter.com/raffi/status/240556426106372096',
+             GLib.get_user_cache_dir() +
+             '/friends/avatars/0219effc03a3049a622476e6e001a4014f33dc31',
+             'https://twitter.com/raffi/status/240556426106372096',
              0.0, False, '', '', '', '', '', '',
              ],
             [[['twitter', '1234', '240539141056638977']],
              'messages', 'Taylor Singletary', '819797', 'episod', False,
              '2012-08-28T19:59:34Z',
              'You\'d be right more often if you thought you were wrong.',
-             '', 'https://twitter.com/episod/status/240539141056638977',
+             GLib.get_user_cache_dir() +
+             '/friends/avatars/0c829cb2934ad76489be21ee5e103735d9b7b034',
+             'https://twitter.com/episod/status/240539141056638977',
              0.0, False, '', '', '', '', '', '',
              ],
             ]
@@ -176,7 +182,9 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         expected_row = [
             [['twitter', '1234', '240558470661799936']],
             'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', True,
-            '2012-08-28T21:16:23Z', 'just another test', '',
+            '2012-08-28T21:16:23Z', 'just another test',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
             'https://twitter.com/oauth_dancer/status/240558470661799936',
             0.0, False, '', '', '', '', '', '',
             ]
