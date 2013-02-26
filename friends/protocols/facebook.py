@@ -81,7 +81,6 @@ class Facebook(Base):
         args = dict(
             stream=stream,
             message=entry.get('message', ''),
-            url=PERMALINK.format(id=message_id),
             icon_uri=entry.get('icon', ''),
             link_picture=entry.get('picture', ''),
             link_name=entry.get('name', ''),
@@ -100,6 +99,7 @@ class Facebook(Base):
         if from_record is not None:
             args['sender'] = from_record.get('name', '')
             args['sender_id'] = sender_id = from_record.get('id', '')
+            args['url'] = PERMALINK.format(id=sender_id)
             args['icon_uri'] = Avatar.get_image(
                 API_BASE.format(id=sender_id) + '/picture?type=large')
             args['sender_nick'] = from_record.get('name', '')
