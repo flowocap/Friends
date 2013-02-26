@@ -69,15 +69,8 @@ class Avatar:
         if size == 0:
             log.debug('Getting: {}'.format(url))
             image_data = Downloader(url).get_bytes()
-            input_stream = Gio.MemoryInputStream.new_from_data(
-                image_data, None)
-            try:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_stream_at_scale(
-                    input_stream, 100, 100, True, None)
-                pixbuf.savev(local_path, 'png', [], [])
-            except GLib.GError:
-                log.error('Failed to save image: {}'.format(url))
-                return ''
+            with open(local_path, 'wb') as fd:
+                fd.write(image_data)
         return local_path
 
     @staticmethod
