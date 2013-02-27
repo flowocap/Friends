@@ -84,7 +84,8 @@ class TestAvatars(unittest.TestCase):
             self.assertEqual(os.listdir(cache_dir),
                             # hashlib.sha1('http://example.com'
                             # .encode('utf-8')).hexdigest()
-                            ['89dce6a446a69d6b9bdc01ac75251e4c322bcdff'])
+                            ['89dce6a446a69d6b9bdc01ac75251e4c322bcdff',
+                             '89dce6a446a69d6b9bdc01ac75251e4c322bcdff.100px'])
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'ubuntu.png'))
