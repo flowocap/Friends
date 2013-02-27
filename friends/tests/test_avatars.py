@@ -121,6 +121,9 @@ class TestAvatars(unittest.TestCase):
         pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
         self.assertEqual(pixbuf.get_height(), 285)
         self.assertEqual(pixbuf.get_width(), 285)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(path + '.100px')
+        self.assertEqual(pixbuf.get_height(), 100)
+        self.assertEqual(pixbuf.get_width(), 100)
         # Confirm that the resulting cache image is actually a PNG.
         with open(path, 'rb') as raw:
             # This is the PNG file format magic number, living in the first 8
