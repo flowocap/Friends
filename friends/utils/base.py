@@ -553,7 +553,11 @@ class Base:
             return False
         if error is None:
             return False
-        raise FriendsError(error.get('message') or str(error))
+        try:
+            message = error.get('message')
+        except AttributeError:
+            message = None
+        raise FriendsError(message or str(error))
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)
