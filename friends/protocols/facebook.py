@@ -101,7 +101,7 @@ class Facebook(Base):
             args['sender_id'] = sender_id = from_record.get('id', '')
             args['url'] = PERMALINK.format(id=sender_id)
             args['icon_uri'] = Avatar.get_image(
-                API_BASE.format(id=sender_id) + '/picture?type=large')
+                API_BASE.format(id=sender_id) + '/picture?width=840&height=840')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
 
