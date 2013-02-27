@@ -79,6 +79,28 @@ class Flickr(Base):
         self._is_error(response)
         return response
 
+# http://www.flickr.com/services/api/flickr.people.getInfo.html
+    def _get_avatar(self, nsid):
+        args = dict(
+            api_key=self._account.auth.parameters.get('ConsumerKey'),
+            method='flickr.people.getInfo',
+            format='json',
+            nojsoncallback='1',
+            user_id=nsid,
+            )
+        response = self._get_url(args)
+        person = response.get('person', {})
+        iconfarm = person.get('iconfarm')
+        iconserver = person.get('iconserver')
+        if None in (iconfarm, iconserver):
+            return Avatar.get_image(
+                'http://www.flickr.com/images/buddyicon.gif')
+        avatar = BUDDY_ICON_URL.format(
+            farm=iconfarm,
+            server=iconserver,
+            nsid=nsid)
+        return Avatar.get_image(avatar)
+
 # http://www.flickr.com/services/api/flickr.photos.getContactsPhotos.html
     @feature
     def receive(self):
@@ -191,10 +213,6 @@ class Flickr(Base):
                 sender_nick=self._account.user_name,
                 timestamp=iso8601utc(int(time.time())),
                 url=destination_url,
-                # FIXME: need to figure out farm & server from Flickr,
-                # This will require a new HTTP request because it's
-                # not in the XML.
-                # icon_uri=Avatar.get_image(
-                #     BUDDY_ICON_URL.format(nsid=self._account.user_id)),
+                icon_uri=self._get_avatar(self._account.user_id),
                 )
             return destination_url

@@ -241,6 +241,8 @@ class TestFlickr(unittest.TestCase):
         gfile.new_for_uri().load_contents.return_value = [True, 'data'.encode()]
         token = self.protocol._get_access_token = mock.Mock()
         publish = self.protocol._publish = mock.Mock()
+        avatar = self.protocol._get_avatar = mock.Mock()
+        avatar.return_value = '/path/to/cached/avatar'
 
         self.assertEqual(
             self.protocol.upload(
@@ -257,6 +259,7 @@ class TestFlickr(unittest.TestCase):
             from_me=True,
             sender=None,
             sender_nick='freddyjimbobjones',
+            icon_uri='/path/to/cached/avatar',
             url='http://www.flickr.com/photos/freddyjimbobjones/8488552823',
             sender_id=None)
 
