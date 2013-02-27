@@ -119,7 +119,8 @@ Facebook UID: None
             False,
             '2012-09-26T17:16:00Z',
             'OK Don...10) Headlong Flight',
-            '',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/b688c8def0455d4a3853d5fcdfaf0708645cfd3e',
             'https://www.facebook.com/809',
             0.0,
             False,
@@ -138,7 +139,8 @@ Facebook UID: None
             False,
             '2012-09-26T17:34:00Z',
             'Rush takes off to the Great White North',
-            '',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
             'https://www.facebook.com/117402931676347',
             16.0,
             False,
@@ -157,7 +159,8 @@ Facebook UID: None
             False,
             '2012-09-26T17:49:06Z',
             'http://www2.gibson.com/Alex-Lifeson-0225-2011.aspx',
-            '',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
             'https://www.facebook.com/117402931676347',
             27.0,
             False,
@@ -281,7 +284,8 @@ Facebook UID: None
             timestamp='2012-11-06T13:49:08Z',
             sender_id=None,
             from_me=True,
-            icon_uri='',
+            icon_uri=GLib.get_user_cache_dir() +
+            '/friends/avatars/d49d72a384d50adf7c736ba27ca55bfa9fa5782d',
             message='This is Ubuntu!',
             message_id='234125',
             sender=None)

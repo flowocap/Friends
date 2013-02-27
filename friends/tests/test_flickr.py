@@ -22,7 +22,7 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
+from gi.repository import GLib, Dee
 
 from friends.errors import AuthorizationError, FriendsError
 from friends.protocols.flickr import Flickr
@@ -218,7 +218,8 @@ class TestFlickr(unittest.TestCase):
              False,
              '',
              '',
-             '',
+             GLib.get_user_cache_dir() +
+             '/friends/avatars/b913501d6face9d13f3006b731a711b596d23099',
              'http://www.flickr.com/people/789',
              0.0,
              False,

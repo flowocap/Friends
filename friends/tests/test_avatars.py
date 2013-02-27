@@ -84,7 +84,8 @@ class TestAvatars(unittest.TestCase):
             self.assertEqual(os.listdir(cache_dir),
                             # hashlib.sha1('http://example.com'
                             # .encode('utf-8')).hexdigest()
-                            ['89dce6a446a69d6b9bdc01ac75251e4c322bcdff'])
+                            ['89dce6a446a69d6b9bdc01ac75251e4c322bcdff',
+                             '89dce6a446a69d6b9bdc01ac75251e4c322bcdff.100px'])
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'ubuntu.png'))
@@ -118,6 +119,9 @@ class TestAvatars(unittest.TestCase):
             path = Avatar.get_image('http://example.com')
         # The image must have been downloaded at least once.
         pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
+        self.assertEqual(pixbuf.get_height(), 285)
+        self.assertEqual(pixbuf.get_width(), 285)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(path + '.100px')
         self.assertEqual(pixbuf.get_height(), 100)
         self.assertEqual(pixbuf.get_width(), 100)
         # Confirm that the resulting cache image is actually a PNG.
