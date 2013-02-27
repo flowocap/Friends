@@ -545,6 +545,16 @@ class Base:
 
         return headers
 
+    def _is_error(self, data):
+        """Is the return data an error response?"""
+        try:
+            error = data.get('error')
+        except AttributeError:
+            return False
+        if error is None:
+            return False
+        raise FriendsError(error.get('message') or str(error))
+
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)

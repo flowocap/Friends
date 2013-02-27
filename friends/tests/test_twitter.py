@@ -99,15 +99,17 @@ oauth_token="omega", \
 oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         self.protocol._rate_limiter = 'limits'
+        class fake:
+            def get_json():
+                return None
+        dload.return_value = fake
         self.protocol._get_url('http://example.com')
-        self.assertEqual(
-            dload.mock_calls,
-            [mock.call('http://example.com',
-                       headers=dict(Authorization=result),
-                       rate_limiter='limits',
-                       params=None,
-                       method='GET'),
-             mock.call().get_json()])
+        dload.assert_called_once_with(
+            'http://example.com',
+            headers=dict(Authorization=result),
+            rate_limiter='limits',
+            params=None,
+            method='GET')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',

@@ -121,15 +121,14 @@ class TestFlickr(unittest.TestCase):
     def test_get(self):
         # Make sure that the REST GET url looks right.
         token = self.protocol._get_access_token = mock.Mock()
+        class fake:
+            def get_json(*ignore):
+                return {}
         with mock.patch('friends.protocols.flickr.Downloader') as cm:
-            cm.get_json.return_value = {}
+            cm.return_value = fake()
             self.assertEqual(self.protocol.receive(), 0)
-        # Unpack the arguments that the mock was called with and test that the
-        # arguments, especially to the GET are what we expected.
-        all_call_args = cm.call_args_list
         token.assert_called_once_with()
         # GET was called once.
-        self.assertEqual(len(all_call_args), 1)
         cm.assert_called_once_with(
             'http://api.flickr.com/services/rest',
             method='GET',

@@ -18,7 +18,6 @@
 
 __all__ = [
     'Facebook',
-    'FacebookError',
     ]
 
 
@@ -46,17 +45,6 @@ FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
 log = logging.getLogger(__name__)
 
 
-class FacebookError(FriendsError):
-    def __init__(self, code, type, message):
-        self.code = code
-        self.type = type
-        self.message = message
-
-    def __str__(self):
-        return 'Facebook error ({} {}): {}'.format(
-            self.code, self.type, self.message)
-
-
 class Facebook(Base):
     def _whoami(self, authdata):
         """Identify the authenticating user."""
@@ -64,13 +52,6 @@ class Facebook(Base):
             ME_URL, dict(access_token=self._account.access_token)).get_json()
         self._account.user_id = me_data.get('id')
         self._account.user_name = me_data.get('name')
-
-    def _is_error(self, data):
-        """Is the return data an error response?"""
-        error = data.get('error')
-        if error is None:
-            return False
-        raise FacebookError(**error)
 
     def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
@@ -300,6 +281,8 @@ class Facebook(Base):
         response = Uploader(
             url, picture_uri, description,
             picture_key='source', desc_key='message').get_json()
+        self._is_error(response)
+
         post_id = response.get('post_id')
         if post_id is not None:
             destination_url = PERMALINK.format(id=post_id)

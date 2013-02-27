@@ -70,12 +70,14 @@ class Flickr(Base):
             data=params or {},
             )
 
-        return Downloader(
+        response = Downloader(
             REST_SERVER,
             params=params,
             headers=headers,
             method=method,
             ).get_json()
+        self._is_error(response)
+        return response
 
 # http://www.flickr.com/services/api/flickr.photos.getContactsPhotos.html
     @feature

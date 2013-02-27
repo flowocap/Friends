@@ -84,9 +84,11 @@ class Twitter(Base):
             data=data,
             )
 
-        return Downloader(
+        response = Downloader(
             url, params=data, headers=headers, method=method,
             rate_limiter=self._rate_limiter).get_json()
+        self._is_error(response)
+        return response
 
     def _publish_tweet(self, tweet, stream='messages'):
         """Publish a single tweet into the Dee.SharedModel."""

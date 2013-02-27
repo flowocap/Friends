@@ -25,7 +25,7 @@ import unittest
 from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
 
-from friends.protocols.facebook import Facebook, FacebookError
+from friends.protocols.facebook import Facebook
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.errors import ContactsError, FriendsError, AuthorizationError
@@ -88,7 +88,7 @@ class TestFacebook(unittest.TestCase):
         with LogMock('friends.utils.base',
                      'friends.protocols.facebook') as log_mock:
             self.assertRaises(
-                FacebookError,
+                FriendsError,
                 self.protocol.home,
                 )
             contents = log_mock.empty(trim=False)
