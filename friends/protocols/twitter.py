@@ -22,10 +22,14 @@ __all__ = [
     ]
 
 
+import os
 import time
+import json
+import errno
 import logging
 
 from urllib.parse import quote
+from gi.repository import GLib
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
@@ -35,6 +39,8 @@ from friends.errors import FriendsError
 
 
 TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
+TWITTER_RATELIMITER_CACHE = os.path.join(
+    GLib.get_user_cache_dir(), 'friends', 'twitter.rates')
 
 
 log = logging.getLogger(__name__)
@@ -372,17 +378,31 @@ class RateLimiter(BaseRateLimiter):
     """Twitter rate limiter."""
 
     def __init__(self):
-        self._limits = {}
+        try:
+            with open(TWITTER_RATELIMITER_CACHE, 'r') as cache:
+                self._limits = json.loads(cache.read())
+        except OSError as error:
+            if error.errno != errno.ENOENT:
+                raise
+            # File not found, so create it:
+            self._limits = {}
+            self._persist_data()
 
     def _sanitize_url(self, uri):
         # Cache the URL sans any query parameters.
         return uri.host + uri.path
 
+    def _persist_data(self):
+        with open(TWITTER_RATELIMITER_CACHE, 'w') as cache:
+            cache.write(json.dumps(self._limits))
+
     def wait(self, message):
         # If we haven't seen this URL, default to no wait.
-        seconds = self._limits.get(self._sanitize_url(message.get_uri()), 0)
+        seconds = self._limits.pop(self._sanitize_url(message.get_uri()), 0)
         log.debug('Sleeping for {} seconds!'.format(seconds))
         time.sleep(seconds)
+        # Don't sleep the same length of time more than once!
+        self._persist_data()
 
     def update(self, message):
         info = message.response_headers
@@ -407,6 +427,7 @@ class RateLimiter(BaseRateLimiter):
             else:
                 wait_secs = rate_delta / rate_count
                 self._limits[url] = wait_secs
+            self._persist_data()
             log.debug(
                 'Next access to {} must wait {} seconds!'.format(
                     url, self._limits.get(url, 0)))
