@@ -81,11 +81,12 @@ class TestAvatars(unittest.TestCase):
             from friends.utils.http import Soup
             self.assertEqual(Soup.Message.call_count, 1)
             # Now the file is there.
-            self.assertEqual(os.listdir(cache_dir),
-                            # hashlib.sha1('http://example.com'
-                            # .encode('utf-8')).hexdigest()
-                            ['89dce6a446a69d6b9bdc01ac75251e4c322bcdff',
-                             '89dce6a446a69d6b9bdc01ac75251e4c322bcdff.100px'])
+            self.assertEqual(
+                sorted(os.listdir(cache_dir)),
+                # hashlib.sha1('http://example.com'
+                # .encode('utf-8')).hexdigest()
+                sorted(['89dce6a446a69d6b9bdc01ac75251e4c322bcdff',
+                        '89dce6a446a69d6b9bdc01ac75251e4c322bcdff.100px']))
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'ubuntu.png'))
