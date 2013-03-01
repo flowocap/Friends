@@ -381,7 +381,7 @@ class RateLimiter(BaseRateLimiter):
         try:
             with open(TWITTER_RATELIMITER_CACHE, 'r') as cache:
                 self._limits = json.loads(cache.read())
-        except OSError as error:
+        except IOError as error:
             if error.errno != errno.ENOENT:
                 raise
             # File not found, so create it:
