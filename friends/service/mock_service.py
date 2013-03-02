@@ -88,6 +88,12 @@ class Dispatcher(dbus.service.Object):
             account_id, uri, description)
         success(message) if self._succeed else failure(message)
 
+    @dbus.service.method(DBUS_INTERFACE,
+                         in_signature='s',
+                         out_signature='i')
+    def PurgeAccount(self, account_id):
+        return len(account_id)
+
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         return json.dumps(protocol_name.split())

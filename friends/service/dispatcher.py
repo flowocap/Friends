@@ -262,6 +262,29 @@ class Dispatcher(dbus.service.Object):
             failure(message)
             log.error(message)
 
+    @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='i')
+    def PurgeAccount(self, account_id):
+        """Remove all messages associated with the specified account_id.
+
+        example:
+            import dbus
+            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
+                '/com/canonical/friends/Dispatcher')
+            service = dbus.Interface(obj, DBUS_INTERFACE)
+            service.PurgeAccount('1')
+
+        Returns the number of rows deleted as an int.
+        """
+        GLib.idle_add(self.mainloop.quit)
+        log.debug('Purging account {}'.format(account_id))
+        account = self.account_manager.get(account_id)
+        rows = Model.get_n_rows()
+        if account is not None:
+            account.protocol._unpublish_all()
+        else:
+            log.error('Could not find account: {}'.format(account_id))
+        return Model.get_n_rows() - rows
+
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.

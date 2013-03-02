@@ -21,6 +21,9 @@
 private interface Dispatcher : GLib.Object {
         public abstract void Refresh () throws GLib.IOError;
         public abstract void ExpireAvatars () throws GLib.IOError;
+        public abstract int PurgeAccount (
+            string account_id
+            ) throws GLib.IOError;
         public abstract async void Do (
             string action,
             string account_id,
@@ -77,7 +80,7 @@ public class Master : Object
             // Compare columns from cached model's schema
             string[] _SCHEMA = _m.get_schema ();
             if (_SCHEMA.length != SCHEMA.length)
-                schemaReset = true; 
+                schemaReset = true;
             else
             {
                 for (int i=0; i < _SCHEMA.length;i++ )
@@ -87,7 +90,6 @@ public class Master : Object
                         debug ("SCHEMA MISMATCH");
                         schemaReset = true;
                     }
-                  
                 }
             }
             if (!schemaReset)
