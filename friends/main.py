@@ -57,10 +57,11 @@ from gi.repository import Gio, GObject
 GObject.threads_init(None)
 
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
-from friends.utils.avatar import Avatar
-from friends.utils.base import _OperationThread, Base, initialize_caches
-from friends.utils.logging import initialize
+from friends.utils.base import _OperationThread, _publish_lock
+from friends.utils.base import Base, initialize_caches
 from friends.utils.model import Model, prune_model
+from friends.utils.logging import initialize
+from friends.utils.avatar import Avatar
 
 
 # Optional performance profiling module.
@@ -126,8 +127,14 @@ def main():
             'private',
             )
 
+    # We need to acquire the publish lock so that the dispatcher
+    # doesn't try to publish rows into an uninitialized model...
+    # basically this prevents duplicates from showing up.
+    _publish_lock.acquire()
+    Dispatcher(gsettings, loop)
+
     # Don't initialize caches until the model is synchronized
-    Model.connect('notify::synchronized', setup, gsettings, loop)
+    Model.connect('notify::synchronized', setup)
 
     try:
         log.info('Starting friends-dispatcher main loop')
@@ -140,7 +147,7 @@ def main():
         yappi.print_stats(sys.stdout, yappi.SORTTYPE_TTOT)
 
 
-def setup(model, param, gsettings, loop):
+def setup(model, param):
     """Continue friends-dispatcher init after the DeeModel has synced."""
     # mhr3 says that we should not let a Dee.SharedModel exceed 8mb in
     # size, because anything larger will have problems being transmitted
@@ -156,7 +163,8 @@ def setup(model, param, gsettings, loop):
     # data for the purposes of faster duplicate checks.
     initialize_caches()
 
-    Dispatcher(gsettings, loop)
+    # Allow publishing.
+    _publish_lock.release()
 
 
 if __name__ == '__main__':
