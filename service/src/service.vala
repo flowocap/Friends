@@ -16,6 +16,7 @@
  * Authored by Ken VanDine <ken.vandine@canonical.com>
  */
 
+using Accounts;
 
 [DBus (name = "com.canonical.Friends.Dispatcher")]
 private interface Dispatcher : GLib.Object {
@@ -38,11 +39,19 @@ public class Master : Object
     private Dee.Model model;
     private Dee.SharedModel shared_model;
     private unowned Dee.ResourceManager resources;
+    private Accounts.Manager acct_manager;
     private Dispatcher dispatcher;
     public int interval { get; set; }
 
     public Master ()
     {
+        acct_manager = Accounts.Manager.new_for_service_type ("microblogging");
+        acct_manager.account_deleted.connect ((manager, account_id) => {
+                debug ("Attempting to purge messages from deleted account.");
+                dispatcher.PurgeAccount (account_id.to_string ());
+            }
+        );
+
         resources = Dee.ResourceManager.get_default ();
         model = new Dee.SequenceModel ();
         Dee.SequenceModel? _m = null;
