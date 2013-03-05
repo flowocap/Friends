@@ -62,10 +62,6 @@ class AccountManager:
             account = self._add_new_account(account_service)
             if account is not None:
                 account.protocol('receive')
-        else:
-            # If an account has been disabled in UOA, we should remove
-            # it's messages from the SharedModel.
-            self._unpublish_entire_account(account_id)
 
     def _add_new_account(self, account_service):
         try:

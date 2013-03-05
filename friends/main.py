@@ -133,7 +133,9 @@ def main():
         log.info('Starting friends-dispatcher main loop')
         loop.run()
     except KeyboardInterrupt:
-        log.info('Stopped friends-dispatcher main loop')
+        pass
+
+    log.info('Stopped friends-dispatcher main loop')
 
     # This bit doesn't run until after the mainloop exits.
     if args.performance and yappi is not None:
