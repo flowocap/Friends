@@ -21,13 +21,17 @@ __all__ = [
     ]
 
 
+import os
+import tempfile
 import unittest
+import shutil
 
 from gi.repository import GLib, Dee
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
+from friends.utils.cache import JsonCache
 from friends.utils.model import COLUMN_TYPES
 from friends.errors import AuthorizationError
 
@@ -44,6 +48,9 @@ class TestTwitter(unittest.TestCase):
     """Test the Twitter API."""
 
     def setUp(self):
+        self._temp_cache = tempfile.mkdtemp()
+        self._root = JsonCache._root = os.path.join(
+            self._temp_cache, '{}.json')
         TestModel.clear()
         self.account = FakeAccount()
         self.protocol = Twitter(self.account)
@@ -54,6 +61,7 @@ class TestTwitter(unittest.TestCase):
         # Ensure that any log entries we haven't tested just get consumed so
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
+        shutil.rmtree(self._temp_cache)
 
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
@@ -162,6 +170,32 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-home.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_messages', {})
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_home_since_id(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(self.protocol.home(), 3)
+
+        with open(self._root.format('twitter_ids'), 'r') as fd:
+            self.assertEqual(fd.read(), '{"messages": 240558470661799936}')
+
+        get_url = self.protocol._get_url = mock.Mock()
+        get_url.return_value = []
+        self.assertEqual(self.protocol.home(), 3)
+        get_url.assert_called_once_with(
+            'https://api.twitter.com/1.1/statuses/' +
+            'home_timeline.json?count=50&since_id=240558470661799936')
+
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-send.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
@@ -216,7 +250,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         publish.assert_called_with('tweet', stream='mentions')
         get_url.assert_called_with(
-            'https://api.twitter.com/1.1/statuses/mentions_timeline.json')
+            'https://api.twitter.com/1.1/statuses/' +
+            'mentions_timeline.json?count=50')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_messages', {})
@@ -270,8 +305,10 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         publish.assert_called_with('tweet', stream='private')
         self.assertEqual(
             get_url.mock_calls,
-            [mock.call('https://api.twitter.com/1.1/direct_messages.json'),
-             mock.call('https://api.twitter.com/1.1/direct_messages/sent.json')
+            [mock.call('https://api.twitter.com/1.1/' +
+                       'direct_messages.json?count=50'),
+             mock.call('https://api.twitter.com/1.1/' +
+                       'direct_messages/sent.json?count=50')
              ])
 
     @mock.patch('friends.protocols.twitter.Avatar.get_image',
@@ -302,8 +339,10 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             message_id='1452456')
         self.assertEqual(
             get_url.mock_calls,
-            [mock.call('https://api.twitter.com/1.1/direct_messages.json'),
-             mock.call('https://api.twitter.com/1.1/direct_messages/sent.json')
+            [mock.call('https://api.twitter.com/1.1/' +
+                       'direct_messages.json?count=50'),
+             mock.call('https://api.twitter.com/1.1/' +
+                       'direct_messages/sent.json?count=50&since_id=1452456')
              ])
 
     @mock.patch('friends.utils.base.Model', TestModel)

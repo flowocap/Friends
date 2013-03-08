@@ -22,10 +22,7 @@ __all__ = [
     ]
 
 
-import os
 import time
-import json
-import errno
 import logging
 
 from urllib.parse import quote
@@ -33,14 +30,14 @@ from gi.repository import GLib
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
+from friends.utils.cache import JsonCache
+from friends.utils.model import Model
 from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
 from friends.errors import FriendsError
 
 
 TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
-TWITTER_RATELIMITER_CACHE = os.path.join(
-    GLib.get_user_cache_dir(), 'friends', 'twitter.rates')
 
 
 log = logging.getLogger(__name__)
@@ -72,6 +69,8 @@ class Twitter(Base):
     def __init__(self, account):
         super().__init__(account)
         self._rate_limiter = RateLimiter()
+        # Can be 'twitter_ids' or 'identica_ids'
+        self._tweet_ids = TweetIdCache(self.__class__.__name__.lower() + '_ids')
 
     def _whoami(self, authdata):
         """Identify the authenticating user."""
@@ -103,6 +102,13 @@ class Twitter(Base):
             log.info('Ignoring tweet with no id_str value')
             return
 
+        # We need to record tweet_ids for use with since_id. Note that
+        # _tweet_ids is a special dict subclass that only accepts
+        # tweet_ids that are larger than the existing value, so at any
+        # given time it will map the stream to the largest (most
+        # recent) tweet_id we've seen for that stream.
+        self._tweet_ids[stream] = tweet_id
+
         # 'user' for tweets, 'sender' for direct messages.
         user = tweet.get('user', {}) or tweet.get('sender', {})
         screen_name = user.get('screen_name', '')
@@ -129,12 +135,20 @@ class Twitter(Base):
             )
         return permalink
 
+    def _append_since(self, url, stream='messages'):
+        since = self._tweet_ids.get(stream)
+        if since is not None:
+            return '{}&since_id={}'.format(url, since)
+        return url
+
 # https://dev.twitter.com/docs/api/1.1/get/statuses/home_timeline
     @feature
     def home(self):
         """Gather the user's home timeline."""
-        url = self._timeline.format(
-            'home') + '?count={}'.format(self._DOWNLOAD_LIMIT)
+        url = '{}?count={}'.format(
+            self._timeline.format('home'),
+            self._DOWNLOAD_LIMIT)
+        url = self._append_since(url)
         for tweet in self._get_url(url):
             self._publish_tweet(tweet)
         return self._get_n_rows()
@@ -143,7 +157,10 @@ class Twitter(Base):
     @feature
     def mentions(self):
         """Gather the tweets that mention us."""
-        url = self._mentions_timeline
+        url = '{}?count={}'.format(
+            self._mentions_timeline,
+            self._DOWNLOAD_LIMIT)
+        url = self._append_since(url, 'mentions')
         for tweet in self._get_url(url):
             self._publish_tweet(tweet, stream='mentions')
         return self._get_n_rows()
@@ -185,11 +202,17 @@ class Twitter(Base):
     @feature
     def private(self):
         """Gather the direct messages sent to/from us."""
-        url = self._api_base.format(endpoint='direct_messages')
+        url = '{}?count={}'.format(
+            self._api_base.format(endpoint='direct_messages'),
+            self._DOWNLOAD_LIMIT)
+        url = self._append_since(url, 'private')
         for tweet in self._get_url(url):
             self._publish_tweet(tweet, stream='private')
 
-        url = self._api_base.format(endpoint='direct_messages/sent')
+        url = '{}?count={}'.format(
+            self._api_base.format(endpoint='direct_messages/sent'),
+            self._DOWNLOAD_LIMIT)
+        url = self._append_since(url, 'private')
         for tweet in self._get_url(url):
             self._publish_tweet(tweet, stream='private')
         return self._get_n_rows()
@@ -374,27 +397,28 @@ class Twitter(Base):
         return self._delete_service_contacts(source)
 
 
+class TweetIdCache(JsonCache):
+    """Persist most-recent tweet_ids as JSON."""
+
+    def __setitem__(self, key, value):
+        if key.find('/') >= 0:
+            # Don't flood the cache with irrelevant "reply_to/..." and
+            # "search/..." streams, we only need the main streams.
+            return
+        value = int(value)
+        if value > self.get(key, 0):
+            JsonCache.__setitem__(self, key, value)
+
+
 class RateLimiter(BaseRateLimiter):
     """Twitter rate limiter."""
 
     def __init__(self):
-        try:
-            with open(TWITTER_RATELIMITER_CACHE, 'r') as cache:
-                self._limits = json.loads(cache.read())
-        except IOError as error:
-            if error.errno != errno.ENOENT:
-                raise
-            # File not found, so create it:
-            self._limits = {}
-            self._persist_data()
+        self._limits = JsonCache('twitter-ratelimiter')
 
     def _sanitize_url(self, uri):
         # Cache the URL sans any query parameters.
         return uri.host + uri.path
-
-    def _persist_data(self):
-        with open(TWITTER_RATELIMITER_CACHE, 'w') as cache:
-            cache.write(json.dumps(self._limits))
 
     def wait(self, message):
         # If we haven't seen this URL, default to no wait.
@@ -402,7 +426,7 @@ class RateLimiter(BaseRateLimiter):
         log.debug('Sleeping for {} seconds!'.format(seconds))
         time.sleep(seconds)
         # Don't sleep the same length of time more than once!
-        self._persist_data()
+        self._limits.write()
 
     def update(self, message):
         info = message.response_headers
@@ -427,7 +451,6 @@ class RateLimiter(BaseRateLimiter):
             else:
                 wait_secs = rate_delta / rate_count
                 self._limits[url] = wait_secs
-            self._persist_data()
             log.debug(
                 'Next access to {} must wait {} seconds!'.format(
                     url, self._limits.get(url, 0)))
