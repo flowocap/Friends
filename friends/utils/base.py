@@ -548,7 +548,7 @@ class Base:
     def _is_error(self, data):
         """Is the return data an error response?"""
         try:
-            error = data.get('error')
+            error = data.get('error') or data.get('errors')
         except AttributeError:
             return False
         if error is None:
