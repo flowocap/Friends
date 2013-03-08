@@ -1,3 +1,9 @@
+friends (0.1.2-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 145 (bootstrap)
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Fri, 08 Mar 2013 09:25:41 -0800
+
 friends (0.1.1bzr13.02.25-0ubuntu1) raring; urgency=low
 
   * Added depends for python3-gi and python3-oauthlib
