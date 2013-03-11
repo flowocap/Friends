@@ -96,8 +96,7 @@ class TestFourSquare(unittest.TestCase):
             'foursquare', 88, '50574c9ce4b0a9a6e84433a0',
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.",
-            '~/.cache/friends/avatar/hash', '', 0.0, False, '', '', '',
-            '', '', '',
+            '~/.cache/friends/avatar/hash', '', 0, False, '', '', '',
+            '', '', '', 49.88873164336725, -97.158043384552,
             ]
-        for got, want in zip(TestModel.get_row(0), expected):
-            self.assertEqual(got, want)
+        self.assertEqual(list(TestModel.get_row(0)), expected)
