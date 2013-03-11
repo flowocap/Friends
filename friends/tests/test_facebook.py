@@ -122,7 +122,7 @@ Facebook UID: None
             GLib.get_user_cache_dir() +
             '/friends/avatars/b688c8def0455d4a3853d5fcdfaf0708645cfd3e',
             'https://www.facebook.com/809',
-            0.0,
+            0,
             False,
             '',
             '',
@@ -147,7 +147,7 @@ Facebook UID: None
             GLib.get_user_cache_dir() +
             '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
             'https://www.facebook.com/117402931676347',
-            16.0,
+            16,
             False,
             'https://fbexternal-a.akamaihd.net/rush.jpg',
             'Rush is a Band Blog',
@@ -172,7 +172,7 @@ Facebook UID: None
             GLib.get_user_cache_dir() +
             '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
             'https://www.facebook.com/117402931676347',
-            27.0,
+            27,
             False,
             'https://images.gibson.com/Rush_Clockwork-Angels_t.jpg',
             'Top 10 Alex Lifeson Guitar Moments',

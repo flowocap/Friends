@@ -62,7 +62,7 @@ public class Master : Object
                            "s",
                            "s",
                            "s",
-                           "d",
+                           "t",
                            "b",
                            "s",
                            "s",

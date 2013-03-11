@@ -243,11 +243,11 @@ class TestAccountManager(unittest.TestCase):
         example_row = ['twitter', 88, '1234',
             'messages', 'Fred Flintstone', '', 'fred', True,
             '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '',
-            0.0, False, '', '', '', '', '', '', 0.0, 0.0]
+            0, False, '', '', '', '', '', '', 0.0, 0.0]
         example_row2 = ['facebook', 69, '5678',
             'messages', 'Barney Rubble', '', 'barney', True,
             '2012-08-28T19:59:34', 'Heya Fred!', '', '',
-            0.0, False, '', '', '', '', '', '', 0.0, 0.0]
+            0, False, '', '', '', '', '', '', 0.0, 0.0]
         row_iter = TestModel.append(*example_row)
         row2_iter = TestModel.append(*example_row2)
         from friends.utils.base import _seen_ids

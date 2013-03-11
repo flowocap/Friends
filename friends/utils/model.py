@@ -54,7 +54,7 @@ SCHEMA = (
     ('message',        's'),
     ('icon_uri',       's'),
     ('url',            's'),
-    ('likes',          'd'),
+    ('likes',          't'),
     ('liked',          'b'),
     ('link_picture',   's'),
     ('link_name',      's'),
