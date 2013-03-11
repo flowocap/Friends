@@ -50,7 +50,9 @@ public class Master : Object
             debug ("Failed to load model from resource manager: %s", e.message);
         }
 
-        string[] SCHEMA = {"aas",
+        string[] SCHEMA = {"s",
+                           "t",
+                           "s",
                            "s",
                            "s",
                            "s",
@@ -77,7 +79,7 @@ public class Master : Object
             // Compare columns from cached model's schema
             string[] _SCHEMA = _m.get_schema ();
             if (_SCHEMA.length != SCHEMA.length)
-                schemaReset = true; 
+                schemaReset = true;
             else
             {
                 for (int i=0; i < _SCHEMA.length;i++ )
@@ -87,7 +89,6 @@ public class Master : Object
                         debug ("SCHEMA MISMATCH");
                         schemaReset = true;
                     }
-                  
                 }
             }
             if (!schemaReset)

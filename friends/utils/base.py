@@ -23,9 +23,7 @@ __all__ = [
     ]
 
 
-import re
 import time
-import string
 import logging
 import threading
 
@@ -43,23 +41,20 @@ from friends.utils.time import ISO8601_FORMAT
 
 
 STUB = lambda *ignore, **kwignore: None
-IGNORED = string.punctuation + string.whitespace
-SCHEME_RE = re.compile('http[s]?://|friends:/', re.IGNORECASE)
-EMPTY_STRING = ''
 COMMA_SPACE = ', '
 AVATAR_IDX = COLUMN_INDICES['icon_uri']
 FROM_ME_IDX = COLUMN_INDICES['from_me']
 STREAM_IDX = COLUMN_INDICES['stream']
 SENDER_IDX = COLUMN_INDICES['sender']
 MESSAGE_IDX = COLUMN_INDICES['message']
-IDS_IDX = COLUMN_INDICES['message_ids']
+ID_IDX = COLUMN_INDICES['message_id']
+ACCT_IDX = COLUMN_INDICES['account_id']
 TIME_IDX = COLUMN_INDICES['timestamp']
 
 
-# This is a mapping from Dee.SharedModel row keys to the DeeModelIters
-# representing the rows matching those keys.  It is used for quickly finding
-# duplicates when we want to insert new rows into the model.
-_seen_messages = {}
+# This is a mapping from message_ids to DeeModel row index ints. It is
+# used for quickly and easily preventing the same message from being
+# published multiple times by mistake.
 _seen_ids = {}
 
 
@@ -92,50 +87,18 @@ def feature(method):
     return method
 
 
-def _make_key(row):
-    """Return a unique key for a row in the model.
-
-    This is used for fuzzy comparisons with messages that are already in the
-    model.  We don't want duplicate messages to show up in the stream of
-    messages that are visible to the user.  But different social media sites
-    attach different semantic meanings to different punctuation marks, so we
-    want to ignore those for the sake of determining whether one message is
-    actually identical to another or not.  Thus, we need to strip out this
-    punctuation for the sake of comparing the strings.  For example:
-
-    Fred uses Friends to post identical messages on Twitter and Google+
-    (pretend that we support G+ for a moment).  Fred writes 'Hey jimbob, been
-    to http://example.com lately?', and this message might show up on Twitter
-    like 'Hey @jimbob, been to example.com lately?', but it might show up on
-    G+ like 'Hey +jimbob, been to http://example.com lately?'.  So we need to
-    strip out all the possibly different bits in order to identify that these
-    messages are the same for our purposes.  In both of these cases, the
-    string is converted into 'Heyjimbobbeentoexamplecomlately' and then they
-    compare equally, so we've identified a duplicate message.
-    """
-    # Given a 'row' of data, the sender and message fields are concatenated
-    # together to form the raw key.  Then we strip out details such as url
-    # schemes, punctuation, and whitespace, that allow for the fuzzy matching.
-    key = SCHEME_RE.sub('', row[SENDER_IDX] + row[MESSAGE_IDX])
-    # Now remove all punctuation and whitespace.
-    return EMPTY_STRING.join([char for char in key if char not in IGNORED])
-
-
 def initialize_caches():
-    """Populate _seen_ids and _seen_messages with Model data.
+    """Populate _seen_ids with Model data.
 
     Our Dee.SharedModel persists across instances, so we need to
-    populate these caches at launch.
+    populate this cache at launch.
     """
-    for i in range(Model.get_n_rows()):
-        row_iter = Model.get_iter_at_row(i)
-        row = Model.get_row(row_iter)
-        _seen_messages[_make_key(row)] = i
-        for triple in row[IDS_IDX]:
-            _seen_ids[tuple(triple)] = i
-    log.debug(
-        '_seen_ids: {}, _seen_messages: {}'.format(
-            len(_seen_ids), len(_seen_messages)))
+    # Don't create a new dict; we need to keep the same dict object in
+    # memory since it gets imported into a few different places that
+    # would not get the updated reference to the new dict.
+    _seen_ids.clear()
+    _seen_ids.update({row[ID_IDX]: i for i, row in enumerate(Model)})
+    log.debug('_seen_ids: {}'.format(len(_seen_ids)))
 
 
 class _OperationThread(threading.Thread):
@@ -323,7 +286,7 @@ class Base:
         """Return the number of rows in the Dee.SharedModel."""
         return len(Model)
 
-    def _publish(self, message_id, **kwargs):
+    def _publish(self, **kwargs):
         """Publish fresh data into the model, ignoring duplicates.
 
         This method inserts a new full row into the Dee.SharedModel
@@ -352,35 +315,29 @@ class Base:
             present.  Otherwise, False is returned if the message could not be
             appended.
         """
-        # Initialize the row of arguments to contain the message_ids value.
-        # The column value is a list of lists (see friends/utils/model.py for
-        # details), and because the arguments are themselves a list, this gets
-        # initialized as a triply-nested list.
-        triple = [self.__class__.__name__.lower(),
-                  self._account.id,
-                  message_id]
-        args = [[triple]]
-        # Now iterate through all the column names listed in the SCHEMA,
-        # except for the first, since we just composed its value in the
-        # preceding line.  Pop matching column values from the kwargs, in the
-        # order which they appear in the SCHEMA.  If any are left over at the
-        # end of this, raise a TypeError indicating the unexpected column
-        # names.
-        #
-        # Missing column values default to the empty string.
-        for column_name, column_type in SCHEMA[1:]:
+        # These bits don't need to be set by the caller; we can infer them.
+        kwargs.update(
+            dict(
+                protocol=self.__class__.__name__.lower(),
+                account_id=self._account.id
+                )
+            )
+        args = []
+        # Now iterate through all the column names listed in the
+        # SCHEMA, and pop matching column values from the kwargs, in
+        # the order which they appear in the SCHEMA. If any are left
+        # over at the end of this, raise a TypeError indicating the
+        # unexpected column names.
+        for column_name, column_type in SCHEMA:
             args.append(kwargs.pop(column_name, DEFAULTS[column_type]))
         if len(kwargs) > 0:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
         with _publish_lock:
-            # Don't let duplicate messages into the model, but do record the
-            # unique message ids of each duplicate message.
-            key = _make_key(args)
-            row_idx = _seen_messages.get(key)
-            if row_idx is None:
-                # We haven't seen this message before.
-                _seen_messages[key] = Model.get_position(Model.append(*args))
+            message_id = args[ID_IDX]
+            # Don't let duplicate messages into the model
+            if message_id not in _seen_ids:
+                _seen_ids[message_id] = Model.get_position(Model.append(*args))
                 # I think it's safe not to notify the user about
                 # messages that they sent themselves...
                 if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
@@ -389,25 +346,7 @@ class Base:
                         args[MESSAGE_IDX],
                         args[AVATAR_IDX],
                         )
-            else:
-                # We have seen this before, so append to the matching column's
-                # message_ids list, this message's id.
-                row = Model.get_row(Model.get_iter_at_row(row_idx))
-                # Remember that row[IDS] is the nested list-of-lists of
-                # message_ids.  args[IDS] is the nested list-of-lists for the
-                # message that we're publishing.  The outer list of the latter
-                # will always be of size 1.  We want to take the inner list
-                # from args and append it to the list-of-lists (i.e.
-                # message_ids) of the row already in the model.  To make sure
-                # the model gets updated, we need to insert into the row, thus
-                # it's best to concatenate the two lists together and store it
-                # back into the column.
-                if triple not in row[IDS_IDX]:
-                    row[IDS_IDX] = row[IDS_IDX] + args[IDS_IDX]
-            # Tuple-ize triple because lists, being mutable, cannot be used as
-            # dictionary keys.
-            _seen_ids[tuple(triple)] = _seen_messages.get(key)
-            return key in _seen_messages
+            return message_id in _seen_ids
 
     def _unpublish(self, message_id):
         """Remove message_id from the Dee.SharedModel.
@@ -416,45 +355,39 @@ class Base:
             published.
         :type message_id: string
         """
-        triple = (self.__class__.__name__.lower(),
-                  self._account.id,
-                  message_id)
-        log.debug('Unpublishing {}!'.format(triple))
+        log.debug('Unpublishing {}!'.format(message_id))
 
-        row_idx = _seen_ids.pop(triple, None)
+        row_idx = _seen_ids.pop(message_id, None)
         if row_idx is None:
             raise FriendsError('Tried to delete an invalid message id.')
 
-        row_iter = Model.get_iter_at_row(row_idx)
-        row = Model.get_row(row_iter)
+        Model.remove(Model.get_iter_at_row(row_idx))
 
-        if len(row[IDS_IDX]) == 1:
-            # Message only exists on one protocol, delete it
-            del _seen_messages[_make_key(row)]
-            Model.remove(row_iter)
-            # Shift our cached indexes up one, when one gets deleted.
-            for key, value in _seen_ids.items():
-                if value > row_idx:
-                    _seen_ids[key] = value - 1
-        else:
-            # Message exists on other protocols too, only drop id
-            row[IDS_IDX] = [ids for ids
-                            in row[IDS_IDX]
-                            if ids[-1] != message_id]
+        # Shift our cached indexes up one, when one gets deleted.
+        for key, value in _seen_ids.items():
+            if value > row_idx:
+                _seen_ids[key] = value - 1
 
     def _unpublish_all(self):
         """Remove all of this account's messages from the Model.
 
-        Saves the Model to disk after it is done purging rows."""
-        for triple in _seen_ids.copy():
-            if self._account.id in triple:
-                self._unpublish(triple[-1])
+        Saves the Model to disk after it is done purging rows.
+        """
+        # This got a bit tricky because we can't destructively iterate
+        # over a DeeModel
+        goners = []
+        for row in Model:
+            if row[ACCT_IDX] == self._account.id:
+                goners.append(row[ID_IDX])
+        for message_id in goners:
+            self._unpublish(message_id)
         persist_model()
 
     def _get_access_token(self):
         """Return an access token, logging in if necessary.
 
-        :return: The access_token, if we are successfully logged in."""
+        :return: The access_token, if we are successfully logged in.
+        """
         if self._account.access_token is None:
             self._login()
 

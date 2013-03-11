@@ -199,7 +199,7 @@ class TestAccountManager(unittest.TestCase):
         # the account manager's mapping.
         manager = AccountManager()
         manager._add_new_account(self.account_service)
-        self.assertIn('1234', manager._accounts)
+        self.assertIn(88, manager._accounts)
 
     def test_account_manager_enabled_event(self):
         manager = AccountManager()
@@ -216,9 +216,9 @@ class TestAccountManager(unittest.TestCase):
         manager = AccountManager()
         manager._get_service = mock.Mock()
         manager._get_service.return_value = self.account_service
-        self.assertNotIn('1234', manager._accounts)
-        manager._on_account_deleted(accounts_manager, '1234')
-        self.assertNotIn('1234', manager._accounts)
+        self.assertNotIn(88, manager._accounts)
+        manager._on_account_deleted(accounts_manager, 88)
+        self.assertNotIn(88, manager._accounts)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
@@ -229,36 +229,33 @@ class TestAccountManager(unittest.TestCase):
         manager._get_service = mock.Mock()
         manager._get_service.return_value = self.account_service
         manager._add_new_account(self.account_service)
-        self.assertIn('1234', manager._accounts)
-        manager._on_account_deleted(accounts_manager, '1234')
-        self.assertNotIn('1234', manager._accounts)
+        self.assertIn(88, manager._accounts)
+        manager._on_account_deleted(accounts_manager, 88)
+        self.assertNotIn(88, manager._accounts)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
-    def test_account_manager_delete_account_preserve_messages(self):
-        # Deleting an Account should not delete messages from the row
-        # that exist on other protocols too.
+    def test_account_manager_delete_account_delete_messages(self):
         manager = AccountManager()
         manager._get_service = mock.Mock()
         manager._get_service.return_value = self.account_service
         manager._add_new_account(self.account_service)
-        example_row = [[['twitter', '6', '1234'],
-             ['base', '1234', '5678']],
+        example_row = ['twitter', 88, '1234',
             'messages', 'Fred Flintstone', '', 'fred', True,
             '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '',
             0.0, False, '', '', '', '', '', '']
-        result_row = [[['twitter', '6', '1234']],
-            'messages', 'Fred Flintstone', '', 'fred', True,
-            '2012-08-28T19:59:34', 'Yabba dabba dooooo!', '', '',
+        example_row2 = ['facebook', 69, '5678',
+            'messages', 'Barney Rubble', '', 'barney', True,
+            '2012-08-28T19:59:34', 'Heya Fred!', '', '',
             0.0, False, '', '', '', '', '', '']
         row_iter = TestModel.append(*example_row)
+        row2_iter = TestModel.append(*example_row2)
         from friends.utils.base import _seen_ids
-        _seen_ids[
-            ('base', '1234', '5678')
-            ] = TestModel.get_position(row_iter)
-        self.assertEqual(list(TestModel.get_row(0)), example_row)
-        manager._on_account_deleted(accounts_manager, '1234')
-        self.assertEqual(list(TestModel.get_row(0)), result_row)
+        _seen_ids['1234'] = TestModel.get_position(row_iter)
+        _seen_ids['5678'] = TestModel.get_position(row2_iter)
+        self.assertEqual(TestModel.get_n_rows(), 2)
+        manager._on_account_deleted(accounts_manager, 88)
+        self.assertEqual(TestModel.get_n_rows(), 1)
 
 
 @mock.patch('gi.repository.Accounts.Manager', accounts_manager)

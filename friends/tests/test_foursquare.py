@@ -93,7 +93,7 @@ class TestFourSquare(unittest.TestCase):
         self.assertEqual(self.protocol.receive(), 1)
         self.assertEqual(1, TestModel.get_n_rows())
         expected = [
-            [['foursquare', '1234', '50574c9ce4b0a9a6e84433a0']],
+            'foursquare', 88, '50574c9ce4b0a9a6e84433a0',
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.",
             '~/.cache/friends/avatar/hash', '', 0.0, False, '', '', '',

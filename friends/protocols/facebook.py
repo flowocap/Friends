@@ -60,6 +60,7 @@ class Facebook(Base):
             return
 
         args = dict(
+            message_id=message_id,
             stream=stream,
             message=entry.get('message', ''),
             icon_uri=entry.get('icon', ''),
@@ -92,7 +93,7 @@ class Facebook(Base):
             args['timestamp'] = iso8601utc(parsetime(timestamp))
 
         # Publish this message into the SharedModel.
-        self._publish(message_id, **args)
+        self._publish(**args)
 
         # If there are any replies, publish them as well.
         for comment in entry.get('comments', {}).get('data', []):

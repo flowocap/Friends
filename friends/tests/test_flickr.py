@@ -157,7 +157,7 @@ class TestFlickr(unittest.TestCase):
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_flickr_data(self):
         # Start by setting up a fake account id.
-        self.account.id = 'lerxst'
+        self.account.id = 69
         with mock.patch.object(self.protocol, '_get_access_token',
                                return_value='token'):
             self.assertEqual(self.protocol.receive(), 3)
@@ -165,7 +165,9 @@ class TestFlickr(unittest.TestCase):
 
         self.assertEqual(
             list(TestModel.get_row(0)),
-            [[['flickr', 'lerxst', '801']],
+            ['flickr',
+             69,
+             '801',
              'images',
              '',
              '123',
@@ -187,7 +189,9 @@ class TestFlickr(unittest.TestCase):
 
         self.assertEqual(
             list(TestModel.get_row(1)),
-            [[['flickr', 'lerxst', '802']],
+            ['flickr',
+             69,
+             '802',
              'images',
              'Alex Lifeson',
              '456',
@@ -209,7 +213,9 @@ class TestFlickr(unittest.TestCase):
 
         self.assertEqual(
             list(TestModel.get_row(2)),
-            [[['flickr', 'lerxst', '803']],
+            ['flickr',
+             69,
+             '803',
              'images',
              'Bob Dobbs',
              '789',
