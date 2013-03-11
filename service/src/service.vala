@@ -69,7 +69,9 @@ public class Master : Object
                            "s",
                            "s",
                            "s",
-                           "s"};
+                           "s",
+                           "d",
+                           "d"};
 
         bool schemaReset = false;
 

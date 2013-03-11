@@ -129,7 +129,10 @@ Facebook UID: None
             '',
             '',
             '',
-            ''])
+            '',
+            0.0,
+            0.0,
+            ])
         self.assertEqual(list(TestModel.get_row(0)), [
             'facebook',
             88,
@@ -151,7 +154,10 @@ Facebook UID: None
             'http://www.rushisaband.com/blog/Rush-Clockwork-Angels-tour',
             'Rush is a Band: Neil Peart, Geddy Lee, Alex Lifeson',
             'www.rushisaband.com',
-            ''])
+            '',
+            0.0,
+            0.0,
+            ])
         self.assertEqual(list(TestModel.get_row(1)), [
             'facebook',
             88,
@@ -173,7 +179,10 @@ Facebook UID: None
             'http://www2.gibson.com/Alex-Lifeson.aspx',
             'For millions of Rush fans old and new, it’s a pleasure',
             'www2.gibson.com',
-            ''])
+            '',
+            0.0,
+            0.0,
+            ])
 
     # XXX We really need full coverage of the receive() method, including
     # cases where some data is missing, or can't be converted

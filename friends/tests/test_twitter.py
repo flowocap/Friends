@@ -143,7 +143,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              GLib.get_user_cache_dir() +
              '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
              'https://twitter.com/oauth_dancer/status/240558470661799936',
-             0.0, False, '', '', '', '', '', '',
+             0.0, False, '', '', '', '', '', '', 0.0, 0.0,
              ],
             ['twitter', 88, '240556426106372096',
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
@@ -152,7 +152,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              GLib.get_user_cache_dir() +
              '/friends/avatars/0219effc03a3049a622476e6e001a4014f33dc31',
              'https://twitter.com/raffi/status/240556426106372096',
-             0.0, False, '', '', '', '', '', '',
+             0.0, False, '', '', '', '', '', '', 0.0, 0.0,
              ],
             ['twitter', 88, '240539141056638977',
              'messages', 'Taylor Singletary', '819797', 'episod', False,
@@ -161,7 +161,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              GLib.get_user_cache_dir() +
              '/friends/avatars/0c829cb2934ad76489be21ee5e103735d9b7b034',
              'https://twitter.com/episod/status/240539141056638977',
-             0.0, False, '', '', '', '', '', '',
+             0.0, False, '', '', '', '', '', '', 0.0, 0.0,
              ],
             ]
         for i, expected_row in enumerate(expected):
@@ -219,7 +219,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             GLib.get_user_cache_dir() +
             '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
             'https://twitter.com/oauth_dancer/status/240558470661799936',
-            0.0, False, '', '', '', '', '', '',
+            0.0, False, '', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
 

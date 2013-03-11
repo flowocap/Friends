@@ -233,6 +233,8 @@ class TestProtocols(unittest.TestCase):
              '',
              '',
              '',
+             0.0,
+             0.0,
              ])
 
     @mock.patch('friends.utils.base.Model', TestModel)
@@ -375,6 +377,8 @@ class TestProtocols(unittest.TestCase):
              '',
              '',
              '',
+             0.0,
+             0.0,
              ])
 
     @mock.patch('friends.utils.base.Model', TestModel)
