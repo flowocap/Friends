@@ -97,6 +97,7 @@ class TestFourSquare(unittest.TestCase):
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.",
             '~/.cache/friends/avatar/hash', '', 0, False, '', '', '',
-            '', '', '', 49.88873164336725, -97.158043384552,
+            '', '', '', 'Pop Soda\'s Coffee House & Gallery',
+            49.88873164336725, -97.158043384552,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected)

@@ -130,6 +130,7 @@ Facebook UID: None
             '',
             '',
             '',
+            '',
             0.0,
             0.0,
             ])
@@ -155,6 +156,7 @@ Facebook UID: None
             'Rush is a Band: Neil Peart, Geddy Lee, Alex Lifeson',
             'www.rushisaband.com',
             '',
+            '',
             0.0,
             0.0,
             ])
@@ -179,6 +181,7 @@ Facebook UID: None
             'http://www2.gibson.com/Alex-Lifeson.aspx',
             'For millions of Rush fans old and new, it’s a pleasure',
             'www2.gibson.com',
+            '',
             '',
             0.0,
             0.0,

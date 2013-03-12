@@ -62,6 +62,7 @@ SCHEMA = (
     ('link_desc',      's'),
     ('link_caption',   's'),
     ('link_icon',      's'),
+    ('location',       's'),
     ('latitude',       'd'),
     ('longitude',      'd'),
     )

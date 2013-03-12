@@ -185,6 +185,7 @@ class TestFlickr(unittest.TestCase):
              '',
              'ant',
              '',
+             '',
              0.0,
              0.0,
              ])
@@ -210,6 +211,7 @@ class TestFlickr(unittest.TestCase):
              '',
              '',
              'bee',
+             '',
              '',
              0.0,
              0.0,
@@ -238,6 +240,7 @@ class TestFlickr(unittest.TestCase):
              '',
              'cat',
              'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg',
+             '',
              0.0,
              0.0,
              ])

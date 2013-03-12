@@ -233,6 +233,7 @@ class TestProtocols(unittest.TestCase):
              '',
              '',
              '',
+             '',
              0.0,
              0.0,
              ])
@@ -371,6 +372,7 @@ class TestProtocols(unittest.TestCase):
              '',
              0,
              False,
+             '',
              '',
              '',
              '',

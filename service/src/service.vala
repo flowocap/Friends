@@ -70,6 +70,7 @@ public class Master : Object
                            "s",
                            "s",
                            "s",
+                           "s",
                            "d",
                            "d"};
 

@@ -85,7 +85,8 @@ class FourSquare(Base):
             checkin_id = checkin.get('id', '')
             tz_offset = checkin.get('timeZoneOffset', 0)
             epoch = checkin.get('createdAt', 0)
-            location = checkin.get('venue', {}).get('location', {})
+            venue = checkin.get('venue', {})
+            location = venue.get('location', {})
             self._publish(
                 message_id=checkin_id,
                 stream='messages',
@@ -95,7 +96,8 @@ class FourSquare(Base):
                 message=checkin.get('shout', ''),
                 likes=checkin.get('likes', {}).get('count', 0),
                 icon_uri=Avatar.get_image(avatar_url),
-                url=checkin.get('venue', {}).get('canonicalUrl', ''),
+                url=venue.get('canonicalUrl', ''),
+                location=venue.get('name', ''),
                 latitude=location.get('lat', 0.0),
                 longitude=location.get('lng', 0.0),
                 )
