@@ -375,10 +375,8 @@ class Base:
         """
         # This got a bit tricky because we can't destructively iterate
         # over a DeeModel
-        goners = []
-        for row in Model:
-            if row[ACCT_IDX] == self._account.id:
-                goners.append(row[ID_IDX])
+        account_id = self._account.id
+        goners = [row[ID_IDX] for row in Model if row[ACCT_IDX] == account_id]
         for message_id in goners:
             self._unpublish(message_id)
         persist_model()

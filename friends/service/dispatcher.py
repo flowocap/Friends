@@ -31,6 +31,7 @@ from gi.repository import GLib
 
 from friends.utils.avatar import Avatar
 from friends.utils.account import AccountManager
+from friends.utils.base import Base
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model
@@ -277,12 +278,14 @@ class Dispatcher(dbus.service.Object):
         """
         GLib.idle_add(self.mainloop.quit)
         log.debug('Purging account {}'.format(account_id))
-        account = self.account_manager.get(account_id)
+        # Unfortunately, the *real* account object is *already gone*
+        # by the time this method even gets invoked, so we have to
+        # fake the account object just enough to make the call to
+        # _unpublish_all work as expected.
+        class account:
+            id = int(account_id)
         rows = Model.get_n_rows()
-        if account is not None:
-            account.protocol._unpublish_all()
-        else:
-            log.error('Could not find account: {}'.format(account_id))
+        Base(account)._unpublish_all()
         return Model.get_n_rows() - rows
 
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')

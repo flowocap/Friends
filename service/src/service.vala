@@ -48,7 +48,8 @@ public class Master : Object
         acct_manager = new Ag.Manager.for_service_type ("microblogging");
         acct_manager.account_deleted.connect ((manager, account_id) => {
                 debug ("Attempting to purge messages from deleted account.");
-                dispatcher.PurgeAccount (account_id.to_string ());
+                var purged = dispatcher.PurgeAccount (account_id.to_string ());
+                debug ("Purged %d messages.", purged);
             }
         );
 

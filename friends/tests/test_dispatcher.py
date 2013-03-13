@@ -168,24 +168,19 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(self.log_mock.empty(),
                          'Uploading file://path/to/image.png to 2\n')
 
-    def test_purge_account(self):
-        account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
-
+    @mock.patch('friends.service.dispatcher.Base')
+    def test_purge_account(self, base_mock):
         self.dispatcher.PurgeAccount('10')
-        account.protocol._unpublish_all.assert_called_once_with()
+        base_mock()._unpublish_all.assert_called_once_with()
         self.assertEqual(self.log_mock.empty(),
                          'Purging account 10\n')
 
-    def test_purge_account_failed(self):
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = None
-
+    @mock.patch('friends.service.dispatcher.Base')
+    def test_purge_account_failed(self, base_mock):
         self.assertEqual(self.dispatcher.PurgeAccount('10'), 0)
+        base_mock()._unpublish_all.assert_called_once_with()
         self.assertEqual(self.log_mock.empty(),
-                         'Purging account 10\n'
-                         'Could not find account: 10\n')
+                         'Purging account 10\n')
 
     def test_get_features(self):
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),
