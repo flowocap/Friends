@@ -263,31 +263,6 @@ class Dispatcher(dbus.service.Object):
             failure(message)
             log.error(message)
 
-    @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='i')
-    def PurgeAccount(self, account_id):
-        """Remove all messages associated with the specified account_id.
-
-        example:
-            import dbus
-            obj = dbus.SessionBus().get_object(DBUS_INTERFACE,
-                '/com/canonical/friends/Dispatcher')
-            service = dbus.Interface(obj, DBUS_INTERFACE)
-            service.PurgeAccount('1')
-
-        Returns the number of rows deleted as an int.
-        """
-        GLib.idle_add(self.mainloop.quit)
-        log.debug('Purging account {}'.format(account_id))
-        # Unfortunately, the *real* account object is *already gone*
-        # by the time this method even gets invoked, so we have to
-        # fake the account object just enough to make the call to
-        # _unpublish_all work as expected.
-        class account:
-            id = int(account_id)
-        rows = Model.get_n_rows()
-        Base(account)._unpublish_all()
-        return Model.get_n_rows() - rows
-
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.

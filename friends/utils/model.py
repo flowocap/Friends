@@ -41,6 +41,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
+# DO NOT EDIT THIS WITHOUT ADJUSTING service.vala IN LOCKSTEP
 SCHEMA = (
     ('protocol',       's'), # Same as UOA 'provider_name'
     ('account_id',     't'), # Same as UOA account id

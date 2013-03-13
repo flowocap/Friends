@@ -263,50 +263,6 @@ class TestProtocols(unittest.TestCase):
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
-    def test_unpublish_all(self):
-        base = Base(FakeAccount())
-        self.assertEqual(0, TestModel.get_n_rows())
-        self.assertTrue(base._publish(
-            message_id='1234',
-            sender='fred',
-            message='hello, @jimmy'))
-        self.assertTrue(base._publish(
-            message_id='1235',
-            sender='fred',
-            message='hello, @jimmy'))
-        self.assertTrue(base._publish(
-            message_id='5678',
-            sender='fred',
-            message='hello, +jimmy'))
-        self.assertEqual(3, TestModel.get_n_rows())
-        base._unpublish_all()
-        self.assertEqual(0, TestModel.get_n_rows())
-
-    @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_ids', {})
-    def test_unpublish_all_preserves_others(self):
-        base = Base(FakeAccount())
-        other = Base(FakeAccount())
-        other._account.id = 69
-        self.assertEqual(0, TestModel.get_n_rows())
-        self.assertTrue(base._publish(
-            message_id='1234',
-            sender='fred',
-            message='hello, @jimmy'))
-        self.assertTrue(base._publish(
-            message_id='1235',
-            sender='fred',
-            message='hello, @jimmy'))
-        self.assertTrue(other._publish(
-            message_id='5678',
-            sender='fred',
-            message='hello, +jimmy'))
-        self.assertEqual(3, TestModel.get_n_rows())
-        base._unpublish_all()
-        self.assertEqual(1, TestModel.get_n_rows())
-
-    @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_ids', {})
     def test_duplicate_messages_identified(self):
         base = Base(FakeAccount())
         self.assertEqual(0, TestModel.get_n_rows())

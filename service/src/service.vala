@@ -22,9 +22,6 @@ using Ag;
 private interface Dispatcher : GLib.Object {
         public abstract void Refresh () throws GLib.IOError;
         public abstract void ExpireAvatars () throws GLib.IOError;
-        public abstract int PurgeAccount (
-            string account_id
-            ) throws GLib.IOError;
         public abstract async void Do (
             string action,
             string account_id,
@@ -47,9 +44,23 @@ public class Master : Object
     {
         acct_manager = new Ag.Manager.for_service_type ("microblogging");
         acct_manager.account_deleted.connect ((manager, account_id) => {
-                debug ("Attempting to purge messages from deleted account.");
-                var purged = dispatcher.PurgeAccount (account_id.to_string ());
-                debug ("Purged %d messages.", purged);
+                debug ("Account %u deleted from UOA, purging...", account_id);
+                uint purged = 0;
+                uint rows = model.get_n_rows ();
+                // Destructively iterate over the Model from back to
+                // front; I know "i < rows" looks kinda goofy here,
+                // but what's happening is that i is unsigned, so once
+                // it hits 0, i-- will overflow to a very large
+                // number, and then "i < rows" will fail, stopping the
+                // iteration at index 0.
+                for (uint i = rows - 1; i < rows; i--) {
+                    var itr = model.get_iter_at_row (i);
+                    if (model.get_uint64 (itr, 1) == account_id) {
+                        model.remove (itr);
+                        purged++;
+                    }
+                }
+                debug ("Purged %u rows.", purged);
             }
         );
 
