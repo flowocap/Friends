@@ -43,7 +43,6 @@ class TestNotifications(unittest.TestCase):
         TestModel.clear()
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_all(self, notify):
@@ -57,7 +56,6 @@ class TestNotifications(unittest.TestCase):
         notify.assert_called_once_with('Benjamin', 'notify!', '')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_mentions_private(self, notify):
@@ -73,7 +71,6 @@ class TestNotifications(unittest.TestCase):
         notify.assert_called_once_with('Benjamin', 'This message is private!', '')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_mention_fail(self, notify):
@@ -89,7 +86,6 @@ class TestNotifications(unittest.TestCase):
         self.assertEqual(notify.call_count, 0)
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_mention_none(self, notify):

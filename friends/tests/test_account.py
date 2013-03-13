@@ -198,7 +198,7 @@ class TestAccountManager(unittest.TestCase):
         # the account manager's mapping.
         manager = AccountManager()
         manager._add_new_account(self.account_service)
-        self.assertIn('1234', manager._accounts)
+        self.assertIn(88, manager._accounts)
 
     def test_account_manager_enabled_event(self):
         manager = AccountManager()

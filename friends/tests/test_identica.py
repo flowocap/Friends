@@ -21,12 +21,16 @@ __all__ = [
     ]
 
 
+import os
+import tempfile
 import unittest
+import shutil
 
 from gi.repository import Dee
 
 from friends.protocols.identica import Identica
 from friends.tests.mocks import FakeAccount, LogMock, mock
+from friends.utils.cache import JsonCache
 from friends.utils.model import COLUMN_TYPES
 from friends.errors import AuthorizationError
 
@@ -43,6 +47,9 @@ class TestIdentica(unittest.TestCase):
     """Test the Identica API."""
 
     def setUp(self):
+        self._temp_cache = tempfile.mkdtemp()
+        self._root = JsonCache._root = os.path.join(
+            self._temp_cache, '{}.json')
         self.account = FakeAccount()
         self.protocol = Identica(self.account)
         self.log_mock = LogMock('friends.utils.base',
@@ -52,6 +59,7 @@ class TestIdentica(unittest.TestCase):
         # Ensure that any log entries we haven't tested just get consumed so
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
+        shutil.rmtree(self._temp_cache)
 
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
@@ -83,7 +91,7 @@ class TestIdentica(unittest.TestCase):
 
         publish.assert_called_with('tweet', stream='mentions')
         get_url.assert_called_with(
-            'http://identi.ca/api/statuses/mentions.json')
+            'http://identi.ca/api/statuses/mentions.json?count=50')
 
     def test_user(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
@@ -116,8 +124,9 @@ class TestIdentica(unittest.TestCase):
         publish.assert_called_with('tweet', stream='private')
         self.assertEqual(
             get_url.mock_calls,
-            [mock.call('http://identi.ca/api/direct_messages.json'),
-             mock.call('http://identi.ca/api/direct_messages/sent.json')])
+            [mock.call('http://identi.ca/api/direct_messages.json?count=50'),
+             mock.call('http://identi.ca/api/direct_messages' +
+                       '/sent.json?count=50')])
 
     def test_send_private(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')

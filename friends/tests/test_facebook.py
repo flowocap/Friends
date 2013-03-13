@@ -109,9 +109,9 @@ Facebook UID: None
         self.assertEqual(self.protocol.receive(), 4)
         self.assertEqual(TestModel.get_n_rows(), 4)
         self.assertEqual(list(TestModel.get_row(2)), [
-            [['facebook',
-              '1234',
-              '117402931676347_386054134801436_3235476']],
+            'facebook',
+            88,
+            '117402931676347_386054134801436_3235476',
             'reply_to/109',
             'Bruce Peart',
             '809',
@@ -122,16 +122,22 @@ Facebook UID: None
             GLib.get_user_cache_dir() +
             '/friends/avatars/b688c8def0455d4a3853d5fcdfaf0708645cfd3e',
             'https://www.facebook.com/809',
-            0.0,
+            0,
             False,
             '',
             '',
             '',
             '',
             '',
-            ''])
+            '',
+            '',
+            0.0,
+            0.0,
+            ])
         self.assertEqual(list(TestModel.get_row(0)), [
-            [['facebook', '1234', '108']],
+            'facebook',
+            88,
+            '108',
             'mentions',
             'Rush is a Band',
             '117402931676347',
@@ -142,16 +148,22 @@ Facebook UID: None
             GLib.get_user_cache_dir() +
             '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
             'https://www.facebook.com/117402931676347',
-            16.0,
+            16,
             False,
             'https://fbexternal-a.akamaihd.net/rush.jpg',
             'Rush is a Band Blog',
             'http://www.rushisaband.com/blog/Rush-Clockwork-Angels-tour',
             'Rush is a Band: Neil Peart, Geddy Lee, Alex Lifeson',
             'www.rushisaband.com',
-            ''])
+            '',
+            '',
+            0.0,
+            0.0,
+            ])
         self.assertEqual(list(TestModel.get_row(1)), [
-            [['facebook', '1234', '109']],
+            'facebook',
+            88,
+            '109',
             'mentions',
             'Rush is a Band',
             '117402931676347',
@@ -162,14 +174,18 @@ Facebook UID: None
             GLib.get_user_cache_dir() +
             '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
             'https://www.facebook.com/117402931676347',
-            27.0,
+            27,
             False,
             'https://images.gibson.com/Rush_Clockwork-Angels_t.jpg',
             'Top 10 Alex Lifeson Guitar Moments',
             'http://www2.gibson.com/Alex-Lifeson.aspx',
             'For millions of Rush fans old and new, it’s a pleasure',
             'www2.gibson.com',
-            ''])
+            '',
+            '',
+            0.0,
+            0.0,
+            ])
 
     # XXX We really need full coverage of the receive() method, including
     # cases where some data is missing, or can't be converted

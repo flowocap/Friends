@@ -69,14 +69,14 @@ class AccountManager:
         except UnsupportedProtocolError as error:
             log.info(error)
         else:
-            self._accounts[str(new_account.id)] = new_account
+            self._accounts[new_account.id] = new_account
             return new_account
 
     def get_all(self):
         return self._accounts.values()
 
     def get(self, account_id, default=None):
-        return self._accounts.get(str(account_id), default)
+        return self._accounts.get(int(account_id), default)
 
 
 class AuthData:
@@ -112,12 +112,12 @@ class Account:
         self.auth = AuthData(account_service.get_auth_data())
         # The provider in libaccounts should match the name of our protocol.
         account = account_service.get_account()
+        self.id = account.id
         self.protocol_name = account.get_provider_name()
         protocol_class = protocol_manager.protocols.get(self.protocol_name)
         if protocol_class is None:
             raise UnsupportedProtocolError(self.protocol_name)
         self.protocol = protocol_class(self)
-        self.id = str(account.id)
         # Connect responders to changes in the account information.
         account_service.connect('changed', self._on_account_changed, account)
         self._on_account_changed(account_service, account)

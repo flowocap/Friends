@@ -1,3 +1,26 @@
+friends (0.1.2-0ubuntu1) UNRELEASED; urgency=low
+
+  * Stop deduplicating messages across protocols, simplifying model schema.
+  * Add schema columns for latitude, longitude, and location name.
+  * Fix 'likes' column from gdouble to guint64.
+  * Add geotagging support from foursquare.
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Tue, 12 Mar 2013 11:40:23 -0700
+
+friends (0.1.2daily13.03.11.1-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * Automatic snapshot from revision 145 (bootstrap)
+  * Friends re-publishing and re-notifying about stale tweets. (LP:
+    #1152417)
+  * The dbus-invocation stuff that just landed broke Twitter's rate
+    limiter. (LP: #1118878)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 160
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 11 Mar 2013 10:43:35 +0000
+
 friends (0.1.1bzr13.02.25-0ubuntu1) raring; urgency=low
 
   * Added depends for python3-gi and python3-oauthlib

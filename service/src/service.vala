@@ -62,24 +62,29 @@ public class Master : Object
             debug ("Failed to load model from resource manager: %s", e.message);
         }
 
-        string[] SCHEMA = {"aas",
+        string[] SCHEMA = {"s",
+                           "t",
+                           "s",
                            "s",
                            "s",
                            "s",
                            "s",
                            "b",
+                           "s",
+                           "s",
+                           "s",
+                           "s",
+                           "t",
+                           "b",
+                           "s",
+                           "s",
+                           "s",
                            "s",
                            "s",
                            "s",
                            "s",
                            "d",
-                           "b",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s"};
+                           "d"};
 
         bool schemaReset = false;
 

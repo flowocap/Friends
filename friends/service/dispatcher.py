@@ -117,7 +117,7 @@ class Dispatcher(dbus.service.Object):
         """
         if account_id:
             accounts = [self.account_manager.get(account_id)]
-            if accounts == [None]:
+            if None in accounts:
                 message = 'Could not find account: {}'.format(account_id)
                 failure(message)
                 log.error(message)
