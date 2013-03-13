@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
+from friends.utils.cache import JsonCache
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
 from friends.errors import FriendsError
@@ -46,6 +47,10 @@ log = logging.getLogger(__name__)
 
 
 class Facebook(Base):
+    def __init__(self, account):
+        super().__init__(account)
+        self._tweet_ids = JsonCache(self._name + '_ids')
+
     def _whoami(self, authdata):
         """Identify the authenticating user."""
         me_data = Downloader(

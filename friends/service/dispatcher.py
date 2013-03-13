@@ -162,7 +162,7 @@ class Dispatcher(dbus.service.Object):
                 sent = True
                 log.debug(
                     'Sending message to {}'.format(
-                        account.protocol.__class__.__name__))
+                        account.protocol._Name))
                 account.protocol(
                     'send',
                     message,

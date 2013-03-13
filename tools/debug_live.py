@@ -59,7 +59,7 @@ def setup(model, signal, protocol, args):
     Model.connect('row-added', row_added)
 
     for account in a._accounts.values():
-        if account.protocol.__class__.__name__.lower() == protocol.lower():
+        if account.protocol._name == protocol.lower():
             found = True
             account.protocol(*args)
 

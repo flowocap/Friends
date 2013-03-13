@@ -70,7 +70,7 @@ class Twitter(Base):
         super().__init__(account)
         self._rate_limiter = RateLimiter()
         # Can be 'twitter_ids' or 'identica_ids'
-        self._tweet_ids = TweetIdCache(self.__class__.__name__.lower() + '_ids')
+        self._tweet_ids = TweetIdCache(self._name + '_ids')
 
     def _whoami(self, authdata):
         """Identify the authenticating user."""

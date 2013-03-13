@@ -176,6 +176,8 @@ class Base:
 
     def __init__(self, account):
         self._account = account
+        self._Name = self.__class__.__name__
+        self._name = self._Name.lower()
 
     def _whoami(self, result):
         """Use OAuth login results to identify the authenticating user.
@@ -203,7 +205,7 @@ class Base:
         """
         raise NotImplementedError(
             '{} protocol has no _whoami() method.'.format(
-                self.__class__.__name__))
+                self._Name))
 
     def receive(self):
         """Poll the social network for new messages.
@@ -242,7 +244,7 @@ class Base:
         """
         raise NotImplementedError(
             '{} protocol has no receive() method.'.format(
-                self.__class__.__name__))
+                self._Name))
 
     def __call__(self, operation, *args, success=STUB, failure=STUB, **kwargs):
         """Call an operation, i.e. a method, with arguments in a sub-thread.
@@ -274,7 +276,7 @@ class Base:
             raise NotImplementedError(operation)
         method = getattr(self, operation)
         _OperationThread(
-            id='{}.{}'.format(self.__class__.__name__, operation),
+            id='{}.{}'.format(self._Name, operation),
             target=method,
             success=success,
             failure=failure,
@@ -318,7 +320,7 @@ class Base:
         # These bits don't need to be set by the caller; we can infer them.
         kwargs.update(
             dict(
-                protocol=self.__class__.__name__.lower(),
+                protocol=self._name,
                 account_id=self._account.id
                 )
             )
@@ -445,15 +447,14 @@ class Base:
         subthread needs to log in. You do not have to worry about
         subthread race conditions inside this method.
         """
-        protocol = self.__class__.__name__
         log.debug('{} to {}'.format(
-                'Re-authenticating' if old_token else 'Logging in', protocol))
+                'Re-authenticating' if old_token else 'Logging in', self._Name))
 
         result = Authentication(self._account).login()
 
         self._account.access_token = result.get('AccessToken')
         self._whoami(result)
-        log.debug('{} UID: {}'.format(protocol, self._account.user_id))
+        log.debug('{} UID: {}'.format(self._Name, self._account.user_id))
 
     def _get_oauth_headers(self, method, url, data=None, headers=None):
         """Basic wrapper around oauthlib that we use for Twitter and Flickr."""

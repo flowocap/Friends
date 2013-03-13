@@ -20,7 +20,10 @@ __all__ = [
     ]
 
 
+import os
+import tempfile
 import unittest
+import shutil
 
 from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
@@ -29,6 +32,7 @@ from friends.protocols.facebook import Facebook
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.errors import ContactsError, FriendsError, AuthorizationError
+from friends.utils.cache import JsonCache
 from friends.utils.model import COLUMN_TYPES
 
 
@@ -44,12 +48,16 @@ class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
     def setUp(self):
+        self._temp_cache = tempfile.mkdtemp()
+        self._root = JsonCache._root = os.path.join(
+            self._temp_cache, '{}.json')
         self.account = FakeAccount()
         self.protocol = Facebook(self.account)
         self.protocol.source_registry = EDSRegistry()
 
     def tearDown(self):
         TestModel.clear()
+        shutil.rmtree(self._temp_cache)
 
     def test_features(self):
         # The set of public features.
