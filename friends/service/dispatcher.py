@@ -31,7 +31,6 @@ from gi.repository import GLib
 
 from friends.utils.avatar import Avatar
 from friends.utils.account import AccountManager
-from friends.utils.base import Base
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model
