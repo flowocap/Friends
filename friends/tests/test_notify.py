@@ -22,18 +22,9 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
-
-from friends.tests.mocks import FakeAccount, mock
+from friends.tests.mocks import FakeAccount, TestModel, mock
 from friends.utils.base import Base
-from friends.utils.model import COLUMN_TYPES
 from friends.utils.notify import notify
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
 
 
 class TestNotifications(unittest.TestCase):

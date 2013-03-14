@@ -26,20 +26,14 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib, Dee
+from gi.repository import GLib
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
-from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
+from friends.tests.mocks import TestModel, mock
 from friends.utils.cache import JsonCache
-from friends.utils.model import COLUMN_TYPES
 from friends.errors import AuthorizationError
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())

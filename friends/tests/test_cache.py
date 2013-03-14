@@ -21,13 +21,9 @@ __all__ = [
 
 
 import os
-import time
 import shutil
 import tempfile
 import unittest
-
-from datetime import date, timedelta
-from pkg_resources import resource_filename
 
 from friends.utils.cache import JsonCache
 

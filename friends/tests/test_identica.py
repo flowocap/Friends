@@ -26,23 +26,15 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import Dee
-
 from friends.protocols.identica import Identica
-from friends.tests.mocks import FakeAccount, LogMock, mock
+from friends.tests.mocks import FakeAccount, LogMock, TestModel, mock
 from friends.utils.cache import JsonCache
-from friends.utils.model import COLUMN_TYPES
 from friends.errors import AuthorizationError
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
 @mock.patch('friends.utils.base.notify', mock.Mock())
+@mock.patch('friends.utils.base.Model', TestModel)
 class TestIdentica(unittest.TestCase):
     """Test the Identica API."""
 

@@ -23,19 +23,11 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
-
 from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
-from friends.tests.mocks import FakeAccount, LogMock, SettingsIterMock, mock
+from friends.tests.mocks import FakeAccount, LogMock, SettingsIterMock
+from friends.tests.mocks import TestModel, mock
 from friends.utils.account import Account, AccountManager
-from friends.utils.model import COLUMN_TYPES
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
 
 
 class TestAccount(unittest.TestCase):

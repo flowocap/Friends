@@ -22,18 +22,12 @@ __all__ = [
 
 import unittest
 
-from gi.repository import GLib, Dee
+from gi.repository import GLib
 
 from friends.errors import AuthorizationError, FriendsError
 from friends.protocols.flickr import Flickr
-from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
-from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
+from friends.tests.mocks import TestModel, mock
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())

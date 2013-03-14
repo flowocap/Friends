@@ -22,13 +22,11 @@ __all__ = [
 
 import dbus.service
 import unittest
-import json
 
 from dbus.mainloop.glib import DBusGMainLoop
 
 from friends.service.mock_service import Dispatcher as MockDispatcher
 from friends.service.dispatcher import Dispatcher
-from friends.tests.mocks import LogMock, mock
 
 
 # Set up the DBus main loop.

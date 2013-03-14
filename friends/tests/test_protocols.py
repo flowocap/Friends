@@ -24,21 +24,12 @@ __all__ = [
 import unittest
 import threading
 
-from gi.repository import Dee
-
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
-from friends.tests.mocks import FakeAccount, LogMock, mock
+from friends.tests.mocks import FakeAccount, LogMock, TestModel, mock
 from friends.utils.base import Base, feature
 from friends.utils.manager import ProtocolManager
-from friends.utils.model import (
-    COLUMN_INDICES, COLUMN_NAMES, COLUMN_TYPES, Model)
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+from friends.utils.model import COLUMN_INDICES, Model
 
 
 class TestProtocolManager(unittest.TestCase):

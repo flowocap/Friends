@@ -22,8 +22,6 @@ __all__ = [
 
 import unittest
 
-from operator import getitem
-
 from friends.shorteners import isgd, ougd, linkeecom, lookup, tinyurlcom
 from friends.tests.mocks import FakeSoupMessage, mock
 

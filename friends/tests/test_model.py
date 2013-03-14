@@ -26,10 +26,8 @@ __all__ = [
 
 import unittest
 
-from friends.utils.model import Model
 from friends.utils.model import prune_model, persist_model
 from friends.tests.mocks import LogMock, mock
-from gi.repository import Dee
 
 
 class TestModel(unittest.TestCase):
@@ -40,6 +38,17 @@ class TestModel(unittest.TestCase):
 
     def tearDown(self):
         self.log_mock.stop()
+
+    @mock.patch('friends.utils.model.Model')
+    def test_persist_model(self, model):
+        model.__len__.return_value = 500
+        model.is_synchronized.return_value = True
+        persist_model()
+        model.is_synchronized.assert_called_once_with()
+        model.flush_revision_queue.assert_called_once_with()
+        self.assertEqual(self.log_mock.empty(),
+                         'Trying to save Dee.SharedModel with 500 rows.\n' +
+                         'Saving Dee.SharedModel with 500 rows.\n')
 
     @mock.patch('friends.utils.model.Model')
     @mock.patch('friends.utils.model.persist_model')

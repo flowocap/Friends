@@ -36,9 +36,11 @@ from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
 from queue import Empty, Queue
 from urllib.parse import urlsplit
+from gi.repository import Dee
 
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
+from friends.utils.model import COLUMN_TYPES
 
 
 try:
@@ -49,6 +51,12 @@ except ImportError:
 
 
 NEWLINE = '\n'
+
+
+# Create a test model that will not interfere with the user's environment.
+# We'll use this object as a mock of the real model.
+TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
+TestModel.set_schema_full(COLUMN_TYPES)
 
 
 class FakeAuth:
