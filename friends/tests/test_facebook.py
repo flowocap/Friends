@@ -115,22 +115,50 @@ Facebook UID: None
         # Receive the wall feed for a user.
         self.maxDiff = None
         self.account.access_token = 'abc'
-        self.assertEqual(self.protocol.receive(), 4)
-        self.assertEqual(TestModel.get_n_rows(), 4)
+        self.assertEqual(self.protocol.receive(), 9)
+        self.assertEqual(TestModel.get_n_rows(), 9)
+        self.assertEqual(list(TestModel.get_row(0)), [
+            'facebook',
+            88,
+            'fake_id',
+            'mentions',
+            'Yours Truly',
+            '56789',
+            'Yours Truly',
+            False,
+            '2013-03-13T23:29:07Z',
+            'Writing code that supports geotagging data from facebook. ' +
+            'If y\'all could make some geotagged facebook posts for me ' +
+            'to test with, that\'d be super.',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/5c4e74c64b1a09343558afc1046c2b1d176a2ba2',
+            'https://www.facebook.com/56789',
+            1,
+            False,
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            'Victoria, British Columbia',
+            48.4333,
+            -123.35,
+            ])
         self.assertEqual(list(TestModel.get_row(2)), [
             'facebook',
             88,
-            '117402931676347_386054134801436_3235476',
-            'reply_to/109',
-            'Bruce Peart',
-            '809',
-            'Bruce Peart',
+            'faker than cake!',
+            'reply_to/fake_id',
+            'Father',
+            '234',
+            'Father',
             False,
-            '2012-09-26T17:16:00Z',
-            'OK Don...10) Headlong Flight',
+            '2013-03-12T23:29:45Z',
+            'don\'t know how',
             GLib.get_user_cache_dir() +
-            '/friends/avatars/b688c8def0455d4a3853d5fcdfaf0708645cfd3e',
-            'https://www.facebook.com/809',
+            '/friends/avatars/9b9379ccc7948e4804dff7914bfa4c6de3974df5',
+            'https://www.facebook.com/234',
             0,
             False,
             '',
@@ -143,57 +171,37 @@ Facebook UID: None
             0.0,
             0.0,
             ])
-        self.assertEqual(list(TestModel.get_row(0)), [
+        self.assertEqual(list(TestModel.get_row(6)), [
             'facebook',
             88,
-            '108',
+            '161247843901324_629147610444676',
             'mentions',
-            'Rush is a Band',
-            '117402931676347',
-            'Rush is a Band',
+            'Best Western Denver Southwest',
+            '161247843901324',
+            'Best Western Denver Southwest',
             False,
-            '2012-09-26T17:34:00Z',
-            'Rush takes off to the Great White North',
+            '2013-03-11T23:51:25Z',
+            'Today only -- Come meet Caroline and Meredith and Stanley the ' +
+            'Stegosaurus (& Greg & Joe, too!) at the TechZulu Trend Lounge, ' +
+            'Hilton Garden Inn 18th floor, 500 N Interstate 35, Austin, ' +
+            'Texas. Monday, March 11th, 4:00pm to 7:00 pm. Also here ' +
+            'Hannah Hart (My Drunk Kitchen) and Angry Video Game Nerd ' +
+            'producer, Sean Keegan. Stanley is in the lobby.',
             GLib.get_user_cache_dir() +
-            '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
-            'https://www.facebook.com/117402931676347',
-            16,
+            '/friends/avatars/5b2d70e788df790b9c8db4c6a138fc4a1f433ec9',
+            'https://www.facebook.com/161247843901324',
+            84,
             False,
-            'https://fbexternal-a.akamaihd.net/rush.jpg',
-            'Rush is a Band Blog',
-            'http://www.rushisaband.com/blog/Rush-Clockwork-Angels-tour',
-            'Rush is a Band: Neil Peart, Geddy Lee, Alex Lifeson',
-            'www.rushisaband.com',
+            'https://fbcdn-photos-a.akamaihd.net/hphotos-ak-snc7/' +
+            '601266_629147587111345_968504279_s.jpg',
+            '',
+            'https://www.facebook.com/photo.php?fbid=629147587111345&set=a.173256162700492.47377.161247843901324&type=1&relevant_count=1',
             '',
             '',
-            0.0,
-            0.0,
-            ])
-        self.assertEqual(list(TestModel.get_row(1)), [
-            'facebook',
-            88,
-            '109',
-            'mentions',
-            'Rush is a Band',
-            '117402931676347',
-            'Rush is a Band',
-            False,
-            '2012-09-26T17:49:06Z',
-            'http://www2.gibson.com/Alex-Lifeson-0225-2011.aspx',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
-            'https://www.facebook.com/117402931676347',
-            27,
-            False,
-            'https://images.gibson.com/Rush_Clockwork-Angels_t.jpg',
-            'Top 10 Alex Lifeson Guitar Moments',
-            'http://www2.gibson.com/Alex-Lifeson.aspx',
-            'For millions of Rush fans old and new, it’s a pleasure',
-            'www2.gibson.com',
             '',
-            '',
-            0.0,
-            0.0,
+            'Hilton Garden Inn Austin Downtown/Convention Center',
+            30.265384957204,
+            -97.735604602521,
             ])
 
     # XXX We really need full coverage of the receive() method, including
@@ -212,18 +220,18 @@ Facebook UID: None
         self.account.auth.parameters = dict(
             ConsumerKey='key',
             ConsumerSecret='secret')
-        self.assertEqual(self.protocol.home(), 4)
+        self.assertEqual(self.protocol.home(), 9)
 
         with open(self._root.format('facebook_ids'), 'r') as fd:
-            self.assertEqual(fd.read(), '{"messages": "2012-09-26T17:49:06Z"}')
+            self.assertEqual(fd.read(), '{"messages": "2013-03-13T23:29:07Z"}')
 
         follow = self.protocol._follow_pagination = mock.Mock()
         follow.return_value = []
-        self.assertEqual(self.protocol.home(), 4)
+        self.assertEqual(self.protocol.home(), 9)
         follow.assert_called_once_with(
             'https://graph.facebook.com/me/home',
             dict(limit=50,
-                 since='2012-09-26T17:49:06Z',
+                 since='2013-03-13T23:29:07Z',
                  access_token='access',
                  )
             )

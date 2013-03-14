@@ -65,6 +65,9 @@ class Facebook(Base):
             # We can't do much with this entry.
             return
 
+        place = entry.get('place', {})
+        location = place.get('location', {})
+
         args = dict(
             message_id=message_id,
             stream=stream,
@@ -75,6 +78,9 @@ class Facebook(Base):
             link_url=entry.get('link', ''),
             link_desc=entry.get('description', ''),
             link_caption=entry.get('caption', ''),
+            location=place.get('name', ''),
+            latitude=location.get('latitude', 0.0),
+            longitude=location.get('longitude', 0.0),
             )
 
         # Posts gives us a likes dict, while replies give us an int.
