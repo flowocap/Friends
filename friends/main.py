@@ -42,30 +42,17 @@ from friends.utils.options import Options
 args = Options().parser.parse_args()
 
 if args.test:
-    import os
-    import tempfile
-    import shutil
-
     from friends.service.mock_service import Dispatcher
-    from friends.utils.mocks import TestModel
-    from gi.repository import Dee
+    from friends.tests.mocks import populate_fake_data
 
-    temp_cache = tempfile.mkdtemp()
-    root = JsonCache._root = os.path.join(temp_cache, '{}.json')
-    account = FakeAccount()
-    protocol = Facebook(self.account)
-    protocol.source_registry = EDSRegistry()
-    with mock.patch('friends.utils.http.Soup.Message',
-                    FakeSoupMessage('friends.tests.data',
-                                    'facebook-login.dat')) as fb:
-
+    populate_fake_data()
     Dispatcher()
+
     try:
         loop.run()
     except KeyboardInterrupt:
         pass
 
-    shutil.rmtree(temp_cache)
     sys.exit(0)
 
 
