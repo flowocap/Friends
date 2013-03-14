@@ -15,12 +15,16 @@
 
 """Test the Facebook plugin."""
 
+
 __all__ = [
     'TestFacebook',
     ]
 
 
+import os
+import tempfile
 import unittest
+import shutil
 
 from gi.repository import Dee, GLib
 from pkg_resources import resource_filename
@@ -29,6 +33,7 @@ from friends.protocols.facebook import Facebook
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.errors import ContactsError, FriendsError, AuthorizationError
+from friends.utils.cache import JsonCache
 from friends.utils.model import COLUMN_TYPES
 
 
@@ -44,12 +49,16 @@ class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
     def setUp(self):
+        self._temp_cache = tempfile.mkdtemp()
+        self._root = JsonCache._root = os.path.join(
+            self._temp_cache, '{}.json')
         self.account = FakeAccount()
         self.protocol = Facebook(self.account)
         self.protocol.source_registry = EDSRegistry()
 
     def tearDown(self):
         TestModel.clear()
+        shutil.rmtree(self._temp_cache)
 
     def test_features(self):
         # The set of public features.
@@ -198,6 +207,34 @@ Facebook UID: None
     # XXX We really need full coverage of the receive() method, including
     # cases where some data is missing, or can't be converted
     # (e.g. timestamps), and paginations.
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'facebook-full.dat'))
+    @mock.patch('friends.protocols.facebook.Facebook._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_home_since_id(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(self.protocol.home(), 9)
+
+        with open(self._root.format('facebook_ids'), 'r') as fd:
+            self.assertEqual(fd.read(), '{"messages": "2013-03-13T23:29:07Z"}')
+
+        follow = self.protocol._follow_pagination = mock.Mock()
+        follow.return_value = []
+        self.assertEqual(self.protocol.home(), 9)
+        follow.assert_called_once_with(
+            'https://graph.facebook.com/me/home',
+            dict(limit=50,
+                 since='2013-03-13T23:29:07Z',
+                 access_token='access',
+                 )
+            )
 
     @mock.patch('friends.protocols.facebook.Downloader')
     def test_send_to_my_wall(self, dload):

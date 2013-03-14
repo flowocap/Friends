@@ -191,7 +191,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'https://api.twitter.com/1.1/statuses/' +
             'home_timeline.json?count=50&since_id=240558470661799936')
 
-
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-send.dat'))
