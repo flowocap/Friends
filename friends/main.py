@@ -43,6 +43,12 @@ args = Options().parser.parse_args()
 
 if args.test:
     from friends.service.mock_service import Dispatcher
+    from friends.utils.model import COLUMN_TYPES
+    from gi.repository import Dee
+
+    TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
+    TestModel.set_schema_full(COLUMN_TYPES)
+
     Dispatcher()
     try:
         loop.run()
