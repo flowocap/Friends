@@ -18,8 +18,11 @@ override_dh_auto_build:
 override_dh_auto_install:
 	python3 setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
 	python3 setup.py install_service_files -d $(CURDIR)/debian/tmp/usr
+	rm -rf $(CURDIR)/debian/tmp/usr/lib/python3/dist-packages/friends/tests/test*
+	rm -rf $(CURDIR)/debian/tmp/usr/lib/python3/dist-packages/friends/*/__pycache__
+	rm -rf $(CURDIR)/debian/tmp/usr/lib/python3/dist-packages/friends/__pycache__
 	dh_auto_install -D service
-	dh_install --list-missing
+	dh_install --fail-missing
 
 override_dh_auto_test:
 	dbus-test-runner -t make -p check -m 300
