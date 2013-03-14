@@ -113,7 +113,7 @@ class Flickr(Base):
             method='flickr.photos.getContactsPhotos',
             format='json',
             nojsoncallback='1',
-            extras='date_upload,owner_name,icon_server',
+            extras='date_upload,owner_name,icon_server,geo',
             )
 
         response = self._get_url(args)
@@ -166,7 +166,10 @@ class Flickr(Base):
                 link_caption=data.get('title', ''),
                 link_url=img_url,
                 link_picture=img_src,
-                link_icon=img_thumb)
+                link_icon=img_thumb,
+                latitude=data.get('latitude', 0.0),
+                longitude=data.get('longitude', 0.0),
+                )
         return self._get_n_rows()
 
 # http://www.flickr.com/services/api/upload.api.html
