@@ -368,21 +368,6 @@ class Base:
             if value > row_idx:
                 _seen_ids[key] = value - 1
 
-    def _unpublish_all(self):
-        """Remove all of this account's messages from the Model.
-
-        Saves the Model to disk after it is done purging rows.
-        """
-        # This got a bit tricky because we can't destructively iterate
-        # over a DeeModel
-        goners = []
-        for row in Model:
-            if row[ACCT_IDX] == self._account.id:
-                goners.append(row[ID_IDX])
-        for message_id in goners:
-            self._unpublish(message_id)
-        persist_model()
-
     def _get_access_token(self):
         """Return an access token, logging in if necessary.
 

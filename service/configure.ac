@@ -18,6 +18,7 @@ GLIB_GSETTINGS
 
 DEE_REQUIRED=1.0.0
 PKG_CHECK_MODULES(BASE,
+                  libaccounts-glib
                   gio-2.0
                   dee-1.0 >= $DEE_REQUIRED)
 
