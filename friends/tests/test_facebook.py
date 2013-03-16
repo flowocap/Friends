@@ -109,8 +109,8 @@ Facebook UID: None
         # Receive the wall feed for a user.
         self.maxDiff = None
         self.account.access_token = 'abc'
-        self.assertEqual(self.protocol.receive(), 9)
-        self.assertEqual(TestModel.get_n_rows(), 9)
+        self.assertEqual(self.protocol.receive(), 12)
+        self.assertEqual(TestModel.get_n_rows(), 12)
         self.assertEqual(list(TestModel.get_row(0)), [
             'facebook',
             88,
@@ -197,6 +197,32 @@ Facebook UID: None
             30.265384957204,
             -97.735604602521,
             ])
+        self.assertEqual(list(TestModel.get_row(9)), [
+            'facebook',
+            88,
+            '104443_100085049977',
+            'mentions',
+            'Guy Frenchie',
+            '1244414',
+            'Guy Frenchie',
+            False,
+            '2013-03-15T19:57:14Z',
+            'Guy Frenchie did some things with some stuff.',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/3f5e276af0c43f6411d931b829123825ede1968e',
+            'https://www.facebook.com/1244414',
+            3,
+            False,
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            0.0,
+            0.0,
+            ])
 
     # XXX We really need full coverage of the receive() method, including
     # cases where some data is missing, or can't be converted
@@ -214,18 +240,18 @@ Facebook UID: None
         self.account.auth.parameters = dict(
             ConsumerKey='key',
             ConsumerSecret='secret')
-        self.assertEqual(self.protocol.home(), 9)
+        self.assertEqual(self.protocol.home(), 12)
 
         with open(self._root.format('facebook_ids'), 'r') as fd:
-            self.assertEqual(fd.read(), '{"messages": "2013-03-13T23:29:07Z"}')
+            self.assertEqual(fd.read(), '{"messages": "2013-03-15T19:57:14Z"}')
 
         follow = self.protocol._follow_pagination = mock.Mock()
         follow.return_value = []
-        self.assertEqual(self.protocol.home(), 9)
+        self.assertEqual(self.protocol.home(), 12)
         follow.assert_called_once_with(
             'https://graph.facebook.com/me/home',
             dict(limit=50,
-                 since='2013-03-13T23:29:07Z',
+                 since='2013-03-15T19:57:14Z',
                  access_token='access',
                  )
             )
