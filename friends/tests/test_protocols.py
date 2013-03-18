@@ -27,7 +27,7 @@ import threading
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
 from friends.tests.mocks import FakeAccount, LogMock, TestModel, mock
-from friends.utils.base import Base, feature
+from friends.utils.base import Base, feature, linkify_string
 from friends.utils.manager import ProtocolManager
 from friends.utils.model import COLUMN_INDICES, Model
 
@@ -392,3 +392,69 @@ class TestProtocols(unittest.TestCase):
 
     def test_features(self):
         self.assertEqual(MyProtocol.get_features(), ['feature_1', 'feature_2'])
+
+    def test_linkify_string(self):
+        # String with no URL is unchanged.
+        self.assertEqual('Hello!', linkify_string('Hello!'))
+        # http:// works.
+        self.assertEqual(
+            '<a href="http://www.example.com">http://www.example.com</a>',
+            linkify_string('http://www.example.com'))
+        # https:// works, too.
+        self.assertEqual(
+            '<a href="https://www.example.com">https://www.example.com</a>',
+            linkify_string('https://www.example.com'))
+        # http:// is optional if you include www.
+        self.assertEqual(
+            '<a href="www.example.com">www.example.com</a>',
+            linkify_string('www.example.com'))
+        # Haha, nobody uses ftp anymore!
+        self.assertEqual(
+            '<a href="ftp://example.com/">ftp://example.com/</a>',
+            linkify_string('ftp://example.com/'))
+        # Trailing periods are not linkified.
+        self.assertEqual(
+            '<a href="http://example.com">http://example.com</a>.',
+            linkify_string('http://example.com.'))
+        # URL can contain periods without getting cut off.
+        self.assertEqual(
+            '<a href="http://example.com/products/buy.html">'
+            'http://example.com/products/buy.html</a>.',
+            linkify_string('http://example.com/products/buy.html.'))
+        # Don't linkify trailing brackets.
+        self.assertEqual(
+            'Example Co (<a href="http://example.com">http://example.com</a>).',
+            linkify_string('Example Co (http://example.com).'))
+        # Don't linkify trailing exclamation marks.
+        self.assertEqual(
+            'Go to <a href="https://example.com">https://example.com</a>!',
+            linkify_string('Go to https://example.com!'))
+        # Don't linkify trailing commas, also ensure all links are found.
+        self.assertEqual(
+            '<a href="www.example.com">www.example.com</a>, <a '
+            'href="http://example.com/stuff">http://example.com/stuff</a>, and '
+            '<a href="http://example.com/things">http://example.com/things</a> '
+            'are my favorite sites.',
+            linkify_string('www.example.com, http://example.com/stuff, and '
+                           'http://example.com/things are my favorite sites.'))
+        # Don't linkify trailing question marks.
+        self.assertEqual(
+            'Ever been to <a href="www.example.com">www.example.com</a>?',
+            linkify_string('Ever been to www.example.com?'))
+        # URLs can contain question marks ok.
+        self.assertEqual(
+            'Like <a href="http://example.com?foo=bar&grill=true">'
+            'http://example.com?foo=bar&grill=true</a>?',
+            linkify_string('Like http://example.com?foo=bar&grill=true?'))
+        # Multi-line strings are also supported.
+        self.assertEqual(
+            'Hey, visit us online!\n\n'
+            '<a href="http://example.com">http://example.com</a>',
+            linkify_string('Hey, visit us online!\n\nhttp://example.com'))
+        # Don't accidentally duplicate linkification.
+        self.assertEqual(
+            '<a href="www.example.com">click here!</a>',
+            linkify_string('<a href="www.example.com">click here!</a>'))
+        self.assertEqual(
+            '<a href="www.example.com">www.example.com</a>',
+            linkify_string('<a href="www.example.com">www.example.com</a>'))

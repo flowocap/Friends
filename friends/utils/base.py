@@ -23,6 +23,7 @@ __all__ = [
     ]
 
 
+import re
 import time
 import logging
 import threading
@@ -50,6 +51,10 @@ MESSAGE_IDX = COLUMN_INDICES['message']
 ID_IDX = COLUMN_INDICES['message_id']
 ACCT_IDX = COLUMN_INDICES['account_id']
 TIME_IDX = COLUMN_INDICES['timestamp']
+
+# The behavior of this regex is documented in friends/tests/test_protocols.py
+LINKIFY_REGEX = re.compile(
+    r'(?<!href=")(?<!">)((?:(?:https?|ftp)://|www\.)(?:\S+?))(?=[,!.?\)]*(?:\s|$)(?!\</a\>))').sub
 
 
 # This is a mapping from message_ids to DeeModel row index ints. It is
@@ -99,6 +104,11 @@ def initialize_caches():
     _seen_ids.clear()
     _seen_ids.update({row[ID_IDX]: i for i, row in enumerate(Model)})
     log.debug('_seen_ids: {}'.format(len(_seen_ids)))
+
+
+def linkify_string(string):
+    """Finds all URLs in a string and turns them into HTML links."""
+    return LINKIFY_REGEX(r'<a href="\1">\1</a>', string)
 
 
 class _OperationThread(threading.Thread):
@@ -324,6 +334,8 @@ class Base:
                 account_id=self._account.id
                 )
             )
+        # linkify the message
+        kwargs['message'] = linkify_string(kwargs.get('message', ''))
         args = []
         # Now iterate through all the column names listed in the
         # SCHEMA, and pop matching column values from the kwargs, in
