@@ -1,3 +1,11 @@
+friends (0.1.2daily13.03.11.1-0ubuntu2) UNRELEASED; urgency=low
+
+  * debian/tests/unit: Redirect stderr to stdout, as unittest discover writes
+    to stderr by default. Succeeding autopkgtests must not write anything
+    there.
+
+ -- Martin Pitt <martin.pitt@ubuntu.com>  Mon, 18 Mar 2013 11:41:27 +0100
+
 friends (0.1.2daily13.03.11.1-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]
