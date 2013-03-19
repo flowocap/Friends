@@ -23,7 +23,7 @@ __all__ = [
 import logging
 import time
 
-from gi.repository import GObject, Signon
+from gi.repository import GObject, Accounts, Signon
 
 from friends.errors import AuthorizationError
 
@@ -37,13 +37,22 @@ log = logging.getLogger(__name__)
 LOGIN_TIMEOUT = 30 # Currently this is measured in half-seconds.
 
 
+# Yes, this is not the most logical place to instantiate this, but I
+# couldn't do it in account.py due to cyclical import dependencies.
+manager = Accounts.Manager.new_for_service_type('microblogging')
+
+
 class Authentication:
-    def __init__(self, account):
-        self.account = account
+    def __init__(self, account_id):
+        self.account_id = account_id
+        account = manager.get_account(account_id)
+        service = account.list_services()[0]
+        self.auth = Accounts.AccountService.new(
+            account, service).get_auth_data()
         self._reply = None
 
     def login(self):
-        auth = self.account.auth
+        auth = self.auth
         self.auth_session = Signon.AuthSession.new(
             auth.get_credentials_id(),
             auth.get_method())
@@ -60,17 +69,17 @@ class Authentication:
             time.sleep(0.5)
             timeout -= 1
         if self._reply is None:
-            raise AuthorizationError(self.account.id, 'Login timed out.')
+            raise AuthorizationError(self.account_id, 'Login timed out.')
         if 'AccessToken' not in self._reply:
             raise AuthorizationError(
-                self.account.id,
+                self.account_id,
                 'No AccessToken found: {!r}'.format(self._reply))
         return self._reply
 
     def _login_cb(self, session, reply, error, user_data):
         self._reply = reply
         if error:
-            exception = AuthorizationError(self.account.id, error.message)
+            exception = AuthorizationError(self.account_id, error.message)
             # Mardy says this error can happen during normal operation.
             if error.message.endswith('userActionFinished error: 10'):
                 log.error(str(exception))

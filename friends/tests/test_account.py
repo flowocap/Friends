@@ -128,16 +128,15 @@ class TestAccount(unittest.TestCase):
         self.assertFalse(hasattr(self.account, 'bee'))
         self.assertFalse(hasattr(self.account, 'cat'))
 
+    @mock.patch('friends.utils.account.manager')
     @mock.patch('friends.utils.account.Account')
     @mock.patch('friends.utils.account.Accounts')
-    def test_find_accounts(self, accts, acct, *ignore):
+    def test_find_accounts(self, accts, acct, manager):
         service = mock.Mock()
-        manager = accts.Manager.new_for_service_type
-        get_enabled = manager().get_enabled_account_services
+        get_enabled = manager.get_enabled_account_services
         get_enabled.return_value = [service]
         manager.reset_mock()
         accounts = _find_accounts_uoa()
-        manager.assert_called_once_with('microblogging')
         get_enabled.assert_called_once_with()
         acct.assert_called_once_with(service)
         self.assertEqual(accounts, {acct().id: acct()})

@@ -60,11 +60,13 @@ class TestFacebook(unittest.TestCase):
             ['contacts', 'delete', 'home', 'like', 'receive', 'search', 'send',
              'send_thread', 'unlike', 'upload', 'wall'])
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-login.dat'))
-    def test_successful_login(self, mock):
+    def test_successful_login(self, *mocks):
         # Test that a successful response from graph.facebook.com returning
         # the user's data, sets up the account dict correctly.
         self.protocol._login()
@@ -72,14 +74,18 @@ class TestFacebook(unittest.TestCase):
         self.assertEqual(self.account.user_name, 'Bart Person')
         self.assertEqual(self.account.user_id, '801')
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
-    def test_login_unsuccessful_authentication(self, mock):
+    def test_login_unsuccessful_authentication(self, *mocks):
         # The user is not already logged in, but the act of logging in fails.
         self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.access_token)
         self.assertIsNone(self.account.user_name)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
     @mock.patch('friends.protocols.facebook.Downloader.get_json',

@@ -57,15 +57,19 @@ class TestTwitter(unittest.TestCase):
         self.log_mock.stop()
         shutil.rmtree(self._temp_cache)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.protocols.twitter.Downloader.get_json',
                 return_value=None)
-    def test_unsuccessful_authentication(self, dload, login):
+    def test_unsuccessful_authentication(self, dload, login, *mocks):
         self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='some clever fake data',
                                   TokenSecret='sssssshhh!',

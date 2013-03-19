@@ -85,6 +85,8 @@ class TestFlickr(unittest.TestCase):
         # But also no photos.
         self.assertEqual(TestModel.get_n_rows(), 0)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Soup.Message',
@@ -94,6 +96,8 @@ class TestFlickr(unittest.TestCase):
         # AccessToken, but this fails.
         self.assertRaises(AuthorizationError, self.protocol.receive)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
     @mock.patch('friends.utils.authentication.Authentication.login',
@@ -101,7 +105,7 @@ class TestFlickr(unittest.TestCase):
                                   user_nsid='bob',
                                   AccessToken='123',
                                   TokenSecret='abc'))
-    def test_login_successful_authentication(self, mock):
+    def test_login_successful_authentication(self, *mocks):
         # Logging in required communication with the account service to get an
         # AccessToken, but this fails.
         self.protocol.receive()

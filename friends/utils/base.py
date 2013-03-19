@@ -472,7 +472,7 @@ class Base:
         log.debug('{} to {}'.format(
                 'Re-authenticating' if old_token else 'Logging in', self._Name))
 
-        result = Authentication(self._account).login()
+        result = Authentication(self._account.id).login()
 
         self._account.access_token = result.get('AccessToken')
         self._whoami(result)

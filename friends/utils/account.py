@@ -28,6 +28,7 @@ from threading import Lock
 
 from friends.errors import UnsupportedProtocolError
 from friends.utils.manager import protocol_manager
+from friends.utils.authentication import manager
 
 
 log = logging.getLogger(__name__)
@@ -36,7 +37,6 @@ log = logging.getLogger(__name__)
 def _find_accounts_uoa():
     """Consult Ubuntu Online Accounts for the accounts we have."""
     accounts = {}
-    manager = Accounts.Manager.new_for_service_type('microblogging')
     for service in manager.get_enabled_account_services():
         try:
             account = Account(service)
@@ -75,8 +75,6 @@ class Account:
     id = None
 
     def __init__(self, account_service):
-        self.account_service = account_service
-
         self.auth = account_service.get_auth_data()
         if self.auth is not None:
             auth_params = self.auth.get_parameters()
