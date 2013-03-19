@@ -113,10 +113,10 @@ class Account:
         # The provider in libaccounts should match the name of our protocol.
         account = account_service.get_account()
         self.id = account.id
-        self.protocol_name = account.get_provider_name()
-        protocol_class = protocol_manager.protocols.get(self.protocol_name)
+        protocol_name = account.get_provider_name()
+        protocol_class = protocol_manager.protocols.get(protocol_name)
         if protocol_class is None:
-            raise UnsupportedProtocolError(self.protocol_name)
+            raise UnsupportedProtocolError(protocol_name)
         self.protocol = protocol_class(self)
         # Connect responders to changes in the account information.
         account_service.connect('changed', self._on_account_changed, account)

@@ -73,7 +73,6 @@ class TestAccount(unittest.TestCase):
 
     def test_account_id(self):
         self.assertEqual(self.account.id, 'fake_id')
-        self.assertEqual(self.account.protocol_name, 'flickr')
 
     def test_account_service(self):
         # The protocol attribute refers directly to the protocol used.
