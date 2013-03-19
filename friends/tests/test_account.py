@@ -17,7 +17,6 @@
 
 __all__ = [
     'TestAccount',
-    'TestAccountManager',
     ]
 
 
@@ -27,7 +26,7 @@ from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
 from friends.tests.mocks import FakeAccount, LogMock, SettingsIterMock
 from friends.tests.mocks import TestModel, mock
-from friends.utils.account import Account, AccountManager
+from friends.utils.account import Account
 
 
 class TestAccount(unittest.TestCase):
@@ -120,75 +119,3 @@ class TestAccount(unittest.TestCase):
         self.assertEqual(self.account.send_enabled, False)
         self.assertFalse(hasattr(self.account, 'bee'))
         self.assertFalse(hasattr(self.account, 'cat'))
-
-
-accounts_manager = mock.Mock()
-accounts_manager.new_for_service_type(
-    'microblogging').get_enabled_account_services.return_value = []
-
-
-@mock.patch('gi.repository.Accounts.Manager', accounts_manager)
-@mock.patch('friends.utils.account.Account', FakeAccount)
-class TestAccountManager(unittest.TestCase):
-    """Test the AccountManager API."""
-
-    def setUp(self):
-        TestModel.clear()
-        self.account_service = mock.Mock()
-
-    @mock.patch('friends.utils.account.Accounts')
-    def test_get_service(self, accounts_mock):
-        manager = AccountManager()
-        manager_mock = mock.Mock()
-        account_mock = mock.Mock()
-        service_mock = mock.Mock()
-        manager_mock.get_account.return_value = account_mock
-        account_mock.list_services.return_value = [service_mock]
-        account_service_mock = accounts_mock.AccountService.new(account_mock,
-                                                                service_mock)
-        account_service_mock.get_service(
-            ).get_display_name().lower.return_value = 'protocol'
-
-        service = manager._get_service(manager_mock, 10)
-
-        manager_mock.get_account.assert_called_once_with(10)
-        account_mock.list_services.assert_called_once_with()
-        accounts_mock.AccountService.new.assert_called_with(account_mock,
-                                                            service_mock)
-
-    def test_account_manager_add_new_account(self):
-        # Explicitly adding a new account puts the account's global_id into
-        # the account manager's mapping.
-        manager = AccountManager()
-        manager._add_new_account(self.account_service)
-        self.assertIn(88, manager._accounts)
-
-    def test_account_manager_enabled_event(self):
-        manager = AccountManager()
-        manager._get_service = mock.Mock()
-        manager._get_service.return_value = mock.Mock()
-        manager._add_new_account = mock.Mock()
-        manager._add_new_account.return_value = account = mock.Mock()
-        manager._on_enabled_event(accounts_manager, 2)
-        account.protocol.assert_called_once_with('receive')
-
-
-@mock.patch('gi.repository.Accounts.Manager', accounts_manager)
-class TestAccountManagerRealAccount(unittest.TestCase):
-    """Test of the AccountManager API requiring the real Account class.
-
-    You'll need to guarantee other mocks are in place such that the real
-    accounts are not touched.
-    """
-    def setUp(self):
-        self.account_service = mock.Mock()
-
-    def test_account_manager_add_new_account_unsupported(self):
-        fake_account = self.account_service.get_account()
-        fake_account.get_provider_name.return_value = 'no service'
-        manager = AccountManager()
-        with LogMock('friends.utils.account') as log_mock:
-            manager._add_new_account(self.account_service)
-            log_contents = log_mock.empty(trim=False)
-        self.assertNotIn('no service', manager._accounts)
-        self.assertEqual(log_contents, 'Unsupported protocol: no service\n')

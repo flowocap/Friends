@@ -42,35 +42,15 @@ class AccountManager:
         # Connect callbacks to the manager so that we can react when accounts
         # are added or deleted.
         manager = Accounts.Manager.new_for_service_type('microblogging')
-        manager.connect('enabled-event', self._on_enabled_event)
         # Add all the currently known accounts.
-        for account_service in manager.get_enabled_account_services():
-            self._add_new_account(account_service)
+        for service in manager.get_enabled_account_services():
+            try:
+                account = Account(service)
+            except UnsupportedProtocolError as error:
+                log.info(error)
+            else:
+                self._accounts[account.id] = account
         log.info('Accounts found: {}'.format(len(self._accounts)))
-
-    def _get_service(self, manager, account_id):
-        """Instantiate an AccountService and identify it."""
-        account = manager.get_account(account_id)
-        for service in account.list_services():
-            return Accounts.AccountService.new(account, service)
-
-    def _on_enabled_event(self, manager, account_id):
-        """React to new microblogging accounts being enabled or disabled."""
-        account_service = self._get_service(manager, account_id)
-        if account_service is not None and account_service.get_enabled():
-            log.debug('Adding account {}'.format(account_id))
-            account = self._add_new_account(account_service)
-            if account is not None:
-                account.protocol('receive')
-
-    def _add_new_account(self, account_service):
-        try:
-            new_account = Account(account_service)
-        except UnsupportedProtocolError as error:
-            log.info(error)
-        else:
-            self._accounts[new_account.id] = new_account
-            return new_account
 
     def get_all(self):
         return self._accounts.values()
