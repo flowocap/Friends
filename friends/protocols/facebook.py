@@ -71,7 +71,7 @@ class Facebook(Base):
         args = dict(
             message_id=message_id,
             stream=stream,
-            message=entry.get('message', ''),
+            message=entry.get('message', '') or entry.get('story', ''),
             icon_uri=entry.get('icon', ''),
             link_picture=entry.get('picture', ''),
             link_name=entry.get('name', ''),
