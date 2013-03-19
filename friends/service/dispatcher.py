@@ -27,10 +27,10 @@ import threading
 import dbus
 import dbus.service
 
-from gi.repository import GLib, Accounts
+from gi.repository import GLib
 
 from friends.utils.avatar import Avatar
-from friends.utils.account import Account
+from friends.utils.account import find_accounts
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model
@@ -55,24 +55,11 @@ class Dispatcher(dbus.service.Object):
         super().__init__(bus_name, self.__dbus_object_path__)
         self.mainloop = mainloop
 
-        self.accounts = {}
-        self._find_accounts()
+        self.accounts = find_accounts()
 
         self._unread_count = 0
         self.menu_manager = MenuManager(self.Refresh, self.mainloop.quit)
         Model.connect('row-added', self._increment_unread_count)
-
-    def _find_accounts(self):
-        """Consult Ubuntu Online Accounts for the accounts we have."""
-        manager = Accounts.Manager.new_for_service_type('microblogging')
-        for service in manager.get_enabled_account_services():
-            try:
-                account = Account(service)
-            except UnsupportedProtocolError as error:
-                log.info(error)
-            else:
-                self.accounts[account.id] = account
-        log.info('Accounts found: {}'.format(len(self.accounts)))
 
     def _increment_unread_count(self, model, itr):
         self._unread_count += 1

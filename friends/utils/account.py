@@ -17,6 +17,7 @@
 
 __all__ = [
     'Account',
+    'find_accounts',
     ]
 
 
@@ -30,6 +31,27 @@ from friends.utils.manager import protocol_manager
 
 
 log = logging.getLogger(__name__)
+
+
+def _find_accounts_uoa():
+    """Consult Ubuntu Online Accounts for the accounts we have."""
+    accounts = {}
+    manager = Accounts.Manager.new_for_service_type('microblogging')
+    for service in manager.get_enabled_account_services():
+        try:
+            account = Account(service)
+        except UnsupportedProtocolError as error:
+            log.info(error)
+        else:
+            accounts[account.id] = account
+    log.info('Accounts found: {}'.format(len(accounts)))
+    return accounts
+
+
+def find_accounts():
+    # TODO: Implement GOA support, then fill out this method with some
+    # logic for determining whether to use UOA or GOA.
+    return _find_accounts_uoa()
 
 
 class AuthData:

@@ -25,14 +25,15 @@ import unittest
 from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
 from friends.tests.mocks import FakeAccount, LogMock, SettingsIterMock
-from friends.tests.mocks import TestModel, mock
-from friends.utils.account import Account
+from friends.tests.mocks import TestModel, LogMock, mock
+from friends.utils.account import Account, _find_accounts_uoa
 
 
 class TestAccount(unittest.TestCase):
     """Test Account class."""
 
     def setUp(self):
+        self.log_mock = LogMock('friends.utils.account')
         def connect_side_effect(signal, callback, account):
             # The account service provides a .connect method that connects a
             # signal to a callback.  We have to mock a side effect into the
@@ -61,6 +62,9 @@ class TestAccount(unittest.TestCase):
             'connect.side_effect': connect_side_effect,
             })
         self.account = Account(self.account_service)
+
+    def tearDown(self):
+        self.log_mock.stop()
 
     def test_account_auth(self):
         # Test that the constructor initializes the 'auth' attribute.
@@ -119,3 +123,20 @@ class TestAccount(unittest.TestCase):
         self.assertEqual(self.account.send_enabled, False)
         self.assertFalse(hasattr(self.account, 'bee'))
         self.assertFalse(hasattr(self.account, 'cat'))
+
+    @mock.patch('friends.utils.account.Account')
+    @mock.patch('friends.utils.account.Accounts')
+    def test_find_accounts(self, accts, acct, *ignore):
+        service = mock.Mock()
+        manager = accts.Manager.new_for_service_type
+        get_enabled = manager().get_enabled_account_services
+        get_enabled.return_value = [service]
+        manager.reset_mock()
+        accounts = _find_accounts_uoa()
+        manager.assert_called_once_with('microblogging')
+        get_enabled.assert_called_once_with()
+        acct.assert_called_once_with(service)
+        self.assertEqual(accounts, {acct().id: acct()})
+        self.assertEqual(self.log_mock.empty(),
+                         'fake_id got send_enabled: True\n'
+                         'Accounts found: 1\n')

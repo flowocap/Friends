@@ -38,13 +38,12 @@ class TestDispatcher(unittest.TestCase):
     """Test the dispatcher's ability to dispatch."""
 
     @mock.patch('dbus.service.BusName')
-    @mock.patch('friends.service.dispatcher.Dispatcher._find_accounts')
+    @mock.patch('friends.service.dispatcher.find_accounts')
     @mock.patch('dbus.service.Object.__init__')
     def setUp(self, *mocks):
         self.log_mock = LogMock('friends.service.dispatcher',
                                 'friends.utils.account')
         self.dispatcher = Dispatcher(mock.Mock(), mock.Mock())
-        self.dispatcher._find_accounts.assert_called_once_with()
         self.dispatcher.accounts = {}
 
     def tearDown(self):
@@ -208,20 +207,3 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.settings.get_boolean.assert_called_once_with('shorten-urls')
         lookup_mock.lookup.assert_called_once_with('is.gd')
         lookup_mock.lookup.return_value.shorten.assert_called_once_with(long_url)
-
-    @mock.patch('dbus.service.BusName')
-    @mock.patch('dbus.service.Object.__init__')
-    @mock.patch('friends.service.dispatcher.Account')
-    @mock.patch('friends.service.dispatcher.Accounts')
-    def test_find_accounts(self, accts, acct, *ignore):
-        service = mock.Mock()
-        manager = accts.Manager.new_for_service_type
-        get_enabled = manager().get_enabled_account_services
-        get_enabled.return_value = [service]
-        manager.reset_mock()
-        dispatcher = Dispatcher(mock.Mock(), mock.Mock())
-        manager.assert_called_once_with('microblogging')
-        get_enabled.assert_called_once_with()
-        acct.assert_called_once_with(service)
-        self.assertEqual(dispatcher.accounts, {acct().id: acct()})
-        self.assertEqual(self.log_mock.empty(), 'Accounts found: 1\n')
