@@ -159,7 +159,3 @@ class Account:
                     setattr(self, key, value)
             else:
                 break
-
-    @property
-    def enabled(self):
-        return self.account_service.get_enabled()

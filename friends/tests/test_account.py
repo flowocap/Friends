@@ -121,13 +121,6 @@ class TestAccount(unittest.TestCase):
         self.assertFalse(hasattr(self.account, 'bee'))
         self.assertFalse(hasattr(self.account, 'cat'))
 
-    def test_enabled(self):
-        # .enabled() just passes through from the account service.
-        self.account_service.get_enabled.return_value = True
-        self.assertTrue(self.account.enabled)
-        self.account_service.get_enabled.return_value = False
-        self.assertFalse(self.account.enabled)
-
 
 accounts_manager = mock.Mock()
 accounts_manager.new_for_service_type(
