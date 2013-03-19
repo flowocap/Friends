@@ -27,14 +27,15 @@ import threading
 import dbus
 import dbus.service
 
-from gi.repository import GLib
+from gi.repository import GLib, Accounts
 
 from friends.utils.avatar import Avatar
-from friends.utils.account import AccountManager
+from friends.utils.account import Account
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model
 from friends.shorteners import lookup
+from friends.errors import UnsupportedProtocolError
 
 
 log = logging.getLogger(__name__)
@@ -53,11 +54,25 @@ class Dispatcher(dbus.service.Object):
         bus_name = dbus.service.BusName(DBUS_INTERFACE, bus=self.bus)
         super().__init__(bus_name, self.__dbus_object_path__)
         self.mainloop = mainloop
-        self.account_manager = AccountManager()
+
+        self.accounts = {}
+        self._find_accounts()
 
         self._unread_count = 0
         self.menu_manager = MenuManager(self.Refresh, self.mainloop.quit)
         Model.connect('row-added', self._increment_unread_count)
+
+    def _find_accounts(self):
+        """Consult Ubuntu Online Accounts for the accounts we have."""
+        manager = Accounts.Manager.new_for_service_type('microblogging')
+        for service in manager.get_enabled_account_services():
+            try:
+                account = Account(service)
+            except UnsupportedProtocolError as error:
+                log.info(error)
+            else:
+                self.accounts[account.id] = account
+        log.info('Accounts found: {}'.format(len(self.accounts)))
 
     def _increment_unread_count(self, model, itr):
         self._unread_count += 1
@@ -73,7 +88,7 @@ class Dispatcher(dbus.service.Object):
         # account.protocol() starts a new thread and then returns
         # immediately, so there is no delay or blocking during the
         # execution of this method.
-        for account in self.account_manager.get_all():
+        for account in self.accounts.values():
             try:
                 account.protocol('receive')
             except NotImplementedError:
@@ -116,14 +131,14 @@ class Dispatcher(dbus.service.Object):
             service.Do('list', '6', 'list_id') # Fetch a single list.
         """
         if account_id:
-            accounts = [self.account_manager.get(account_id)]
+            accounts = [self.accounts.get(int(account_id))]
             if None in accounts:
                 message = 'Could not find account: {}'.format(account_id)
                 failure(message)
                 log.error(message)
                 return
         else:
-            accounts = list(self.account_manager.get_all())
+            accounts = list(self.accounts.values())
 
         called = False
         for account in accounts:
@@ -157,7 +172,7 @@ class Dispatcher(dbus.service.Object):
             service.SendMessage('Your message')
         """
         sent = False
-        for account in self.account_manager.get_all():
+        for account in self.accounts.values():
             if account.send_enabled:
                 sent = True
                 log.debug(
@@ -191,7 +206,7 @@ class Dispatcher(dbus.service.Object):
             service.SendReply('6', '34245645347345626', 'Your reply')
         """
         log.debug('Replying to {}, {}'.format(account_id, message_id))
-        account = self.account_manager.get(account_id)
+        account = self.accounts.get(int(account_id))
         if account is not None:
             account.protocol(
                 'send_thread',
@@ -248,7 +263,7 @@ class Dispatcher(dbus.service.Object):
         free to ignore error conditions at your peril.
         """
         log.debug('Uploading {} to {}'.format(uri, account_id))
-        account = self.account_manager.get(account_id)
+        account = self.accounts.get(int(account_id))
         if account is not None:
             account.protocol(
                 'upload',

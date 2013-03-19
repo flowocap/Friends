@@ -38,13 +38,14 @@ class TestDispatcher(unittest.TestCase):
     """Test the dispatcher's ability to dispatch."""
 
     @mock.patch('dbus.service.BusName')
-    @mock.patch('friends.service.dispatcher.AccountManager')
-    @mock.patch('friends.service.dispatcher.Dispatcher.Refresh')
+    @mock.patch('friends.service.dispatcher.Dispatcher._find_accounts')
     @mock.patch('dbus.service.Object.__init__')
     def setUp(self, *mocks):
         self.log_mock = LogMock('friends.service.dispatcher',
                                 'friends.utils.account')
         self.dispatcher = Dispatcher(mock.Mock(), mock.Mock())
+        self.dispatcher._find_accounts.assert_called_once_with()
+        self.dispatcher.accounts = {}
 
     def tearDown(self):
         self.log_mock.stop()
@@ -53,12 +54,12 @@ class TestDispatcher(unittest.TestCase):
     def test_refresh(self, threading_mock):
         account = mock.Mock()
         threading_mock.activeCount.return_value = 1
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get_all.return_value = [account]
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.values.return_value = [account]
 
         self.assertIsNone(self.dispatcher.Refresh())
 
-        self.dispatcher.account_manager.get_all.assert_called_once_with()
+        self.dispatcher.accounts.values.assert_called_once_with()
         account.protocol.assert_called_once_with('receive')
 
         self.assertEqual(self.log_mock.empty(), 'Refresh requested\n')
@@ -71,12 +72,11 @@ class TestDispatcher(unittest.TestCase):
     def test_do(self):
         account = mock.Mock()
         account.id = '345'
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = account
 
         self.dispatcher.Do('like', '345', '23346356767354626')
-        self.dispatcher.account_manager.get.assert_called_once_with(
-            '345')
+        self.dispatcher.accounts.get.assert_called_once_with(345)
         account.protocol.assert_called_once_with(
             'like', '23346356767354626', success=STUB, failure=STUB)
 
@@ -85,11 +85,11 @@ class TestDispatcher(unittest.TestCase):
 
     def test_failing_do(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = None
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = None
 
         self.dispatcher.Do('unlike', '6', '23346356767354626')
-        self.dispatcher.account_manager.get.assert_called_once_with('6')
+        self.dispatcher.accounts.get.assert_called_once_with(6)
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
@@ -101,15 +101,15 @@ class TestDispatcher(unittest.TestCase):
         account3 = mock.Mock()
         account2.send_enabled = False
 
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get_all.return_value = [
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.values.return_value = [
             account1,
             account2,
             account3,
             ]
 
         self.dispatcher.SendMessage('Howdy friends!')
-        self.dispatcher.account_manager.get_all.assert_called_once_with()
+        self.dispatcher.accounts.values.assert_called_once_with()
         account1.protocol.assert_called_once_with(
             'send', 'Howdy friends!', success=STUB, failure=STUB)
         account3.protocol.assert_called_once_with(
@@ -118,11 +118,11 @@ class TestDispatcher(unittest.TestCase):
 
     def test_send_reply(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = account
 
         self.dispatcher.SendReply('2', 'objid', '[Hilarious Response]')
-        self.dispatcher.account_manager.get.assert_called_once_with('2')
+        self.dispatcher.accounts.get.assert_called_once_with(2)
         account.protocol.assert_called_once_with(
             'send_thread', 'objid', '[Hilarious Response]',
             success=STUB, failure=STUB)
@@ -132,11 +132,11 @@ class TestDispatcher(unittest.TestCase):
 
     def test_send_reply_failed(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = None
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = None
 
         self.dispatcher.SendReply('2', 'objid', '[Hilarious Response]')
-        self.dispatcher.account_manager.get.assert_called_once_with('2')
+        self.dispatcher.accounts.get.assert_called_once_with(2)
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
@@ -145,8 +145,8 @@ class TestDispatcher(unittest.TestCase):
 
     def test_upload_async(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = account
 
         success = mock.Mock()
         failure = mock.Mock()
@@ -156,7 +156,7 @@ class TestDispatcher(unittest.TestCase):
                                'A thousand words',
                                success=success,
                                failure=failure)
-        self.dispatcher.account_manager.get.assert_called_once_with('2')
+        self.dispatcher.accounts.get.assert_called_once_with(2)
         account.protocol.assert_called_once_with(
             'upload',
             'file://path/to/image.png',
@@ -208,3 +208,20 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.settings.get_boolean.assert_called_once_with('shorten-urls')
         lookup_mock.lookup.assert_called_once_with('is.gd')
         lookup_mock.lookup.return_value.shorten.assert_called_once_with(long_url)
+
+    @mock.patch('dbus.service.BusName')
+    @mock.patch('dbus.service.Object.__init__')
+    @mock.patch('friends.service.dispatcher.Account')
+    @mock.patch('friends.service.dispatcher.Accounts')
+    def test_find_accounts(self, accts, acct, *ignore):
+        service = mock.Mock()
+        manager = accts.Manager.new_for_service_type
+        get_enabled = manager().get_enabled_account_services
+        get_enabled.return_value = [service]
+        manager.reset_mock()
+        dispatcher = Dispatcher(mock.Mock(), mock.Mock())
+        manager.assert_called_once_with('microblogging')
+        get_enabled.assert_called_once_with()
+        acct.assert_called_once_with(service)
+        self.assertEqual(dispatcher.accounts, {acct().id: acct()})
+        self.assertEqual(self.log_mock.empty(), 'Accounts found: 1\n')

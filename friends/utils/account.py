@@ -17,7 +17,6 @@
 
 __all__ = [
     'Account',
-    'AccountManager',
     ]
 
 
@@ -31,32 +30,6 @@ from friends.utils.manager import protocol_manager
 
 
 log = logging.getLogger(__name__)
-
-
-class AccountManager:
-    """Manage the accounts that we know about."""
-
-    def __init__(self):
-        self._accounts = {}
-        # Ask libaccounts for a manager of the microblogging services.
-        # Connect callbacks to the manager so that we can react when accounts
-        # are added or deleted.
-        manager = Accounts.Manager.new_for_service_type('microblogging')
-        # Add all the currently known accounts.
-        for service in manager.get_enabled_account_services():
-            try:
-                account = Account(service)
-            except UnsupportedProtocolError as error:
-                log.info(error)
-            else:
-                self._accounts[account.id] = account
-        log.info('Accounts found: {}'.format(len(self._accounts)))
-
-    def get_all(self):
-        return self._accounts.values()
-
-    def get(self, account_id, default=None):
-        return self._accounts.get(int(account_id), default)
 
 
 class AuthData:
