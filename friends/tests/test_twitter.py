@@ -389,6 +389,44 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                         'tweet @pumpichank!',
                  in_reply_to_status_id='1234'))
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-home.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_send_thread_prepend_nick(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(self.protocol.home(), 3)
+        self.assertEqual(3, TestModel.get_n_rows())
+
+        # If you forgot to @mention in your reply, we add it for you.
+        get = self.protocol._get_url = mock.Mock()
+        self.protocol._publish_tweet = mock.Mock()
+        self.protocol.send_thread(
+            '240556426106372096',
+            'Exciting and original response!')
+        get.assert_called_once_with(
+            'https://api.twitter.com/1.1/statuses/update.json',
+            dict(status='@raffi Exciting and original response!',
+                 in_reply_to_status_id='240556426106372096'))
+
+        # If you remembered the @mention, we won't duplicate it.
+        get.reset_mock()
+        self.protocol.send_thread(
+            '240556426106372096',
+            'You are the greatest, @raffi!')
+        get.assert_called_once_with(
+            'https://api.twitter.com/1.1/statuses/update.json',
+            dict(status='You are the greatest, @raffi!',
+                 in_reply_to_status_id='240556426106372096'))
+
+
     def test_delete(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
         publish = self.protocol._unpublish = mock.Mock()
