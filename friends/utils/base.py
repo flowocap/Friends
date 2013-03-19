@@ -23,6 +23,7 @@ __all__ = [
     ]
 
 
+import re
 import time
 import logging
 import threading
@@ -50,6 +51,35 @@ MESSAGE_IDX = COLUMN_INDICES['message']
 ID_IDX = COLUMN_INDICES['message_id']
 ACCT_IDX = COLUMN_INDICES['account_id']
 TIME_IDX = COLUMN_INDICES['timestamp']
+
+# See friends/tests/test_protocols.py for further documentation
+LINKIFY_REGEX = re.compile(
+    r"""
+    # Do not match if URL is preceded by '"' or '>'
+    # This is used to prevent duplication of linkification.
+    (?<![\"\>])
+    # Record everything that we're about to match.
+    (
+      # URLs can start with 'http://', 'https://', 'ftp://', or 'www.'
+      (?:(?:https?|ftp)://|www\.)
+      # Match many non-whitespace characters, but not greedily.
+      (?:\S+?)
+    # Stop recording the match.
+    )
+    # This section will peek ahead (without matching) in order to
+    # determine precisely where the URL actually *ends*.
+    (?=
+      # Do not include any trailing period, comma, exclamation mark,
+      # question mark, or closing parentheses, if any are present.
+      [.,!?\)]*
+      # With "trailing" defined as immediately preceding the first
+      # space, or end-of-string.
+      (?:\s|$)
+      # But abort the whole thing if the URL ends with '</a>',
+      # again to prevent duplication of linkification.
+      (?!</a>)
+    )""",
+    flags=re.VERBOSE).sub
 
 
 # This is a mapping from message_ids to DeeModel row index ints. It is
@@ -99,6 +129,11 @@ def initialize_caches():
     _seen_ids.clear()
     _seen_ids.update({row[ID_IDX]: i for i, row in enumerate(Model)})
     log.debug('_seen_ids: {}'.format(len(_seen_ids)))
+
+
+def linkify_string(string):
+    """Finds all URLs in a string and turns them into HTML links."""
+    return LINKIFY_REGEX(r'<a href="\1">\1</a>', string)
 
 
 class _OperationThread(threading.Thread):
@@ -324,6 +359,8 @@ class Base:
                 account_id=self._account.id
                 )
             )
+        # linkify the message
+        kwargs['message'] = linkify_string(kwargs.get('message', ''))
         args = []
         # Now iterate through all the column names listed in the
         # SCHEMA, and pop matching column values from the kwargs, in
