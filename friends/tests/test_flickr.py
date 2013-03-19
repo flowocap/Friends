@@ -130,7 +130,7 @@ class TestFlickr(unittest.TestCase):
                 extras='date_upload,owner_name,icon_server,geo',
                 format='json',
                 nojsoncallback='1',
-                api_key='fake',
+                api_key='consume',
                 method='flickr.photos.getContactsPhotos',
                 ),
             headers={})

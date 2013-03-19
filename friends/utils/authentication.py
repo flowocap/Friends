@@ -44,10 +44,14 @@ class Authentication:
 
     def login(self):
         auth = self.account.auth
-        self.auth_session = Signon.AuthSession.new(auth.id, auth.method)
+        self.auth_session = Signon.AuthSession.new(
+            auth.get_credentials_id(),
+            auth.get_method())
         self.auth_session.process(
-            auth.parameters, auth.mechanism,
-            self._login_cb, None)
+            auth.get_parameters(),
+            auth.get_mechanism(),
+            self._login_cb,
+            None)
         timeout = LOGIN_TIMEOUT
         while self._reply is None and timeout > 0:
             # We're building a synchronous API on top of an inherently

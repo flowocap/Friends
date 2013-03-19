@@ -43,7 +43,11 @@ class FakeAuthSession:
         # error, and user_data arguments.  We'll use the parameters
         # argument as a way to specify whether an error occurred during
         # authentication or not.
-        callback(None, self.results, parameters, None)
+        callback(
+            None,
+            self.results,
+            parameters if hasattr(parameters, 'message') else None,
+            None)
 
 
 class FakeSignon:
@@ -78,17 +82,17 @@ class TestAuthentication(unittest.TestCase):
 
     def setUp(self):
         self.account = FakeAccount()
-        self.account.auth.id = 'my id'
-        self.account.auth.method = 'some method'
-        self.account.auth.parameters = 'change me'
-        self.account.auth.mechanism = ['whatever']
+        self.account.auth.get_credentials_id = lambda *ignore: 'my id'
+        self.account.auth.get_method = lambda *ignore: 'some method'
+        self.account.auth.get_parameters = lambda *ignore: 'change me'
+        self.account.auth.get_mechanism = lambda *ignore: 'whatever'
         logger.reset()
 
     @mock.patch('friends.utils.authentication.log', logger)
     @mock.patch('friends.utils.authentication.Signon', FakeSignon)
     def test_successful_login(self):
         # Prevent an error in the callback.
-        self.account.auth.parameters = False
+        self.account.auth.get_parameters = lambda *ignore: False
         authenticator = Authentication(self.account)
         reply = authenticator.login()
         self.assertEqual(reply, dict(AccessToken='auth reply'))
@@ -99,7 +103,7 @@ class TestAuthentication(unittest.TestCase):
     @mock.patch('friends.utils.authentication.Signon', FailingSignon)
     def test_missing_access_token(self):
         # Prevent an error in the callback.
-        self.account.auth.parameters = False
+        self.account.auth.get_parameters = lambda *ignore: False
         authenticator = Authentication(self.account)
         self.assertRaises(AuthorizationError, authenticator.login)
 
@@ -109,6 +113,6 @@ class TestAuthentication(unittest.TestCase):
         # Trigger an error in the callback.
         class Error:
             message = 'who are you?'
-        self.account.auth.parameters = Error
+        self.account.auth.get_parameters = lambda *ignore: Error
         authenticator = Authentication(self.account)
         self.assertRaises(AuthorizationError, authenticator.login)

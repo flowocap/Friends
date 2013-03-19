@@ -86,11 +86,12 @@ class TestTwitter(unittest.TestCase):
     def test_signatures(self, dload):
         self.account.secret_token = 'alpha'
         self.account.access_token = 'omega'
-        self.account.auth.id = 6
-        self.account.auth.method = 'oauth2'
-        self.account.auth.mechanism = 'HMAC-SHA1'
-        self.account.auth.parameters = dict(ConsumerKey='consume',
-                                            ConsumerSecret='obey')
+        self.account.consumer_secret = 'obey'
+        self.account.consumer_key = 'consume'
+        self.account.auth.get_credentials_id = lambda *ignore: 6
+        self.account.auth.get_method = lambda *ignore: 'oauth2'
+        self.account.auth.get_mechanism = lambda *ignore: 'HMAC-SHA1'
+
         result = '''\
 OAuth oauth_nonce="once%20upon%20a%20nonce", \
 oauth_timestamp="1348690628", \
@@ -122,9 +123,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_home(self, *mocks):
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
-        self.account.auth.parameters = dict(
-            ConsumerKey='key',
-            ConsumerSecret='secret')
         self.assertEqual(0, TestModel.get_n_rows())
         self.assertEqual(self.protocol.home(), 3)
         self.assertEqual(3, TestModel.get_n_rows())
@@ -171,9 +169,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_home_since_id(self, *mocks):
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
-        self.account.auth.parameters = dict(
-            ConsumerKey='key',
-            ConsumerSecret='secret')
         self.assertEqual(self.protocol.home(), 3)
 
         with open(self._root.format('twitter_ids'), 'r') as fd:
@@ -196,9 +191,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
         self.account.user_name = 'oauth_dancer'
-        self.account.auth.parameters = dict(
-            ConsumerKey='key',
-            ConsumerSecret='secret')
         self.assertEqual(0, TestModel.get_n_rows())
         self.assertEqual(
             self.protocol.send('some message'),
@@ -399,9 +391,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_send_thread_prepend_nick(self, *mocks):
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
-        self.account.auth.parameters = dict(
-            ConsumerKey='key',
-            ConsumerSecret='secret')
         self.assertEqual(0, TestModel.get_n_rows())
         self.assertEqual(self.protocol.home(), 3)
         self.assertEqual(3, TestModel.get_n_rows())
@@ -703,9 +692,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_protocol_rate_limiting(self, time, sleep, login):
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
-        self.account.auth.parameters = dict(
-            ConsumerKey='key',
-            ConsumerSecret='secret')
         # Test rate limiting via the Twitter plugin API.
         #
         # The first call doesn't get rate limited.

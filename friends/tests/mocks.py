@@ -100,16 +100,21 @@ def populate_fake_data():
 
 
 class FakeAuth:
-    id = 'fakeauth id'
-    method = 'fakeauth method'
-    parameters = {'ConsumerKey': 'fake', 'ConsumerSecret': 'alsofake'}
-    mechanism = 'fakeauth mechanism'
+    get_credentials_id = lambda *ignore: 'fakeauth id'
+    get_method = lambda *ignore: 'fakeauth method'
+    get_mechanism = lambda *ignore: 'fakeauth mechanism'
+    get_parameters = lambda *ignore: {
+        'ConsumerKey': 'fake',
+        'ConsumerSecret': 'alsofake',
+        }
 
 
 class FakeAccount:
     """A fake account object for testing purposes."""
 
     def __init__(self, service=None, account_id=88):
+        self.consumer_secret = 'secret'
+        self.consumer_key = 'consume'
         self.access_token = None
         self.secret_token = None
         self.user_full_name = None

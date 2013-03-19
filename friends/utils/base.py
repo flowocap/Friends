@@ -481,8 +481,8 @@ class Base:
     def _get_oauth_headers(self, method, url, data=None, headers=None):
         """Basic wrapper around oauthlib that we use for Twitter and Flickr."""
         # "Client" == "Consumer" in oauthlib parlance.
-        client_key = self._account.auth.parameters['ConsumerKey']
-        client_secret = self._account.auth.parameters['ConsumerSecret']
+        client_key = self._account.consumer_key
+        client_secret = self._account.consumer_secret
 
         # "resource_owner" == secret and token.
         resource_owner_key = self._get_access_token()

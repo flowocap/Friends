@@ -237,9 +237,6 @@ Facebook UID: None
     def test_home_since_id(self, *mocks):
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
-        self.account.auth.parameters = dict(
-            ConsumerKey='key',
-            ConsumerSecret='secret')
         self.assertEqual(self.protocol.home(), 12)
 
         with open(self._root.format('facebook_ids'), 'r') as fd:

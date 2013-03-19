@@ -24,13 +24,13 @@ import logging
 
 sys.path.insert(0, '.')
 
-from gi.repository import GLib, Accounts
+from gi.repository import GLib
 from friends.utils.logging import initialize
 
 # Print all logs for debugging purposes
 initialize(debug=True, console=True)
 
-from friends.utils.account import Account
+from friends.utils.account import find_accounts
 from friends.utils.base import initialize_caches, _OperationThread
 from friends.utils.model import Model
 
@@ -56,9 +56,7 @@ def setup(model, signal, protocol, args):
     Model.connect('row-added', row_added)
 
     found = False
-    manager = Accounts.Manager.new_for_service_type('microblogging')
-    for service in manager.get_enabled_account_services():
-        account = Account(service)
+    for account in find_accounts().values():
         if account.protocol._name == protocol.lower():
             found = True
             account.protocol(*args)

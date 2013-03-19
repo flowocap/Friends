@@ -35,7 +35,6 @@ from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model
 from friends.shorteners import lookup
-from friends.errors import UnsupportedProtocolError
 
 
 log = logging.getLogger(__name__)

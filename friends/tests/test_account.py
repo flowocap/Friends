@@ -49,7 +49,9 @@ class TestAccount(unittest.TestCase):
                 'get_credentials_id.return_value': 'fake credentials',
                 'get_method.return_value': 'fake method',
                 'get_mechanism.return_value': 'fake mechanism',
-                'get_parameters.return_value': 'fake parameters',
+                'get_parameters.return_value': {
+                            'ConsumerKey': 'fake_key',
+                            'ConsumerSecret': 'fake_secret'},
                 }),
             'get_account.return_value': mock.Mock(**{
                 'get_settings_iter.return_value': SettingsIterMock(),
@@ -69,10 +71,12 @@ class TestAccount(unittest.TestCase):
     def test_account_auth(self):
         # Test that the constructor initializes the 'auth' attribute.
         auth = self.account.auth
-        self.assertEqual(auth.id, 'fake credentials')
-        self.assertEqual(auth.method, 'fake method')
-        self.assertEqual(auth.mechanism, 'fake mechanism')
-        self.assertEqual(auth.parameters, 'fake parameters')
+        self.assertEqual(auth.get_credentials_id(), 'fake credentials')
+        self.assertEqual(auth.get_method(), 'fake method')
+        self.assertEqual(auth.get_mechanism(), 'fake mechanism')
+        self.assertEqual(auth.get_parameters(),
+                         dict(ConsumerKey='fake_key',
+                              ConsumerSecret='fake_secret'))
 
     def test_account_id(self):
         self.assertEqual(self.account.id, 'fake_id')
@@ -138,5 +142,5 @@ class TestAccount(unittest.TestCase):
         acct.assert_called_once_with(service)
         self.assertEqual(accounts, {acct().id: acct()})
         self.assertEqual(self.log_mock.empty(),
-                         'fake_id got send_enabled: True\n'
+                         'Flickr (fake_id) got send_enabled: True\n'
                          'Accounts found: 1\n')

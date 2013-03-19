@@ -54,16 +54,6 @@ def find_accounts():
     return _find_accounts_uoa()
 
 
-class AuthData:
-    """This class serves as a sub-namespace for Account instances."""
-
-    def __init__(self, auth_data):
-        self.id = auth_data.get_credentials_id()
-        self.method = auth_data.get_method()
-        self.mechanism = auth_data.get_mechanism()
-        self.parameters = auth_data.get_parameters()
-
-
 class Account:
     """A thin wrapper around libaccounts API."""
 
@@ -74,6 +64,8 @@ class Account:
         )
 
     # Defaults for the known and useful attributes.
+    consumer_secret = None
+    consumer_key = None
     access_token = None
     secret_token = None
     send_enabled = None
@@ -84,7 +76,16 @@ class Account:
 
     def __init__(self, account_service):
         self.account_service = account_service
-        self.auth = AuthData(account_service.get_auth_data())
+
+        self.auth = account_service.get_auth_data()
+        if self.auth is not None:
+            auth_params = self.auth.get_parameters()
+            self.consumer_key = auth_params.get('ConsumerKey')
+            self.consumer_secret = auth_params.get('ConsumerSecret')
+        else:
+            raise UnsupportedProtocolError(
+                'This AgAccountService is missing AgAuthData!')
+
         # The provider in libaccounts should match the name of our protocol.
         account = account_service.get_account()
         self.id = account.id
@@ -127,7 +128,8 @@ class Account:
         while True:
             success, key, value = settings.next()
             if success:
-                log.debug('{} got {}: {}'.format(self.id, key, value))
+                log.debug('{} ({}) got {}: {}'.format(
+                        self.protocol._Name, self.id, key, value))
                 # Testing for tuple membership makes this easy to expand
                 # later, if necessary.
                 if key in Account._LIBACCOUNTS_PROPERTIES:
