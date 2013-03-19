@@ -128,27 +128,6 @@ class TestAccount(unittest.TestCase):
         self.account_service.get_enabled.return_value = False
         self.assertFalse(self.account.enabled)
 
-    def test_equal(self):
-        # Two accounts are equal if their account services are equal.
-        other = Account(self.account_service)
-        self.assertEqual(self.account, other)
-        assert not self.account == None
-
-    def test_unequal(self):
-        # Two accounts are unequal if their account services are unequal.  The
-        # other mock service has to at least support the basic required API.
-        other = Account(mock.Mock(**{
-            'get_account.return_value': mock.Mock(**{
-                'get_settings_iter.return_value': SettingsIterMock(),
-                    # It's okay if the provider names are the same; the test
-                    # is for whether the account services are the same or not,
-                    # and in this test, they'll be different mock instances.
-                    'get_provider_name.return_value': 'flickr',
-                }),
-            }))
-        self.assertNotEqual(self.account, other)
-        assert self.account != None
-
 
 accounts_manager = mock.Mock()
 accounts_manager.new_for_service_type(

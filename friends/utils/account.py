@@ -163,9 +163,3 @@ class Account:
     @property
     def enabled(self):
         return self.account_service.get_enabled()
-
-    def __eq__(self, other):
-        return self.account_service == getattr(other, 'account_service', None)
-
-    def __ne__(self, other):
-        return self.account_service != getattr(other, 'account_service', None)
