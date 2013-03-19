@@ -462,3 +462,8 @@ class TestProtocols(unittest.TestCase):
             '<a href="www.example.com">www.example.com</a> is our website',
             linkify_string(
                 '<a href="www.example.com">www.example.com</a> is our website'))
+        # This, apparently, is valid HTML.
+        self.assertEqual(
+            '<a href = "www.example.com">www.example.com</a>',
+            linkify_string(
+                '<a href = "www.example.com">www.example.com</a>'))

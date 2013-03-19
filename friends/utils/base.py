@@ -55,9 +55,9 @@ TIME_IDX = COLUMN_INDICES['timestamp']
 # See friends/tests/test_protocols.py for further documentation
 LINKIFY_REGEX = re.compile(
     r"""
-    # Do not match if URL is preceded by 'href="' or '>'
+    # Do not match if URL is preceded by '"' or '>'
     # This is used to prevent duplication of linkification.
-    (?<!href=")(?<!>)
+    (?<![\"\>])
     # Record everything that we're about to match.
     (
       # URLs can start with 'http://', 'https://', 'ftp://', or 'www.'
