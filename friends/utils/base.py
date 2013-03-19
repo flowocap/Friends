@@ -515,6 +515,16 @@ class Base:
             message = None
         raise FriendsError(message or str(error))
 
+    def _fetch_cell(self, message_id, column_name):
+        """Find a column value associated with a specific message_id."""
+        row_id = _seen_ids.get(message_id)
+        col_idx = COLUMN_INDICES.get(column_name)
+        if None not in (row_id, col_idx):
+            row = Model.get_row(row_id)
+            return row[col_idx]
+        else:
+            raise FriendsError('Value could not be found.')
+
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)
         client.open_sync(False, None)
