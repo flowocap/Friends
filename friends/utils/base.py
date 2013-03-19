@@ -52,9 +52,34 @@ ID_IDX = COLUMN_INDICES['message_id']
 ACCT_IDX = COLUMN_INDICES['account_id']
 TIME_IDX = COLUMN_INDICES['timestamp']
 
-# The behavior of this regex is documented in friends/tests/test_protocols.py
+# See friends/tests/test_protocols.py for further documentation
 LINKIFY_REGEX = re.compile(
-    r'(?<!href=")(?<!">)((?:(?:https?|ftp)://|www\.)(?:\S+?))(?=[,!.?\)]*(?:\s|$)(?!\</a\>))').sub
+    r"""
+    # Do not match if URL is preceded by 'href="' or '>'
+    # This is used to prevent duplication of linkification.
+    (?<!href=")(?<!>)
+    # Record everything that we're about to match.
+    (
+      # URLs can start with 'http://', 'https://', 'ftp://', or 'www.'
+      (?:(?:https?|ftp)://|www\.)
+      # Match many non-whitespace characters, but not greedily.
+      (?:\S+?)
+    # Stop recording the match.
+    )
+    # This section will peek ahead (without matching) in order to
+    # determine precisely where the URL actually *ends*.
+    (?=
+      # Do not include any trailing period, comma, exclamation mark,
+      # question mark, or closing parentheses, if any are present.
+      [.,!?\)]*
+      # With "trailing" defined as immediately preceding the first
+      # space, or end-of-string.
+      (?:\s|$)
+      # But abort the whole thing if the URL ends with '</a>',
+      # again to prevent duplication of linkification.
+      (?!</a>)
+    )""",
+    flags=re.VERBOSE).sub
 
 
 # This is a mapping from message_ids to DeeModel row index ints. It is
