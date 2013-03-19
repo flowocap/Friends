@@ -1,4 +1,10 @@
-friends (0.1.2-0ubuntu1) UNRELEASED; urgency=low
+friends (0.2.0-0ubuntu1) UNRELEASED; urgency=low
+
+  * Version bump for the next development series.
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Tue, 19 Mar 2013 15:03:58 -0700
+
+friends (0.1.2-0ubuntu1) raring; urgency=low
 
   * Stop deduplicating messages across protocols, simplifying model schema.
   * Add schema columns for latitude, longitude, and location name.
