@@ -1,3 +1,9 @@
+friends (0.1.2daily13.03.19-1raring1) raring; urgency=low
+
+  * Bump for PPA
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 19 Mar 2013 11:53:19 -0400
+
 friends (0.1.2daily13.03.19-0ubuntu1) raring; urgency=low
 
   [ Martin Pitt ]
