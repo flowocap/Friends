@@ -165,11 +165,7 @@ class Account:
         return self.account_service.get_enabled()
 
     def __eq__(self, other):
-        if other is None:
-            return False
-        return self.account_service == other.account_service
+        return self.account_service == getattr(other, 'account_service', None)
 
     def __ne__(self, other):
-        if other is None:
-            return True
-        return self.account_service != other.account_service
+        return self.account_service != getattr(other, 'account_service', None)
