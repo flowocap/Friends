@@ -4,11 +4,46 @@ friends (0.2.0-0ubuntu1) UNRELEASED; urgency=low
 
  -- Robert Bruce Park <robert.park@canonical.com>  Tue, 19 Mar 2013 15:03:58 -0700
 
-friends (0.1.2daily13.03.19-1raring1) raring; urgency=low
+friends (0.1.3daily13.03.20-0ubuntu1) raring; urgency=low
 
-  * Bump for PPA
+  [ Robert Bruce Park ]
+  * Keep the Dispatcher alive for 30s beyond the return of the final
+    method invocation.
+  * Stop deduplicating messages across protocols, simplifying model
+    schema (LP: #1156941)
+  * Add schema columns for latitude, longitude, and location name.
+  * Fix 'likes' column from gdouble to guint64.
+  * Add geotagging support from foursquare, facebook, flickr.
+  * Implement since= for Facebook, reducing bandwidth usage.
+  * Automatically prepend the required @mention to Twitter
+    replies (LP: #1156829)
+  * Automatically linkify URLs that get published to the model.
+  * Fix the publishing of Facebook Stories (LP: #1155785)
 
- -- Ken VanDine <ken.vandine@canonical.com>  Tue, 19 Mar 2013 11:53:19 -0400
+  [ Ken VanDine ]
+  * [FFe] replace gwibber-service with Friends (LP: #1156979)
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb():
+    GDBus.Error:com.google.code.AccountsSSO.SingleSignOn.Error.UserInter
+    action: userActionFinished error: 10 (account: 1) (LP: #1135038)
+
+  [ Robert Bruce Park <robert.park@canonical.com>, Ken VanDine ]
+  * [FFe] replace gwibber-service with Friends (LP: #1156979)
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb():
+    GDBus.Error:com.google.code.AccountsSSO.SingleSignOn.Error.UserInter
+    action: userActionFinished error: 10 (account: 1) (LP: #1135038)
+
+  [ Robert Bruce Park ]
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb():
+    GDBus.Error:com.google.code.AccountsSSO.SingleSignOn.Error.UserInter
+    action: userActionFinished error: 10 (account: 1) (LP: #1135038)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 164
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 20 Mar 2013 14:30:42 +0000
 
 friends (0.1.2daily13.03.19-0ubuntu1) raring; urgency=low
 
@@ -23,16 +58,6 @@ friends (0.1.2daily13.03.19-0ubuntu1) raring; urgency=low
   * Automatic snapshot from revision 162
 
  -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 19 Mar 2013 05:03:06 +0000
-
-friends (0.1.2-0ubuntu1) raring; urgency=low
-
-  * Stop deduplicating messages across protocols, simplifying model schema.
-  * Add schema columns for latitude, longitude, and location name.
-  * Fix 'likes' column from gdouble to guint64.
-  * Add geotagging support from foursquare, facebook, flickr.
-  * Implement since= for Facebook, reducing bandwidth usage.
-
- -- Robert Bruce Park <robert.park@canonical.com>  Tue, 12 Mar 2013 11:40:23 -0700
 
 friends (0.1.2daily13.03.11.1-0ubuntu1) raring; urgency=low
 
