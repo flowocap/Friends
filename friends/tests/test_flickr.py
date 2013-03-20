@@ -42,6 +42,7 @@ class TestFlickr(unittest.TestCase):
         self.protocol._get_oauth_headers = lambda *ignore, **kwignore: {}
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.flickr')
+        TestModel.clear()
 
     def tearDown(self):
         self.log_mock.stop()
