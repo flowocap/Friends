@@ -26,7 +26,7 @@ import json
 
 from dbus.mainloop.glib import DBusGMainLoop
 
-from friends.service.dispatcher import Dispatcher, STUB
+from friends.service.dispatcher import Dispatcher, ManageTimers, STUB
 from friends.tests.mocks import LogMock, mock
 
 
@@ -61,7 +61,11 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.account_manager.get_all.assert_called_once_with()
         account.protocol.assert_called_once_with('receive')
 
-        self.assertEqual(self.log_mock.empty(), 'Refresh requested\n')
+        self.assertEqual(self.log_mock.empty(),
+                         'Clearing 1 shutdown timer(s)...\n'
+                         'Refresh requested\n'
+                         'Clearing 0 shutdown timer(s)...\n'
+                         'Starting new shutdown timer...\n')
 
     def test_clear_indicators(self):
         self.dispatcher.menu_manager = mock.Mock()
@@ -81,7 +85,10 @@ class TestDispatcher(unittest.TestCase):
             'like', '23346356767354626', success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         '345: like 23346356767354626\n')
+                         'Clearing 1 shutdown timer(s)...\n'
+                         '345: like 23346356767354626\n'
+                         'Clearing 0 shutdown timer(s)...\n'
+                         'Starting new shutdown timer...\n')
 
     def test_failing_do(self):
         account = mock.Mock()
@@ -93,7 +100,10 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Could not find account: 6\n')
+                         'Clearing 1 shutdown timer(s)...\n'
+                         'Could not find account: 6\n'
+                         'Clearing 0 shutdown timer(s)...\n'
+                         'Starting new shutdown timer...\n')
 
     def test_send_message(self):
         account1 = mock.Mock()
@@ -128,7 +138,10 @@ class TestDispatcher(unittest.TestCase):
             success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Replying to 2, objid\n')
+                         'Clearing 1 shutdown timer(s)...\n'
+                         'Replying to 2, objid\n'
+                         'Clearing 0 shutdown timer(s)...\n'
+                         'Starting new shutdown timer...\n')
 
     def test_send_reply_failed(self):
         account = mock.Mock()
@@ -140,8 +153,11 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Replying to 2, objid\n' +
-                         'Could not find account: 2\n')
+                         'Clearing 1 shutdown timer(s)...\n'
+                         'Replying to 2, objid\n'
+                         'Could not find account: 2\n'
+                         'Clearing 0 shutdown timer(s)...\n'
+                         'Starting new shutdown timer...\n')
 
     def test_upload_async(self):
         account = mock.Mock()
@@ -166,7 +182,10 @@ class TestDispatcher(unittest.TestCase):
             )
 
         self.assertEqual(self.log_mock.empty(),
-                         'Uploading file://path/to/image.png to 2\n')
+                         'Clearing 1 shutdown timer(s)...\n'
+                         'Uploading file://path/to/image.png to 2\n'
+                         'Clearing 0 shutdown timer(s)...\n'
+                         'Starting new shutdown timer...\n')
 
     def test_get_features(self):
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),
@@ -205,6 +224,52 @@ class TestDispatcher(unittest.TestCase):
             self.dispatcher.URLShorten(long_url),
             'short url')
         lookup_mock.is_shortened.assert_called_once_with(long_url)
-        self.dispatcher.settings.get_boolean.assert_called_once_with('shorten-urls')
+        self.dispatcher.settings.get_boolean.assert_called_once_with(
+            'shorten-urls')
         lookup_mock.lookup.assert_called_once_with('is.gd')
-        lookup_mock.lookup.return_value.shorten.assert_called_once_with(long_url)
+        lookup_mock.lookup.return_value.shorten.assert_called_once_with(
+            long_url)
+
+    @mock.patch('friends.service.dispatcher.GLib')
+    def test_manage_timers_clear(self, glib):
+        manager = ManageTimers()
+        manager.timers = {1}
+        manager.__enter__()
+        glib.source_remove.assert_called_once_with(1)
+        manager.timers = {1, 2, 3}
+        manager.clear_all_timers()
+        self.assertEqual(glib.source_remove.call_count, 4)
+
+    @mock.patch('friends.service.dispatcher.GLib')
+    def test_manage_timers_set(self, glib):
+        manager = ManageTimers()
+        manager.timers = set()
+        manager.clear_all_timers = mock.Mock()
+        manager.__exit__()
+        glib.timeout_add_seconds.assert_called_once_with(30, manager.terminate)
+        manager.clear_all_timers.assert_called_once_with()
+        self.assertEqual(len(manager.timers), 1)
+
+    @mock.patch('friends.service.dispatcher.persist_model')
+    @mock.patch('friends.service.dispatcher.threading')
+    @mock.patch('friends.service.dispatcher.GLib')
+    def test_manage_timers_terminate(self, glib, thread, persist):
+        manager = ManageTimers()
+        manager.timers = set()
+        thread.activeCount.return_value = 1
+        manager.terminate()
+        thread.activeCount.assert_called_once_with()
+        persist.assert_called_once_with()
+        glib.idle_add.assert_called_once_with(manager.callback)
+
+    @mock.patch('friends.service.dispatcher.persist_model')
+    @mock.patch('friends.service.dispatcher.threading')
+    @mock.patch('friends.service.dispatcher.GLib')
+    def test_manage_timers_dont_kill_threads(self, glib, thread, persist):
+        manager = ManageTimers()
+        manager.timers = set()
+        manager.set_new_timer = mock.Mock()
+        thread.activeCount.return_value = 10
+        manager.terminate()
+        thread.activeCount.assert_called_once_with()
+        manager.set_new_timer.assert_called_once_with()

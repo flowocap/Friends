@@ -1,3 +1,11 @@
+friends (0.1.2daily13.03.19-1raring2) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * Keep the Dispatcher alive for 30s beyond the return of the final
+    method invocation.
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 19 Mar 2013 22:01:23 -0400
+
 friends (0.1.2daily13.03.19-1raring1) raring; urgency=low
 
   * Bump for PPA

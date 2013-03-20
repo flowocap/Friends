@@ -26,7 +26,6 @@ import time
 import logging
 
 from urllib.parse import quote
-from gi.repository import GLib
 
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
