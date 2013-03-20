@@ -1,4 +1,4 @@
-friends (0.1.3-0ubuntu1) UNRELEASED; urgency=low
+friends (0.1.3daily13.03.20-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]
   * Keep the Dispatcher alive for 30s beyond the return of the final
@@ -14,7 +14,30 @@ friends (0.1.3-0ubuntu1) UNRELEASED; urgency=low
   * Automatically linkify URLs that get published to the model.
   * Fix the publishing of Facebook Stories (LP: #1155785)
 
- -- Ken VanDine <ken.vandine@canonical.com>  Wed, 20 Mar 2013 09:14:15 -0400
+  [ Ken VanDine ]
+  * [FFe] replace gwibber-service with Friends (LP: #1156979)
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb():
+    GDBus.Error:com.google.code.AccountsSSO.SingleSignOn.Error.UserInter
+    action: userActionFinished error: 10 (account: 1) (LP: #1135038)
+
+  [ Robert Bruce Park <robert.park@canonical.com>, Ken VanDine ]
+  * [FFe] replace gwibber-service with Friends (LP: #1156979)
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb():
+    GDBus.Error:com.google.code.AccountsSSO.SingleSignOn.Error.UserInter
+    action: userActionFinished error: 10 (account: 1) (LP: #1135038)
+
+  [ Robert Bruce Park ]
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb():
+    GDBus.Error:com.google.code.AccountsSSO.SingleSignOn.Error.UserInter
+    action: userActionFinished error: 10 (account: 1) (LP: #1135038)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 164
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 20 Mar 2013 14:30:42 +0000
 
 friends (0.1.2daily13.03.19-0ubuntu1) raring; urgency=low
 
