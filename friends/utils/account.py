@@ -43,7 +43,6 @@ class AccountManager:
         # are added or deleted.
         manager = Accounts.Manager.new_for_service_type('microblogging')
         manager.connect('enabled-event', self._on_enabled_event)
-        manager.connect('account-deleted', self._on_account_deleted)
         # Add all the currently known accounts.
         for account_service in manager.get_enabled_account_services():
             self._add_new_account(account_service)
@@ -63,25 +62,6 @@ class AccountManager:
             account = self._add_new_account(account_service)
             if account is not None:
                 account.protocol('receive')
-        else:
-            # If an account has been disabled in UOA, we should remove
-            # it's messages from the SharedModel.
-            self._unpublish_entire_account(account_id)
-
-    def _on_account_deleted(self, manager, account_id):
-        account_service = self._get_service(manager, account_id)
-        if account_service is not None:
-            log.debug('Deleting account {}'.format(account_id))
-            self._unpublish_entire_account(account_id)
-        else:
-            log.error('Tried to delete invalid account: {}'.format(account_id))
-
-    def _unpublish_entire_account(self, account_id):
-        """Delete all the account's messages from the SharedModel."""
-        log.debug('Deleting all messages from {}.'.format(account_id))
-        account = self._accounts.pop(str(account_id), None)
-        if account is not None:
-            account.protocol._unpublish_all()
 
     def _add_new_account(self, account_service):
         try:
@@ -89,14 +69,14 @@ class AccountManager:
         except UnsupportedProtocolError as error:
             log.info(error)
         else:
-            self._accounts[str(new_account.id)] = new_account
+            self._accounts[new_account.id] = new_account
             return new_account
 
     def get_all(self):
         return self._accounts.values()
 
     def get(self, account_id, default=None):
-        return self._accounts.get(str(account_id), default)
+        return self._accounts.get(int(account_id), default)
 
 
 class AuthData:
@@ -132,12 +112,12 @@ class Account:
         self.auth = AuthData(account_service.get_auth_data())
         # The provider in libaccounts should match the name of our protocol.
         account = account_service.get_account()
+        self.id = account.id
         self.protocol_name = account.get_provider_name()
         protocol_class = protocol_manager.protocols.get(self.protocol_name)
         if protocol_class is None:
             raise UnsupportedProtocolError(self.protocol_name)
         self.protocol = protocol_class(self)
-        self.id = str(account.id)
         # Connect responders to changes in the account information.
         account_service.connect('changed', self._on_account_changed, account)
         self._on_account_changed(account_service, account)

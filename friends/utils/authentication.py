@@ -66,5 +66,10 @@ class Authentication:
     def _login_cb(self, session, reply, error, user_data):
         self._reply = reply
         if error:
-            raise AuthorizationError(self.account.id, error.message)
+            exception = AuthorizationError(self.account.id, error.message)
+            # Mardy says this error can happen during normal operation.
+            if error.message.endswith('userActionFinished error: 10'):
+                log.error(str(exception))
+            else:
+                raise exception
         log.debug('Login completed')

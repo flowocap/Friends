@@ -28,12 +28,13 @@ import dbus
 import dbus.service
 
 from gi.repository import GLib
+from contextlib import ContextDecorator
 
 from friends.utils.avatar import Avatar
 from friends.utils.account import AccountManager
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
-from friends.utils.model import Model
+from friends.utils.model import Model, persist_model
 from friends.shorteners import lookup
 
 
@@ -41,6 +42,48 @@ log = logging.getLogger(__name__)
 
 DBUS_INTERFACE = 'com.canonical.Friends.Dispatcher'
 STUB = lambda *ignore, **kwignore: None
+
+
+# Avoid race condition during shut-down
+_exit_lock = threading.Lock()
+
+
+class ManageTimers(ContextDecorator):
+    """Exit the dispatcher 30s after the most recent method call returns."""
+    timers = set()
+    callback = STUB
+
+    def __enter__(self):
+        self.clear_all_timers()
+
+    def __exit__(self, *ignore):
+        self.set_new_timer()
+
+    def clear_all_timers(self):
+        log.debug('Clearing {} shutdown timer(s)...'.format(len(self.timers)))
+        while self.timers:
+            GLib.source_remove(self.timers.pop())
+
+    def set_new_timer(self):
+        # Concurrency will cause two methods to exit near each other,
+        # causing two timers to be set, so we have to clear them again.
+        self.clear_all_timers()
+        log.debug('Starting new shutdown timer...')
+        self.timers.add(GLib.timeout_add_seconds(30, self.terminate))
+
+    def terminate(self, *ignore):
+        """Exit the dispatcher, but only if there are no active subthreads."""
+        with _exit_lock:
+            if threading.activeCount() < 2:
+                log.debug('No threads found, shutting down.')
+                persist_model()
+                self.timers.add(GLib.idle_add(self.callback))
+            else:
+                log.debug('Delaying shutdown because active threads found.')
+                self.set_new_timer()
+
+
+exit_after_idle = ManageTimers()
 
 
 class Dispatcher(dbus.service.Object):
@@ -59,10 +102,13 @@ class Dispatcher(dbus.service.Object):
         self.menu_manager = MenuManager(self.Refresh, self.mainloop.quit)
         Model.connect('row-added', self._increment_unread_count)
 
+        ManageTimers.callback = mainloop.quit
+
     def _increment_unread_count(self, model, itr):
         self._unread_count += 1
         self.menu_manager.update_unread_count(self._unread_count)
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)
     def Refresh(self):
         """Download new messages from each connected protocol."""
@@ -80,6 +126,7 @@ class Dispatcher(dbus.service.Object):
                 # If a protocol doesn't support receive then ignore it.
                 pass
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)
     def ClearIndicators(self):
         """Indicate that messages have been read.
@@ -92,8 +139,8 @@ class Dispatcher(dbus.service.Object):
             service.ClearIndicators()
         """
         self.menu_manager.update_unread_count(0)
-        GLib.idle_add(self.mainloop.quit)
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
                          out_signature='s',
@@ -117,7 +164,7 @@ class Dispatcher(dbus.service.Object):
         """
         if account_id:
             accounts = [self.account_manager.get(account_id)]
-            if accounts == [None]:
+            if None in accounts:
                 message = 'Could not find account: {}'.format(account_id)
                 failure(message)
                 log.error(message)
@@ -138,6 +185,7 @@ class Dispatcher(dbus.service.Object):
         if not called:
             failure('No accounts supporting {} found.'.format(action))
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='s',
                          out_signature='s',
@@ -162,7 +210,7 @@ class Dispatcher(dbus.service.Object):
                 sent = True
                 log.debug(
                     'Sending message to {}'.format(
-                        account.protocol.__class__.__name__))
+                        account.protocol._Name))
                 account.protocol(
                     'send',
                     message,
@@ -172,6 +220,7 @@ class Dispatcher(dbus.service.Object):
         if not sent:
             failure('No send_enabled accounts found.')
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
                          out_signature='s',
@@ -205,6 +254,7 @@ class Dispatcher(dbus.service.Object):
             failure(message)
             log.error(message)
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE,
                          in_signature='sss',
                          out_signature='s',
@@ -262,6 +312,7 @@ class Dispatcher(dbus.service.Object):
             failure(message)
             log.error(message)
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def GetFeatures(self, protocol_name):
         """Returns a list of features supported by service as json string.
@@ -274,9 +325,9 @@ class Dispatcher(dbus.service.Object):
             features = json.loads(service.GetFeatures('facebook'))
         """
         protocol = protocol_manager.protocols.get(protocol_name)
-        GLib.idle_add(self.mainloop.quit)
-        return json.dumps(protocol.get_features())
+        return json.dumps(protocol.get_features() if protocol else [])
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def URLShorten(self, url):
         """Shorten a URL.
@@ -291,7 +342,6 @@ class Dispatcher(dbus.service.Object):
             service = dbus.Interface(obj, DBUS_INTERFACE)
             short_url = service.URLShorten(url)
         """
-        GLib.idle_add(self.mainloop.quit)
         service_name = self.settings.get_string('urlshorter')
         log.info('Shortening URL {} with {}'.format(url, service_name))
         if (lookup.is_shortened(url) or
@@ -305,7 +355,7 @@ class Dispatcher(dbus.service.Object):
             log.exception('URL shortening class: {}'.format(service))
             return url
 
+    @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)
     def ExpireAvatars(self):
         Avatar.expire_old_avatars()
-        GLib.idle_add(self.mainloop.quit)

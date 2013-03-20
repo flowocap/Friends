@@ -30,15 +30,19 @@ import os
 import hashlib
 import logging
 import threading
+import tempfile
+import shutil
 
 from io import StringIO
 from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
 from queue import Empty, Queue
 from urllib.parse import urlsplit
+from gi.repository import Dee
 
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
+from friends.utils.model import COLUMN_TYPES
 
 
 try:
@@ -51,6 +55,50 @@ except ImportError:
 NEWLINE = '\n'
 
 
+# Create a test model that will not interfere with the user's environment.
+# We'll use this object as a mock of the real model.
+TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
+TestModel.set_schema_full(COLUMN_TYPES)
+
+
+@mock.patch('friends.utils.http._soup', mock.Mock())
+@mock.patch('friends.utils.base.Model', TestModel)
+@mock.patch('friends.utils.base.Base._get_access_token',
+            mock.Mock(return_value='Access Tolkien'))
+def populate_fake_data():
+    """Dump a mixture of random data from our testsuite into TestModel.
+
+    This is invoked by running 'friends-dispatcher --test' so that you
+    can have some phony data in the model to test against.
+
+    Just remember that the data appears in a separate model so as not
+    to interfere with the user's official DeeModel stream.
+    """
+    from friends.utils.cache import JsonCache
+    from friends.protocols.facebook import Facebook
+    from friends.protocols.flickr import Flickr
+    from friends.protocols.twitter import Twitter
+    from gi.repository import Dee
+
+    temp_cache = tempfile.mkdtemp()
+    root = JsonCache._root = os.path.join(temp_cache, '{}.json')
+
+    protocols = {
+        'facebook-full.dat': Facebook(FakeAccount(account_id=1)),
+        'flickr-full.dat': Flickr(FakeAccount(account_id=2)),
+        'twitter-home.dat': Twitter(FakeAccount(account_id=3)),
+        }
+
+    for fake_name, protocol in protocols.items():
+        protocol.source_registry = EDSRegistry()
+        with mock.patch('friends.utils.http.Soup.Message',
+                        FakeSoupMessage('friends.tests.data',
+                                        fake_name)) as fake:
+            protocol.receive()
+
+    shutil.rmtree(temp_cache)
+
+
 class FakeAuth:
     id = 'fakeauth id'
     method = 'fakeauth method'
@@ -61,7 +109,7 @@ class FakeAuth:
 class FakeAccount:
     """A fake account object for testing purposes."""
 
-    def __init__(self, service=None):
+    def __init__(self, service=None, account_id=88):
         self.access_token = None
         self.secret_token = None
         self.user_full_name = None
@@ -69,7 +117,7 @@ class FakeAccount:
         self.user_id = None
         self.auth = FakeAuth()
         self.login_lock = threading.Lock()
-        self.id = '1234'
+        self.id = account_id
         self.protocol = Base(self)
 
 

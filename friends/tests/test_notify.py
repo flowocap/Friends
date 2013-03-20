@@ -22,18 +22,9 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
-
-from friends.tests.mocks import FakeAccount, mock
+from friends.tests.mocks import FakeAccount, TestModel, mock
 from friends.utils.base import Base
-from friends.utils.model import COLUMN_TYPES
 from friends.utils.notify import notify
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
 
 
 class TestNotifications(unittest.TestCase):
@@ -43,7 +34,6 @@ class TestNotifications(unittest.TestCase):
         TestModel.clear()
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_all(self, notify):
@@ -57,7 +47,6 @@ class TestNotifications(unittest.TestCase):
         notify.assert_called_once_with('Benjamin', 'notify!', '')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_mentions_private(self, notify):
@@ -73,7 +62,6 @@ class TestNotifications(unittest.TestCase):
         notify.assert_called_once_with('Benjamin', 'This message is private!', '')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_mention_fail(self, notify):
@@ -89,7 +77,6 @@ class TestNotifications(unittest.TestCase):
         self.assertEqual(notify.call_count, 0)
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
     def test_publish_mention_none(self, notify):

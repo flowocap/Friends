@@ -22,18 +22,12 @@ __all__ = [
 
 import unittest
 
-from gi.repository import GLib, Dee
+from gi.repository import GLib
 
 from friends.errors import AuthorizationError, FriendsError
 from friends.protocols.flickr import Flickr
-from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
-from friends.utils.model import COLUMN_INDICES, COLUMN_TYPES
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
+from friends.tests.mocks import TestModel, mock
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -133,7 +127,7 @@ class TestFlickr(unittest.TestCase):
             'http://api.flickr.com/services/rest',
             method='GET',
             params=dict(
-                extras='date_upload,owner_name,icon_server',
+                extras='date_upload,owner_name,icon_server,geo',
                 format='json',
                 nojsoncallback='1',
                 api_key='fake',
@@ -157,77 +151,66 @@ class TestFlickr(unittest.TestCase):
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_flickr_data(self):
         # Start by setting up a fake account id.
-        self.account.id = 'lerxst'
+        self.account.id = 69
         with mock.patch.object(self.protocol, '_get_access_token',
                                return_value='token'):
-            self.assertEqual(self.protocol.receive(), 3)
-        self.assertEqual(TestModel.get_n_rows(), 3)
+            self.assertEqual(self.protocol.receive(), 10)
+        self.assertEqual(TestModel.get_n_rows(), 10)
 
         self.assertEqual(
             list(TestModel.get_row(0)),
-            [[['flickr', 'lerxst', '801']],
+            ['flickr',
+             69,
+             '8552892154',
              'images',
-             '',
-             '123',
-             '',
-             False,
-             '2012-05-10T13:36:45Z',
-             '',
-             '',
-             '',
-             0.0,
-             False,
-             '',
-             '',
-             '',
-             '',
-             'ant',
-             '',
-             ])
-
-        self.assertEqual(
-            list(TestModel.get_row(1)),
-            [[['flickr', 'lerxst', '802']],
-             'images',
-             'Alex Lifeson',
-             '456',
-             'Alex Lifeson',
+             'raise my voice',
+             '47303164@N00',
+             'raise my voice',
              True,
-             '',
-             '',
-             '',
-             '',
-             0.0,
-             False,
-             '',
-             '',
-             '',
-             '',
-             'bee',
-             '',
-             ])
-
-        self.assertEqual(
-            list(TestModel.get_row(2)),
-            [[['flickr', 'lerxst', '803']],
-             'images',
-             'Bob Dobbs',
-             '789',
-             'Bob Dobbs',
-             False,
-             '',
+             '2013-03-12T19:51:42Z',
              '',
              GLib.get_user_cache_dir() +
-             '/friends/avatars/b913501d6face9d13f3006b731a711b596d23099',
-             'http://www.flickr.com/people/789',
-             0.0,
+             '/friends/avatars/7b30ff0140dd9b80f2b1782a2802c3ce785fa0ce',
+             'http://www.flickr.com/people/47303164@N00',
+             0,
              False,
-             'http://farmanimalz.static.flickr.com/1/789_ghi_m.jpg',
+             'http://farm9.static.flickr.com/8378/47303164@N00_a_m.jpg',
              '',
-             'http://farmanimalz.static.flickr.com/1/789_ghi_b.jpg',
+             'http://farm9.static.flickr.com/8378/47303164@N00_a_b.jpg',
              '',
-             'cat',
-             'http://farmanimalz.static.flickr.com/1/789_ghi_t.jpg',
+             'Chocolate chai #yegcoffee',
+             'http://farm9.static.flickr.com/8378/47303164@N00_a_t.jpg',
+             '',
+             0.0,
+             0.0,
+             ])
+
+        self.assertEqual(
+            list(TestModel.get_row(4)),
+            ['flickr',
+             69,
+             '8550829193',
+             'images',
+             'Nelson Webb',
+             '27204141@N05',
+             'Nelson Webb',
+             True,
+             '2013-03-12T13:54:10Z',
+             '',
+             GLib.get_user_cache_dir() +
+             '/friends/avatars/cae2939354a33fea5f008df91bb8e25920be5dc3',
+             'http://www.flickr.com/people/27204141@N05',
+             0,
+             False,
+             'http://farm9.static.flickr.com/8246/27204141@N05_e_m.jpg',
+             '',
+             'http://farm9.static.flickr.com/8246/27204141@N05_e_b.jpg',
+             '',
+             'St. Michael - The Archangel',
+             'http://farm9.static.flickr.com/8246/27204141@N05_e_t.jpg',
+             '',
+             53.833156,
+             -112.330784,
              ])
 
     @mock.patch('friends.utils.http.Soup.form_request_new_from_multipart',

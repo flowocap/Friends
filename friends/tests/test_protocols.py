@@ -24,21 +24,12 @@ __all__ = [
 import unittest
 import threading
 
-from gi.repository import Dee
-
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
-from friends.tests.mocks import FakeAccount, LogMock, mock
-from friends.utils.base import Base, feature
+from friends.tests.mocks import FakeAccount, LogMock, TestModel, mock
+from friends.utils.base import Base, feature, linkify_string
 from friends.utils.manager import ProtocolManager
-from friends.utils.model import (
-    COLUMN_INDICES, COLUMN_NAMES, COLUMN_TYPES, Model)
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+from friends.utils.model import COLUMN_INDICES, Model
 
 
 class TestProtocolManager(unittest.TestCase):
@@ -147,42 +138,39 @@ class TestProtocols(unittest.TestCase):
         count = Model.get_n_rows()
         self.assertEqual(TestModel.get_n_rows(), 0)
         base = Base(FakeAccount())
-        base._publish('alpha', message='a')
-        base._publish('beta', message='b')
-        base._publish('omega', message='c')
+        base._publish(message_id='alpha', message='a')
+        base._publish(message_id='beta', message='b')
+        base._publish(message_id='omega', message='c')
         self.assertEqual(Model.get_n_rows(), count)
         self.assertEqual(TestModel.get_n_rows(), 3)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
-    @mock.patch('friends.utils.base._seen_messages', {})
     def test_seen_dicts_successfully_instantiated(self):
-        from friends.utils.base import _seen_ids, _seen_messages
+        from friends.utils.base import _seen_ids
         from friends.utils.base import initialize_caches
         self.assertEqual(TestModel.get_n_rows(), 0)
         base = Base(FakeAccount())
-        base._publish('alpha', sender='a', message='a')
-        base._publish('beta', sender='a', message='a')
-        base._publish('omega', sender='a', message='b')
-        self.assertEqual(TestModel.get_n_rows(), 2)
+        base._publish(message_id='alpha', sender='a', message='a')
+        base._publish(message_id='beta', sender='a', message='a')
+        base._publish(message_id='omega', sender='a', message='b')
+        self.assertEqual(TestModel.get_n_rows(), 3)
         _seen_ids.clear()
-        _seen_messages.clear()
         initialize_caches()
-        self.assertEqual(sorted(list(_seen_messages.keys())), ['aa', 'ab'])
-        self.assertEqual(sorted(list(_seen_ids.keys())),
-                         [('base', '1234', 'alpha'),
-                          ('base', '1234', 'beta'),
-                          ('base', '1234', 'omega')])
-        # These two point at the same row because sender+message are identical
-        self.assertEqual(_seen_ids[('base', '1234', 'alpha')],
-                         _seen_ids[('base', '1234', 'beta')])
+        self.assertEqual(
+            _seen_ids,
+            dict(alpha=0,
+                 beta=1,
+                 omega=2,
+                 )
+            )
 
     @mock.patch('friends.utils.base.Model', TestModel)
     def test_invalid_argument(self):
         base = Base(FakeAccount())
         self.assertEqual(0, TestModel.get_n_rows())
         with self.assertRaises(TypeError) as cm:
-            base._publish('message_id', invalid_argument='not good')
+            base._publish(message_id='message_id', invalid_argument='not good')
         self.assertEqual(str(cm.exception),
                          'Unexpected keyword arguments: invalid_argument')
 
@@ -192,12 +180,11 @@ class TestProtocols(unittest.TestCase):
         base = Base(FakeAccount())
         self.assertEqual(0, TestModel.get_n_rows())
         with self.assertRaises(TypeError) as cm:
-            base._publish('p.middy', bad='no', wrong='yes')
+            base._publish(message_id='p.middy', bad='no', wrong='yes')
         self.assertEqual(str(cm.exception),
                          'Unexpected keyword arguments: bad, wrong')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_one_message(self):
         # Test that publishing a message inserts a row into the model.
@@ -215,28 +202,34 @@ class TestProtocols(unittest.TestCase):
             liked=True))
         self.assertEqual(1, TestModel.get_n_rows())
         row = TestModel.get_row(0)
-        # For convenience.
-        def V(column_name):
-            return row[COLUMN_INDICES[column_name]]
-        self.assertEqual(V('message_ids'),
-                         [['base', '1234', '1234']])
-        self.assertEqual(V('stream'), 'messages')
-        self.assertEqual(V('sender'), 'fred')
-        self.assertEqual(V('sender_nick'), 'freddy')
-        self.assertTrue(V('from_me'))
-        self.assertEqual(V('timestamp'), 'today')
-        self.assertEqual(V('message'), 'hello, @jimmy')
-        self.assertEqual(V('likes'), 10)
-        self.assertTrue(V('liked'))
-        # All the other columns have empty string values.
-        empty_columns = set(COLUMN_NAMES) - set(
-            ['message_ids', 'stream', 'sender', 'sender_nick', 'from_me',
-             'timestamp', 'comments', 'message', 'likes', 'liked'])
-        for column_name in empty_columns:
-            self.assertEqual(row[COLUMN_INDICES[column_name]], '')
+        self.assertEqual(
+            list(row),
+            ['base',
+             88,
+             '1234',
+             'messages',
+             'fred',
+             '',
+             'freddy',
+             True,
+             'today',
+             'hello, @jimmy',
+             '',
+             '',
+             10,
+             True,
+             '',
+             '',
+             '',
+             '',
+             '',
+             '',
+             '',
+             0.0,
+             0.0,
+             ])
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_unpublish(self):
         base = Base(FakeAccount())
@@ -246,32 +239,24 @@ class TestProtocols(unittest.TestCase):
             sender='fred',
             message='hello, @jimmy'))
         self.assertTrue(base._publish(
+            message_id='1234',
+            sender='fred',
+            message='hello, @jimmy'))
+        self.assertTrue(base._publish(
             message_id='5678',
             sender='fred',
             message='hello, +jimmy'))
-        self.assertEqual(1, TestModel.get_n_rows())
-        self.assertEqual(TestModel[0][0],
-                         [['base', '1234', '1234'],
-                          ['base', '1234', '5678']])
+        self.assertEqual(2, TestModel.get_n_rows())
         base._unpublish('1234')
         self.assertEqual(1, TestModel.get_n_rows())
-        self.assertEqual(TestModel[0][0],
-                         [['base', '1234', '5678']])
         base._unpublish('5678')
         self.assertEqual(0, TestModel.get_n_rows())
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_duplicate_messages_identified(self):
-        # When two messages which are deemed identical, by way of the
-        # _make_key() test in base.py, are published, only one ends up in the
-        # model.  However, the message_ids list-of-lists gets both sets of
-        # identifiers.
         base = Base(FakeAccount())
         self.assertEqual(0, TestModel.get_n_rows())
-        # Insert the first message into the table.  The key will be the string
-        # 'fredhellojimmy'
         self.assertTrue(base._publish(
             message_id='1234',
             stream='messages',
@@ -282,11 +267,9 @@ class TestProtocols(unittest.TestCase):
             message='hello, @jimmy',
             likes=10,
             liked=True))
-        # Insert the second message into the table.  Note that because
-        # punctuation was stripped from the above message, this one will also
-        # have the key 'fredhellojimmy', thus it will be deemed a duplicate.
+        # Duplicate
         self.assertTrue(base._publish(
-            message_id='5678',
+            message_id='1234',
             stream='messages',
             sender='fred',
             sender_nick='freddy',
@@ -300,13 +283,8 @@ class TestProtocols(unittest.TestCase):
         # The first published message wins.
         row = TestModel.get_row(0)
         self.assertEqual(row[COLUMN_INDICES['message']], 'hello, @jimmy')
-        # Both message ids will be present, in the order they were published.
-        self.assertEqual(row[COLUMN_INDICES['message_ids']],
-                         [['base', '1234', '1234'],
-                          ['base', '1234', '5678']])
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_duplicate_ids_not_duplicated(self):
         # When two messages are actually identical (same ids and all),
@@ -325,12 +303,34 @@ class TestProtocols(unittest.TestCase):
             message='hello, @jimmy'))
         self.assertEqual(1, TestModel.get_n_rows())
         row = TestModel.get_row(0)
-        # The same message_id should not appear twice.
-        self.assertEqual(row[COLUMN_INDICES['message_ids']],
-                         [['base', '1234', '1234']])
+        self.assertEqual(
+            list(row),
+            ['base',
+             88,
+             '1234',
+             'messages',
+             'fred',
+             '',
+             '',
+             False,
+             '',
+             'hello, @jimmy',
+             '',
+             '',
+             0,
+             False,
+             '',
+             '',
+             '',
+             '',
+             '',
+             '',
+             '',
+             0.0,
+             0.0,
+             ])
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_similar_messages_allowed(self):
         # Because both the sender and message contribute to the unique key we
@@ -392,3 +392,78 @@ class TestProtocols(unittest.TestCase):
 
     def test_features(self):
         self.assertEqual(MyProtocol.get_features(), ['feature_1', 'feature_2'])
+
+    def test_linkify_string(self):
+        # String with no URL is unchanged.
+        self.assertEqual('Hello!', linkify_string('Hello!'))
+        # http:// works.
+        self.assertEqual(
+            '<a href="http://www.example.com">http://www.example.com</a>',
+            linkify_string('http://www.example.com'))
+        # https:// works, too.
+        self.assertEqual(
+            '<a href="https://www.example.com">https://www.example.com</a>',
+            linkify_string('https://www.example.com'))
+        # http:// is optional if you include www.
+        self.assertEqual(
+            '<a href="www.example.com">www.example.com</a>',
+            linkify_string('www.example.com'))
+        # Haha, nobody uses ftp anymore!
+        self.assertEqual(
+            '<a href="ftp://example.com/">ftp://example.com/</a>',
+            linkify_string('ftp://example.com/'))
+        # Trailing periods are not linkified.
+        self.assertEqual(
+            '<a href="http://example.com">http://example.com</a>.',
+            linkify_string('http://example.com.'))
+        # URL can contain periods without getting cut off.
+        self.assertEqual(
+            '<a href="http://example.com/products/buy.html">'
+            'http://example.com/products/buy.html</a>.',
+            linkify_string('http://example.com/products/buy.html.'))
+        # Don't linkify trailing brackets.
+        self.assertEqual(
+            'Example Co (<a href="http://example.com">http://example.com</a>).',
+            linkify_string('Example Co (http://example.com).'))
+        # Don't linkify trailing exclamation marks.
+        self.assertEqual(
+            'Go to <a href="https://example.com">https://example.com</a>!',
+            linkify_string('Go to https://example.com!'))
+        # Don't linkify trailing commas, also ensure all links are found.
+        self.assertEqual(
+            '<a href="www.example.com">www.example.com</a>, <a '
+            'href="http://example.com/stuff">http://example.com/stuff</a>, and '
+            '<a href="http://example.com/things">http://example.com/things</a> '
+            'are my favorite sites.',
+            linkify_string('www.example.com, http://example.com/stuff, and '
+                           'http://example.com/things are my favorite sites.'))
+        # Don't linkify trailing question marks.
+        self.assertEqual(
+            'Ever been to <a href="www.example.com">www.example.com</a>?',
+            linkify_string('Ever been to www.example.com?'))
+        # URLs can contain question marks ok.
+        self.assertEqual(
+            'Like <a href="http://example.com?foo=bar&grill=true">'
+            'http://example.com?foo=bar&grill=true</a>?',
+            linkify_string('Like http://example.com?foo=bar&grill=true?'))
+        # Multi-line strings are also supported.
+        self.assertEqual(
+            'Hey, visit us online!\n\n'
+            '<a href="http://example.com">http://example.com</a>',
+            linkify_string('Hey, visit us online!\n\nhttp://example.com'))
+        # Don't accidentally duplicate linkification.
+        self.assertEqual(
+            '<a href="www.example.com">click here!</a>',
+            linkify_string('<a href="www.example.com">click here!</a>'))
+        self.assertEqual(
+            '<a href="www.example.com">www.example.com</a>',
+            linkify_string('<a href="www.example.com">www.example.com</a>'))
+        self.assertEqual(
+            '<a href="www.example.com">www.example.com</a> is our website',
+            linkify_string(
+                '<a href="www.example.com">www.example.com</a> is our website'))
+        # This, apparently, is valid HTML.
+        self.assertEqual(
+            '<a href = "www.example.com">www.example.com</a>',
+            linkify_string(
+                '<a href = "www.example.com">www.example.com</a>'))

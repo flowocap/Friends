@@ -1,3 +1,21 @@
+friends (0.1.3-0ubuntu1) UNRELEASED; urgency=low
+
+  [ Robert Bruce Park ]
+  * Keep the Dispatcher alive for 30s beyond the return of the final
+    method invocation.
+  * Stop deduplicating messages across protocols, simplifying model 
+    schema (LP: #1156941)
+  * Add schema columns for latitude, longitude, and location name.
+  * Fix 'likes' column from gdouble to guint64.
+  * Add geotagging support from foursquare, facebook, flickr.
+  * Implement since= for Facebook, reducing bandwidth usage.
+  * Automatically prepend the required @mention to Twitter 
+    replies (LP: #1156829)
+  * Automatically linkify URLs that get published to the model.
+  * Fix the publishing of Facebook Stories (LP: #1155785)
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 20 Mar 2013 09:14:15 -0400
+
 friends (0.1.2daily13.03.19-0ubuntu1) raring; urgency=low
 
   [ Martin Pitt ]

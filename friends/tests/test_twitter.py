@@ -26,20 +26,14 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib, Dee
+from gi.repository import GLib
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
-from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
+from friends.tests.mocks import TestModel, mock
 from friends.utils.cache import JsonCache
-from friends.utils.model import COLUMN_TYPES
 from friends.errors import AuthorizationError
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -124,7 +118,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                 FakeSoupMessage('friends.tests.data', 'twitter-home.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_home(self, *mocks):
         self.account.access_token = 'access'
@@ -138,31 +131,32 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         # This test data was ripped directly from Twitter's API docs.
         expected = [
-            [[['twitter', '1234', '240558470661799936']],
+            ['twitter', 88, '240558470661799936',
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
              '2012-08-28T21:16:23Z', 'just another test',
              GLib.get_user_cache_dir() +
              '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
              'https://twitter.com/oauth_dancer/status/240558470661799936',
-             0.0, False, '', '', '', '', '', '',
+             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
-            [[['twitter', '1234', '240556426106372096']],
+            ['twitter', 88, '240556426106372096',
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
-             '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data ' +
-             'with twitter" class at @cal with @othman  http://t.co/bfj7zkDJ',
+             '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
+             'with twitter" class at @cal with @othman  '
+             '<a href="http://t.co/bfj7zkDJ">http://t.co/bfj7zkDJ</a>',
              GLib.get_user_cache_dir() +
              '/friends/avatars/0219effc03a3049a622476e6e001a4014f33dc31',
              'https://twitter.com/raffi/status/240556426106372096',
-             0.0, False, '', '', '', '', '', '',
+             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
-            [[['twitter', '1234', '240539141056638977']],
+            ['twitter', 88, '240539141056638977',
              'messages', 'Taylor Singletary', '819797', 'episod', False,
              '2012-08-28T19:59:34Z',
              'You\'d be right more often if you thought you were wrong.',
              GLib.get_user_cache_dir() +
              '/friends/avatars/0c829cb2934ad76489be21ee5e103735d9b7b034',
              'https://twitter.com/episod/status/240539141056638977',
-             0.0, False, '', '', '', '', '', '',
+             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
             ]
         for i, expected_row in enumerate(expected):
@@ -173,7 +167,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                 FakeSoupMessage('friends.tests.data', 'twitter-home.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_home_since_id(self, *mocks):
         self.account.access_token = 'access'
@@ -193,13 +186,11 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'https://api.twitter.com/1.1/statuses/' +
             'home_timeline.json?count=50&since_id=240558470661799936')
 
-
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-send.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
                 return_value=True)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_from_me(self, *mocks):
         self.account.access_token = 'access'
@@ -216,18 +207,17 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
         # This test data was ripped directly from Twitter's API docs.
         expected_row = [
-            [['twitter', '1234', '240558470661799936']],
+            'twitter', 88, '240558470661799936',
             'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', True,
             '2012-08-28T21:16:23Z', 'just another test',
             GLib.get_user_cache_dir() +
             '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
             'https://twitter.com/oauth_dancer/status/240558470661799936',
-            0.0, False, '', '', '', '', '', '',
+            0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_home_url(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
@@ -240,7 +230,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'https://api.twitter.com/1.1/statuses/home_timeline.json?count=50')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_mentions(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
@@ -254,7 +243,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'mentions_timeline.json?count=50')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_user(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
@@ -267,7 +255,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         'https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_list(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
@@ -280,7 +267,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         'https://api.twitter.com/1.1/lists/statuses.json?list_id=some_list_id')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_lists(self):
         get_url = self.protocol._get_url = mock.Mock(
@@ -294,7 +280,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'https://api.twitter.com/1.1/lists/list.json')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_private(self):
         get_url = self.protocol._get_url = mock.Mock(return_value=['tweet'])
@@ -346,7 +331,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              ])
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_send_private(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
@@ -405,6 +389,44 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             dict(status='Why yes, I would love to respond to your '
                         'tweet @pumpichank!',
                  in_reply_to_status_id='1234'))
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-home.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_send_thread_prepend_nick(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(self.protocol.home(), 3)
+        self.assertEqual(3, TestModel.get_n_rows())
+
+        # If you forgot to @mention in your reply, we add it for you.
+        get = self.protocol._get_url = mock.Mock()
+        self.protocol._publish_tweet = mock.Mock()
+        self.protocol.send_thread(
+            '240556426106372096',
+            'Exciting and original response!')
+        get.assert_called_once_with(
+            'https://api.twitter.com/1.1/statuses/update.json',
+            dict(status='@raffi Exciting and original response!',
+                 in_reply_to_status_id='240556426106372096'))
+
+        # If you remembered the @mention, we won't duplicate it.
+        get.reset_mock()
+        self.protocol.send_thread(
+            '240556426106372096',
+            'You are the greatest, @raffi!')
+        get.assert_called_once_with(
+            'https://api.twitter.com/1.1/statuses/update.json',
+            dict(status='You are the greatest, @raffi!',
+                 in_reply_to_status_id='240556426106372096'))
+
 
     def test_delete(self):
         get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
@@ -466,7 +488,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             dict(id='1234'))
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_tag(self):
         get_url = self.protocol._get_url = mock.Mock(
@@ -486,7 +507,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'https://api.twitter.com/1.1/search/tweets.json?q=%23yegbike')
 
     @mock.patch('friends.utils.base.Model', TestModel)
-    @mock.patch('friends.utils.base._seen_messages', {})
     @mock.patch('friends.utils.base._seen_ids', {})
     def test_search(self):
         get_url = self.protocol._get_url = mock.Mock(

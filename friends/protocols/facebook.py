@@ -24,10 +24,9 @@ __all__ = [
 import time
 import logging
 
-from datetime import datetime, timedelta
-
 from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
+from friends.utils.cache import JsonCache
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import parsetime, iso8601utc
 from friends.errors import FriendsError
@@ -42,10 +41,17 @@ ME_URL = API_BASE.format(id='me')
 FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
 
 
+TEN_DAYS = 864000 # seconds
+
+
 log = logging.getLogger(__name__)
 
 
 class Facebook(Base):
+    def __init__(self, account):
+        super().__init__(account)
+        self._timestamps = PostIdCache(self._name + '_ids')
+
     def _whoami(self, authdata):
         """Identify the authenticating user."""
         me_data = Downloader(
@@ -59,15 +65,22 @@ class Facebook(Base):
             # We can't do much with this entry.
             return
 
+        place = entry.get('place', {})
+        location = place.get('location', {})
+
         args = dict(
+            message_id=message_id,
             stream=stream,
-            message=entry.get('message', ''),
+            message=entry.get('message', '') or entry.get('story', ''),
             icon_uri=entry.get('icon', ''),
             link_picture=entry.get('picture', ''),
             link_name=entry.get('name', ''),
             link_url=entry.get('link', ''),
             link_desc=entry.get('description', ''),
             link_caption=entry.get('caption', ''),
+            location=place.get('name', ''),
+            latitude=location.get('latitude', 0.0),
+            longitude=location.get('longitude', 0.0),
             )
 
         # Posts gives us a likes dict, while replies give us an int.
@@ -89,10 +102,16 @@ class Facebook(Base):
         # Normalize the timestamp.
         timestamp = entry.get('updated_time', entry.get('created_time'))
         if timestamp is not None:
-            args['timestamp'] = iso8601utc(parsetime(timestamp))
+            timestamp = args['timestamp'] = iso8601utc(parsetime(timestamp))
+            # We need to record timestamps for use with since=. Note that
+            # _timestamps is a special dict subclass that only accepts
+            # timestamps that are larger than the existing value, so at any
+            # given time it will map the stream to the most
+            # recent timestamp we've seen for that stream.
+            self._timestamps[stream] = timestamp
 
         # Publish this message into the SharedModel.
-        self._publish(message_id, **args)
+        self._publish(**args)
 
         # If there are any replies, publish them as well.
         for comment in entry.get('comments', {}).get('data', []):
@@ -109,6 +128,7 @@ class Facebook(Base):
 
         while True:
             response = Downloader(url, params).get_json()
+
             if self._is_error(response):
                 break
 
@@ -137,24 +157,18 @@ class Facebook(Base):
         # We've gotten everything Facebook is going to give us.
         return entries
 
-    def _get(self, url, stream, since=None):
+    def _get(self, url, stream):
         """Retrieve a list of Facebook objects.
 
         A maximum of 50 objects are requested.
-
-        :param since: Only get objects posted since this date.  If not given,
-            then only objects younger than 10 days are retrieved.  The value
-            is a number seconds since the epoch.
-        :type since: float
         """
         access_token = self._get_access_token()
-        if since is None:
-            when = datetime.now() - timedelta(days=10)
-        else:
-            when = datetime.fromtimestamp(since)
+        since = self._timestamps.get(
+            stream, iso8601utc(int(time.time()) - TEN_DAYS))
+
         entries = []
         params = dict(access_token=access_token,
-                      since=when.isoformat(),
+                      since=since,
                       limit=self._DOWNLOAD_LIMIT)
 
         entries = self._follow_pagination(url, params)
@@ -163,15 +177,15 @@ class Facebook(Base):
             self._publish_entry(entry, stream=stream)
 
     @feature
-    def home(self, since=None):
+    def home(self):
         """Gather and publish public timeline messages."""
-        self._get(ME_URL + '/home', 'messages', since)
+        self._get(ME_URL + '/home', 'messages')
         return self._get_n_rows()
 
     @feature
-    def wall(self, since=None):
+    def wall(self):
         """Gather and publish messages written on user's wall."""
-        self._get(ME_URL + '/feed', 'mentions', since)
+        self._get(ME_URL + '/feed', 'mentions')
         return self._get_n_rows()
 
     @feature
@@ -369,3 +383,16 @@ class Facebook(Base):
     def delete_contacts(self):
         source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
         return self._delete_service_contacts(source)
+
+
+class PostIdCache(JsonCache):
+    """Persist most-recent timestamps as JSON."""
+
+    def __setitem__(self, key, value):
+        if key.find('/') >= 0:
+            # Don't flood the cache with irrelevant "reply_to/..." and
+            # "search/..." streams, we only need the main streams.
+            return
+        # Thank SCIENCE for lexically-sortable timestamp strings!
+        if value > self.get(key, ''):
+            JsonCache.__setitem__(self, key, value)

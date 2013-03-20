@@ -41,26 +41,11 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# Most of this schema is very straightforward, but the 'message_ids' column
-# needs a bit of explanation:
-#
-# It is a two-dimensional array (ie, an array of arrays). Each inner
-# array contains three elements: the name of the protocol
-# (introspected from the name of the class that implements the
-# protocol), the account_id as a string (like '6' or '3'), followed by
-# the message_id for that particular service.
-#
-# Then, there will be one of these triples present for every service on which
-# the message exists.  So for example, if the user posts the same message to
-# both facebook and twitter, that message will appear as a single row in this
-# schema, and the 'message_ids' column will look something like this:
-#
-# [
-#     ['facebook', '2', '12345'],
-#     ['twitter', '3', '987654'],
-# ]
+# DO NOT EDIT THIS WITHOUT ADJUSTING service.vala IN LOCKSTEP
 SCHEMA = (
-    ('message_ids',    'aas'),
+    ('protocol',       's'), # Same as UOA 'provider_name'
+    ('account_id',     't'), # Same as UOA account id
+    ('message_id',     's'),
     ('stream',         's'),
     ('sender',         's'),
     ('sender_id',      's'),
@@ -70,7 +55,7 @@ SCHEMA = (
     ('message',        's'),
     ('icon_uri',       's'),
     ('url',            's'),
-    ('likes',          'd'),
+    ('likes',          't'),
     ('liked',          'b'),
     ('link_picture',   's'),
     ('link_name',      's'),
@@ -78,6 +63,9 @@ SCHEMA = (
     ('link_desc',      's'),
     ('link_caption',   's'),
     ('link_icon',      's'),
+    ('location',       's'),
+    ('latitude',       'd'),
+    ('longitude',      'd'),
     )
 
 
@@ -91,6 +79,7 @@ DEFAULTS = {
     'b': False,
     's': '',
     'd': 0,
+    't': 0,
     }
 
 

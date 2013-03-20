@@ -22,18 +22,10 @@ __all__ = [
 
 import unittest
 
-from gi.repository import Dee
-
 from friends.protocols.foursquare import FourSquare
-from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
-from friends.utils.model import COLUMN_TYPES
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
+from friends.tests.mocks import TestModel, mock
 from friends.errors import AuthorizationError
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -93,11 +85,11 @@ class TestFourSquare(unittest.TestCase):
         self.assertEqual(self.protocol.receive(), 1)
         self.assertEqual(1, TestModel.get_n_rows())
         expected = [
-            [['foursquare', '1234', '50574c9ce4b0a9a6e84433a0']],
+            'foursquare', 88, '50574c9ce4b0a9a6e84433a0',
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.",
-            '~/.cache/friends/avatar/hash', '', 0.0, False, '', '', '',
-            '', '', '',
+            '~/.cache/friends/avatar/hash', '', 0, False, '', '', '',
+            '', '', '', 'Pop Soda\'s Coffee House & Gallery',
+            49.88873164336725, -97.158043384552,
             ]
-        for got, want in zip(TestModel.get_row(0), expected):
-            self.assertEqual(got, want)
+        self.assertEqual(list(TestModel.get_row(0)), expected)

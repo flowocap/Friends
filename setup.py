@@ -29,6 +29,7 @@ setup(
     include_package_data=True,
     package_data = {
         'friends.service.templates': ['*.service.in'],
+        'friends.tests.data': ['*.dat'],
         },
     data_files = [
         ('/usr/share/glib-2.0/schemas',

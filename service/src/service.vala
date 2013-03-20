@@ -16,6 +16,7 @@
  * Authored by Ken VanDine <ken.vandine@canonical.com>
  */
 
+using Ag;
 
 [DBus (name = "com.canonical.Friends.Dispatcher")]
 private interface Dispatcher : GLib.Object {
@@ -35,11 +36,34 @@ public class Master : Object
     private Dee.Model model;
     private Dee.SharedModel shared_model;
     private unowned Dee.ResourceManager resources;
+    private Ag.Manager acct_manager;
     private Dispatcher dispatcher;
     public int interval { get; set; }
 
     public Master ()
     {
+        acct_manager = new Ag.Manager.for_service_type ("microblogging");
+        acct_manager.account_deleted.connect ((manager, account_id) => {
+                debug ("Account %u deleted from UOA, purging...", account_id);
+                uint purged = 0;
+                uint rows = model.get_n_rows ();
+                // Destructively iterate over the Model from back to
+                // front; I know "i < rows" looks kinda goofy here,
+                // but what's happening is that i is unsigned, so once
+                // it hits 0, i-- will overflow to a very large
+                // number, and then "i < rows" will fail, stopping the
+                // iteration at index 0.
+                for (uint i = rows - 1; i < rows; i--) {
+                    var itr = model.get_iter_at_row (i);
+                    if (model.get_uint64 (itr, 1) == account_id) {
+                        model.remove (itr);
+                        purged++;
+                    }
+                }
+                debug ("Purged %u rows.", purged);
+            }
+        );
+
         resources = Dee.ResourceManager.get_default ();
         model = new Dee.SequenceModel ();
         Dee.SequenceModel? _m = null;
@@ -50,24 +74,29 @@ public class Master : Object
             debug ("Failed to load model from resource manager: %s", e.message);
         }
 
-        string[] SCHEMA = {"aas",
+        string[] SCHEMA = {"s",
+                           "t",
+                           "s",
                            "s",
                            "s",
                            "s",
                            "s",
                            "b",
+                           "s",
+                           "s",
+                           "s",
+                           "s",
+                           "t",
+                           "b",
+                           "s",
+                           "s",
+                           "s",
                            "s",
                            "s",
                            "s",
                            "s",
                            "d",
-                           "b",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s"};
+                           "d"};
 
         bool schemaReset = false;
 
@@ -77,7 +106,7 @@ public class Master : Object
             // Compare columns from cached model's schema
             string[] _SCHEMA = _m.get_schema ();
             if (_SCHEMA.length != SCHEMA.length)
-                schemaReset = true; 
+                schemaReset = true;
             else
             {
                 for (int i=0; i < _SCHEMA.length;i++ )
@@ -87,7 +116,6 @@ public class Master : Object
                         debug ("SCHEMA MISMATCH");
                         schemaReset = true;
                     }
-                  
                 }
             }
             if (!schemaReset)

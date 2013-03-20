@@ -15,27 +15,26 @@
 
 """Test the Facebook plugin."""
 
+
 __all__ = [
     'TestFacebook',
     ]
 
 
+import os
+import tempfile
 import unittest
+import shutil
 
-from gi.repository import Dee, GLib
+from gi.repository import GLib
 from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
-from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock, mock
+from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
+from friends.tests.mocks import TestModel, mock
 from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
 from friends.errors import ContactsError, FriendsError, AuthorizationError
-from friends.utils.model import COLUMN_TYPES
-
-
-# Create a test model that will not interfere with the user's environment.
-# We'll use this object as a mock of the real model.
-TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+from friends.utils.cache import JsonCache
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -44,12 +43,16 @@ class TestFacebook(unittest.TestCase):
     """Test the Facebook API."""
 
     def setUp(self):
+        self._temp_cache = tempfile.mkdtemp()
+        self._root = JsonCache._root = os.path.join(
+            self._temp_cache, '{}.json')
         self.account = FakeAccount()
         self.protocol = Facebook(self.account)
         self.protocol.source_registry = EDSRegistry()
 
     def tearDown(self):
         TestModel.clear()
+        shutil.rmtree(self._temp_cache)
 
     def test_features(self):
         # The set of public features.
@@ -106,74 +109,152 @@ Facebook UID: None
         # Receive the wall feed for a user.
         self.maxDiff = None
         self.account.access_token = 'abc'
-        self.assertEqual(self.protocol.receive(), 4)
-        self.assertEqual(TestModel.get_n_rows(), 4)
-        self.assertEqual(list(TestModel.get_row(2)), [
-            [['facebook',
-              '1234',
-              '117402931676347_386054134801436_3235476']],
-            'reply_to/109',
-            'Bruce Peart',
-            '809',
-            'Bruce Peart',
-            False,
-            '2012-09-26T17:16:00Z',
-            'OK Don...10) Headlong Flight',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/b688c8def0455d4a3853d5fcdfaf0708645cfd3e',
-            'https://www.facebook.com/809',
-            0.0,
-            False,
-            '',
-            '',
-            '',
-            '',
-            '',
-            ''])
+        self.assertEqual(self.protocol.receive(), 12)
+        self.assertEqual(TestModel.get_n_rows(), 12)
         self.assertEqual(list(TestModel.get_row(0)), [
-            [['facebook', '1234', '108']],
+            'facebook',
+            88,
+            'fake_id',
             'mentions',
-            'Rush is a Band',
-            '117402931676347',
-            'Rush is a Band',
+            'Yours Truly',
+            '56789',
+            'Yours Truly',
             False,
-            '2012-09-26T17:34:00Z',
-            'Rush takes off to the Great White North',
+            '2013-03-13T23:29:07Z',
+            'Writing code that supports geotagging data from facebook. ' +
+            'If y\'all could make some geotagged facebook posts for me ' +
+            'to test with, that\'d be super.',
             GLib.get_user_cache_dir() +
-            '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
-            'https://www.facebook.com/117402931676347',
-            16.0,
+            '/friends/avatars/5c4e74c64b1a09343558afc1046c2b1d176a2ba2',
+            'https://www.facebook.com/56789',
+            1,
             False,
-            'https://fbexternal-a.akamaihd.net/rush.jpg',
-            'Rush is a Band Blog',
-            'http://www.rushisaband.com/blog/Rush-Clockwork-Angels-tour',
-            'Rush is a Band: Neil Peart, Geddy Lee, Alex Lifeson',
-            'www.rushisaband.com',
-            ''])
-        self.assertEqual(list(TestModel.get_row(1)), [
-            [['facebook', '1234', '109']],
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            'Victoria, British Columbia',
+            48.4333,
+            -123.35,
+            ])
+        self.assertEqual(list(TestModel.get_row(2)), [
+            'facebook',
+            88,
+            'faker than cake!',
+            'reply_to/fake_id',
+            'Father',
+            '234',
+            'Father',
+            False,
+            '2013-03-12T23:29:45Z',
+            'don\'t know how',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/9b9379ccc7948e4804dff7914bfa4c6de3974df5',
+            'https://www.facebook.com/234',
+            0,
+            False,
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            0.0,
+            0.0,
+            ])
+        self.assertEqual(list(TestModel.get_row(6)), [
+            'facebook',
+            88,
+            '161247843901324_629147610444676',
             'mentions',
-            'Rush is a Band',
-            '117402931676347',
-            'Rush is a Band',
+            'Best Western Denver Southwest',
+            '161247843901324',
+            'Best Western Denver Southwest',
             False,
-            '2012-09-26T17:49:06Z',
-            'http://www2.gibson.com/Alex-Lifeson-0225-2011.aspx',
+            '2013-03-11T23:51:25Z',
+            'Today only -- Come meet Caroline and Meredith and Stanley the ' +
+            'Stegosaurus (& Greg & Joe, too!) at the TechZulu Trend Lounge, ' +
+            'Hilton Garden Inn 18th floor, 500 N Interstate 35, Austin, ' +
+            'Texas. Monday, March 11th, 4:00pm to 7:00 pm. Also here ' +
+            'Hannah Hart (My Drunk Kitchen) and Angry Video Game Nerd ' +
+            'producer, Sean Keegan. Stanley is in the lobby.',
             GLib.get_user_cache_dir() +
-            '/friends/avatars/7d1a70e6998f4a38954e93ca03d689463f71d63b',
-            'https://www.facebook.com/117402931676347',
-            27.0,
+            '/friends/avatars/5b2d70e788df790b9c8db4c6a138fc4a1f433ec9',
+            'https://www.facebook.com/161247843901324',
+            84,
             False,
-            'https://images.gibson.com/Rush_Clockwork-Angels_t.jpg',
-            'Top 10 Alex Lifeson Guitar Moments',
-            'http://www2.gibson.com/Alex-Lifeson.aspx',
-            'For millions of Rush fans old and new, it’s a pleasure',
-            'www2.gibson.com',
-            ''])
+            'https://fbcdn-photos-a.akamaihd.net/hphotos-ak-snc7/' +
+            '601266_629147587111345_968504279_s.jpg',
+            '',
+            'https://www.facebook.com/photo.php?fbid=629147587111345&set=a.173256162700492.47377.161247843901324&type=1&relevant_count=1',
+            '',
+            '',
+            '',
+            'Hilton Garden Inn Austin Downtown/Convention Center',
+            30.265384957204,
+            -97.735604602521,
+            ])
+        self.assertEqual(list(TestModel.get_row(9)), [
+            'facebook',
+            88,
+            '104443_100085049977',
+            'mentions',
+            'Guy Frenchie',
+            '1244414',
+            'Guy Frenchie',
+            False,
+            '2013-03-15T19:57:14Z',
+            'Guy Frenchie did some things with some stuff.',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/3f5e276af0c43f6411d931b829123825ede1968e',
+            'https://www.facebook.com/1244414',
+            3,
+            False,
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            0.0,
+            0.0,
+            ])
 
     # XXX We really need full coverage of the receive() method, including
     # cases where some data is missing, or can't be converted
     # (e.g. timestamps), and paginations.
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'facebook-full.dat'))
+    @mock.patch('friends.protocols.facebook.Facebook._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_home_since_id(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(self.protocol.home(), 12)
+
+        with open(self._root.format('facebook_ids'), 'r') as fd:
+            self.assertEqual(fd.read(), '{"messages": "2013-03-15T19:57:14Z"}')
+
+        follow = self.protocol._follow_pagination = mock.Mock()
+        follow.return_value = []
+        self.assertEqual(self.protocol.home(), 12)
+        follow.assert_called_once_with(
+            'https://graph.facebook.com/me/home',
+            dict(limit=50,
+                 since='2013-03-15T19:57:14Z',
+                 access_token='access',
+                 )
+            )
 
     @mock.patch('friends.protocols.facebook.Downloader')
     def test_send_to_my_wall(self, dload):
