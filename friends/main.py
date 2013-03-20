@@ -62,11 +62,9 @@ from gi.repository import Gio, GObject
 GObject.threads_init(None)
 
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
-from friends.utils.base import _OperationThread, _publish_lock
-from friends.utils.base import Base, initialize_caches
+from friends.utils.base import Base, initialize_caches, _publish_lock
 from friends.utils.model import Model, prune_model
 from friends.utils.logging import initialize
-from friends.utils.avatar import Avatar
 
 
 # Optional performance profiling module.
@@ -88,10 +86,6 @@ def main():
             package, dot, class_name = cls.__name__.rpartition('.')
             print(class_name)
         return
-
-    # Our threading implementation needs to know how to quit the
-    # application once all threads have completed.
-    _OperationThread.shutdown = loop.quit
 
     # Disallow multiple instances of friends-dispatcher
     bus = dbus.SessionBus()

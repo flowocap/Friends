@@ -92,9 +92,6 @@ _seen_ids = {}
 # publishing new data into the SharedModel.
 _publish_lock = threading.Lock()
 
-# Avoid race condition during shut-down
-_exit_lock = threading.Lock()
-
 
 log = logging.getLogger(__name__)
 
@@ -138,8 +135,6 @@ def linkify_string(string):
 
 class _OperationThread(threading.Thread):
     """Manage async callbacks, and log subthread exceptions."""
-    # main.py will replace this with a reference to the mainloop.quit method
-    shutdown = lambda: log.error('Failed to exit friends-dispatcher main loop')
 
     def __init__(self, *args, id=None, success=STUB, failure=STUB, **kws):
         self._id = id
@@ -170,13 +165,6 @@ class _OperationThread(threading.Thread):
         elapsed = time.time() - start
         log.debug('{} has completed in {:.2f}s, thread exiting.'.format(
                 self._id, elapsed))
-
-        # If this is the last thread to exit, then the refresh is
-        # completed and we should save the model, and then exit.
-        with _exit_lock:
-            if threading.activeCount() < 3:
-                persist_model()
-                GLib.idle_add(self.shutdown)
 
 
 class Base:
