@@ -89,10 +89,6 @@ def main():
             print(class_name)
         return
 
-    # Our threading implementation needs to know how to quit the
-    # application once all threads have completed.
-    _OperationThread.shutdown = loop.quit
-
     # Disallow multiple instances of friends-dispatcher
     bus = dbus.SessionBus()
     obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
