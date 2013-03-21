@@ -103,3 +103,9 @@ Architecture: all
 Depends: friends, ${misc:Depends}, ${python3:Depends}
 Description: Social integration with the desktop - Flickr
  Provides social networking integration with the desktop
+
+Package: friends-linkedin
+Architecture: all
+Depends: friends, ${misc:Depends}, ${python3:Depends}
+Description: Social integration with the desktop - LinkedIn
+ Provides social networking integration with the desktop

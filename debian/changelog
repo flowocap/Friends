@@ -1,8 +1,12 @@
-friends (0.2.0-0ubuntu1) UNRELEASED; urgency=low
+friends (0.2.0-0ubuntu2) UNRELEASED; urgency=low
 
+  [ Robert Bruce Park ]
   * Version bump for the next development series.
 
- -- Robert Bruce Park <robert.park@canonical.com>  Tue, 19 Mar 2013 15:03:58 -0700
+  [ Jonathan Davies ]
+  * Added friends-linkedin.
+
+ -- Jonathan Davies <jonathan.davies@canonical.com>  Thu, 21 Mar 2013 22:52:07 +0000
 
 friends (0.1.3daily13.03.20-0ubuntu1) raring; urgency=low
 
