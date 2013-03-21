@@ -52,6 +52,7 @@ class ManageTimers(ContextDecorator):
     """Exit the dispatcher 30s after the most recent method call returns."""
     timers = set()
     callback = STUB
+    timeout = 30
 
     def __enter__(self):
         self.clear_all_timers()
@@ -60,16 +61,17 @@ class ManageTimers(ContextDecorator):
         self.set_new_timer()
 
     def clear_all_timers(self):
-        log.debug('Clearing {} shutdown timer(s)...'.format(len(self.timers)))
         while self.timers:
-            GLib.source_remove(self.timers.pop())
+            timer_id = self.timers.pop()
+            log.debug('Clearing timer id: {}'.format(timer_id))
+            GLib.source_remove(timer_id)
 
     def set_new_timer(self):
         # Concurrency will cause two methods to exit near each other,
         # causing two timers to be set, so we have to clear them again.
         self.clear_all_timers()
         log.debug('Starting new shutdown timer...')
-        self.timers.add(GLib.timeout_add_seconds(30, self.terminate))
+        self.timers.add(GLib.timeout_add_seconds(self.timeout, self.terminate))
 
     def terminate(self, *ignore):
         """Exit the dispatcher, but only if there are no active subthreads."""

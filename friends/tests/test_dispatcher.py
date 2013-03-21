@@ -34,6 +34,8 @@ from friends.tests.mocks import LogMock, mock
 DBusGMainLoop(set_as_default=True)
 
 
+@mock.patch('friends.service.dispatcher.GLib.timeout_add_seconds',
+            mock.Mock(return_value=42))
 class TestDispatcher(unittest.TestCase):
     """Test the dispatcher's ability to dispatch."""
 
@@ -62,9 +64,8 @@ class TestDispatcher(unittest.TestCase):
         account.protocol.assert_called_once_with('receive')
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Refresh requested\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_clear_indicators(self):
@@ -84,9 +85,8 @@ class TestDispatcher(unittest.TestCase):
             'like', '23346356767354626', success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          '345: like 23346356767354626\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_failing_do(self):
@@ -99,9 +99,8 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Could not find account: 6\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_send_message(self):
@@ -137,9 +136,8 @@ class TestDispatcher(unittest.TestCase):
             success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Replying to 2, objid\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_send_reply_failed(self):
@@ -152,10 +150,9 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Replying to 2, objid\n'
                          'Could not find account: 2\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_upload_async(self):
@@ -181,9 +178,8 @@ class TestDispatcher(unittest.TestCase):
             )
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Uploading file://path/to/image.png to 2\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_get_features(self):
@@ -241,6 +237,7 @@ class TestDispatcher(unittest.TestCase):
 
     @mock.patch('friends.service.dispatcher.GLib')
     def test_manage_timers_set(self, glib):
+        glib.timeout_add_seconds.reset_mock()
         manager = ManageTimers()
         manager.timers = set()
         manager.clear_all_timers = mock.Mock()

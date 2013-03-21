@@ -30,6 +30,7 @@ from friends.utils.logging import initialize
 # Print all logs for debugging purposes
 initialize(debug=True, console=True)
 
+from friends.service.dispatcher import ManageTimers
 from friends.utils.account import find_accounts
 from friends.utils.base import initialize_caches, _OperationThread
 from friends.utils.model import Model
@@ -59,7 +60,8 @@ def setup(model, signal, protocol, args):
     for account in find_accounts().values():
         if account.protocol._name == protocol.lower():
             found = True
-            account.protocol(*args)
+            with ManageTimers() as cm:
+                account.protocol(*args)
 
     if not found:
         log.error('No {} found in Ubuntu Online Accounts!'.format(protocol))
@@ -73,5 +75,7 @@ if __name__ == '__main__':
     protocol = sys.argv[1]
     args = sys.argv[2:]
 
+    ManageTimers.callback = loop.quit
+    ManageTimers.timeout = 5
     Model.connect('notify::synchronized', setup, protocol, args)
     loop.run()

@@ -46,9 +46,14 @@ class Authentication:
     def __init__(self, account_id):
         self.account_id = account_id
         account = manager.get_account(account_id)
-        service = account.list_services()[0]
-        self.auth = Accounts.AccountService.new(
-            account, service).get_auth_data()
+        for service in account.list_services():
+            self.auth = Accounts.AccountService.new(
+                account, service).get_auth_data()
+            break
+        else:
+            raise AuthorizationError(
+                account_id,
+                'No AgService found, is your UOA plugin written correctly?')
         self._reply = None
 
     def login(self):

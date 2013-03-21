@@ -100,6 +100,8 @@ class TestFlickr(unittest.TestCase):
     @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(username='Bob Dobbs',
                                   user_nsid='bob',

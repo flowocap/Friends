@@ -74,10 +74,11 @@ class TestAuthentication(unittest.TestCase):
     def tearDown(self):
         self.log_mock.stop()
 
-    @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Signon', FakeSignon)
+    @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')
-    def test_successful_login(self, accounts, *mocks):
+    def test_successful_login(self, accounts, manager):
+        manager.get_account().list_services.return_value = ['foo']
         # Prevent an error in the callback.
         accounts.AccountService.new().get_auth_data(
             ).get_parameters.return_value = False
@@ -86,22 +87,24 @@ class TestAuthentication(unittest.TestCase):
         self.assertEqual(reply, dict(AccessToken='auth reply'))
         self.assertEqual(self.log_mock.empty(), 'Login completed\n')
 
+    @mock.patch('friends.utils.authentication.Signon', FailingSignon)
     @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')
-    @mock.patch('friends.utils.authentication.Signon', FailingSignon)
-    def test_missing_access_token(self, *mocks):
+    def test_missing_access_token(self, accounts, manager):
+        manager.get_account().list_services.return_value = ['foo']
         # Prevent an error in the callback.
         self.account.auth.get_parameters = lambda *ignore: False
         authenticator = Authentication(self.account.id)
         self.assertRaises(AuthorizationError, authenticator.login)
 
-    @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Signon', FakeSignon)
+    @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')
-    def test_failed_login(self, accounts, *mocks):
+    def test_failed_login(self, accounts, manager):
         # Trigger an error in the callback.
         class Error:
             message = 'who are you?'
+        manager.get_account().list_services.return_value = ['foo']
         accounts.AccountService.new(
             ).get_auth_data().get_parameters.return_value = Error
         authenticator = Authentication(self.account.id)

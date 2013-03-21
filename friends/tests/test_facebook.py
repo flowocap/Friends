@@ -62,6 +62,8 @@ class TestFacebook(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
     @mock.patch('friends.utils.http.Soup.Message',
@@ -101,10 +103,7 @@ class TestFacebook(unittest.TestCase):
                 self.protocol.home,
                 )
             contents = log_mock.empty(trim=False)
-        self.assertEqual(contents, """\
-Logging in to Facebook
-Facebook UID: None
-""")
+        self.assertEqual(contents, 'Logging in to Facebook\n')
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'facebook-full.dat'))

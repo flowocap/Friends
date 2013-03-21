@@ -65,6 +65,8 @@ class TestFourSquare(unittest.TestCase):
     @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='tokeny goodness'))
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.protocols.foursquare.Downloader.get_json',
                 return_value=dict(
                     response=dict(
