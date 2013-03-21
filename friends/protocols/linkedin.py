@@ -20,7 +20,6 @@ __all__ = [
     'LinkedIn',
     ]
 
-
 import time
 import logging
 
@@ -38,13 +37,64 @@ class LinkedIn(Base):
 
     def _whoami(self, authdata):
         """Identify the authenticating user."""
+        # http://developer.linkedin.com/documents/profile-fields
         url = self._api_base.format(
             endpoint='people/~:(id,first-name,last-name)',
             token=self._get_access_token())
         result = Downloader(url).get_json()
         self._account.user_id = result.get('id')
         self._account.user_full_name = '{firstName} {lastName}'.format(**result)
+        
+    def _publish_entry(self, entry, stream='messages'):
+        """Publish a single update into the Dee.SharedModel."""
+        message_id = entry.get('updateKey')
+
+        if message_id is None:
+            # We can't do much with this entry.
+            return
+           
+        content = entry.get('updateContent')
+        person = content.get('person')
+        name = '{firstName} {lastName}'.format(**person)
+        person_id = person.get('id')
+        status = person.get('currentStatus')
+        picture = person.get('pictureUrl', '')
+        url = person.get('siteStandardProfileRequest').get('url')
+        timestamp = entry.get('timestamp')
+        # We need to divide by 1000 here, as LinkedIn's timestamps have
+        # milliseconds.
+        iso_time = iso8601utc(int(timestamp/1000))
+        
+        # Posts gives us a likes dict, while replies give us an int.
+        likes = entry.get('numLikes', 0)
+        
+        args = dict(
+             message_id=message_id,
+             stream=stream,
+             message=status,
+             likes=likes,
+             sender_id=person_id,
+             sender=name,
+             icon_uri=picture,
+             link_url=url,
+             timestamp=iso_time
+             )
+             
+        self._publish(**args)
 
     @feature    
+    def home(self):
+        """Gather and publish public timeline messages."""
+        url = self._api_base.format(
+            endpoint='people/~/network/updates',
+            token=self._get_access_token()) + '&type=STAT'
+        result = Downloader(url).get_json()
+        values = result.get('values')
+        for update in values:
+            self._publish_entry(update)
+    
+    @feature
     def receive(self):
-        self._get_access_token()
+        """Gather and publish all incoming messages."""
+        self.home()
+        return self._get_n_rows()
