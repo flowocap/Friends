@@ -75,6 +75,13 @@ yappi = None
 log = None
 
 
+# We need to acquire the publish lock so that the dispatcher
+# doesn't try to publish rows into an uninitialized model...
+# basically this prevents duplicates from showing up.
+# We release this lock later, once the model is synchronized.
+_publish_lock.acquire()
+
+
 def main():
     global log
     global yappi
@@ -126,10 +133,6 @@ def main():
             'private',
             )
 
-    # We need to acquire the publish lock so that the dispatcher
-    # doesn't try to publish rows into an uninitialized model...
-    # basically this prevents duplicates from showing up.
-    _publish_lock.acquire()
     Dispatcher(gsettings, loop)
 
     # Don't initialize caches until the model is synchronized
@@ -165,7 +168,12 @@ def setup(model, param):
     initialize_caches()
 
     # Allow publishing.
-    _publish_lock.release()
+    try:
+        _publish_lock.release()
+    except RuntimeError:
+        # Happens if the lock was already released previously, which
+        # is safe to ignore. Dispatcher goes on to publish normally.
+        pass
 
 
 if __name__ == '__main__':
