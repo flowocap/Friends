@@ -98,3 +98,34 @@ class LinkedIn(Base):
         """Gather and publish all incoming messages."""
         self.home()
         return self._get_n_rows()
+        
+    def _create_contact(self, connection_json):
+        """Build a VCard based on a dict representation of a contact."""
+        user_id = connection_json.get('id')
+            
+        user_fullname = '{firstName} {lastName}'.format(**connection_json)
+        user_link = connection_json.get('siteStandardProfileRequest').get('url')
+        
+        attrs = {}
+        attrs['linkined-id'] = user_id
+        attrs['linkedin-name'] = user_fullname
+        attrs['X-URIS'] = user_link
+        
+        contact = Base._create_contact(
+            self, user_fullname, None, attrs)
+        
+        return contact
+    
+    @feature
+    def contacts(self):
+        """Retrieve a list of up to 500 LinkedIn connections."""
+        # http://developer.linkedin.com/documents/connections-api
+        url = self._api_base.format(
+            endpoint='people/~/connections',
+            token=self._get_access_token())
+        result = Downloader(url).get_json()
+        connections = result.get('values')
+        
+        for connection in connections:
+            if connection.get('id') != 'private':
+                self._create_contact(connection)
