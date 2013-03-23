@@ -128,4 +128,6 @@ class LinkedIn(Base):
         
         for connection in connections:
             if connection.get('id') != 'private':
+                # We cannot access information on profiles that are set to
+                # private.
                 self._create_contact(connection)
