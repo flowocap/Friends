@@ -44,8 +44,8 @@ UPLOAD_SERVER = 'http://api.flickr.com/services/upload'
 # http://www.flickr.com/services/api/misc.buddyicons.html
 FARM = 'http://farm{farm}.static.flickr.com/{server}/'
 BUDDY_ICON_URL = FARM + 'buddyicons/{nsid}.jpg'
-IMAGE_URL = FARM + '{nsid}_{secret}_{type}.jpg'
-IMAGE_PAGE_URL = 'http://www.flickr.com/photos/{owner}/{nsid}'
+IMAGE_URL = FARM + '{photo}_{secret}_{type}.jpg'
+IMAGE_PAGE_URL = 'http://www.flickr.com/photos/{owner}/{photo}'
 PEOPLE_URL = 'http://www.flickr.com/people/{owner}'
 
 
@@ -121,6 +121,11 @@ class Flickr(Base):
             # Pre-calculate some values to publish.
             username = data.get('username', '')
             ownername = data.get('ownername', '')
+            photo_id = data.get('id')
+
+            if photo_id is None:
+                # Can't do anything without this, really.
+                continue
 
             # Icons.
             icon_farm = data.get('iconfarm')
@@ -132,7 +137,7 @@ class Flickr(Base):
             if None not in (icon_farm, icon_server, owner):
                 icon_uri = Avatar.get_image(BUDDY_ICON_URL.format(
                     farm=icon_farm, server=icon_server, nsid=owner))
-                url = PEOPLE_URL.format(owner=owner)
+                url = IMAGE_PAGE_URL.format(owner=owner, photo=photo_id)
 
             # Calculate the ISO 8601 UTC time string.
             try:
@@ -144,17 +149,20 @@ class Flickr(Base):
             farm = data.get('farm')
             server = data.get('server')
             secret = data.get('secret')
-            img_url = ''
-            img_src = ''
-            img_thumb = ''
+            img_src, img_thumb = '', ''
             if None not in (farm, server, secret):
-                args = dict(farm=farm, server=server, nsid=owner, secret=secret)
-                img_url = IMAGE_URL.format(type='b', **args)
+                args = dict(
+                    farm=farm,
+                    server=server,
+                    photo=photo_id,
+                    secret=secret,
+                    )
                 img_src = IMAGE_URL.format(type='m', **args)
                 img_thumb = IMAGE_URL.format(type='t', **args)
 
             self._publish(
-                message_id=data.get('id', ''),
+                message_id=photo_id,
+                message=data.get('title', ''),
                 stream='images',
                 sender=ownername,
                 sender_id=owner,
@@ -163,8 +171,7 @@ class Flickr(Base):
                 url=url,
                 from_me=from_me,
                 timestamp=timestamp,
-                link_caption=data.get('title', ''),
-                link_url=img_url,
+                link_url=url,
                 link_picture=img_src,
                 link_icon=img_thumb,
                 latitude=data.get('latitude', 0.0),
@@ -204,7 +211,7 @@ class Flickr(Base):
         else:
             destination_url = IMAGE_PAGE_URL.format(
                 owner=self._account.user_name,
-                nsid=post_id,
+                photo=post_id,
                 )
             self._publish(
                 from_me=True,
