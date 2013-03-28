@@ -35,7 +35,7 @@ from friends.utils.account import find_accounts
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model, persist_model
-from friends.shorteners import lookup
+from friends.utils.shorteners import lookup, is_shortened
 
 
 log = logging.getLogger(__name__)
@@ -347,15 +347,14 @@ class Dispatcher(dbus.service.Object):
         """
         service_name = self.settings.get_string('urlshorter')
         log.info('Shortening URL {} with {}'.format(url, service_name))
-        if (lookup.is_shortened(url) or
+        if (is_shortened(url) or
             not self.settings.get_boolean('shorten-urls')):
             # It's already shortened, or the preference is not set.
             return url
-        service = lookup.lookup(service_name)
         try:
-            return service.shorten(url)
-        except Exception:
-            log.exception('URL shortening class: {}'.format(service))
+            return lookup(service_name).shorten(url)
+        except Exception as e:
+            log.exception(e)
             return url
 
     @exit_after_idle

@@ -209,20 +209,21 @@ class TestDispatcher(unittest.TestCase):
 
     @mock.patch('friends.service.dispatcher.logging')
     @mock.patch('friends.service.dispatcher.lookup')
-    def test_urlshorten(self, lookup_mock, logging_mock):
-        lookup_mock.is_shortened.return_value = False
-        lookup_mock.lookup.return_value = mock.Mock()
-        lookup_mock.lookup.return_value.shorten.return_value = 'short url'
+    @mock.patch('friends.service.dispatcher.is_shortened')
+    def test_urlshorten(self, short_mock, lookup_mock, logging_mock):
+        short_mock.return_value = False
+        lookup_mock().shorten.return_value = 'short url'
+        lookup_mock.reset_mock()
         self.dispatcher.settings.get_string.return_value = 'is.gd'
         long_url = 'http://example.com/really/really/long'
         self.assertEqual(
             self.dispatcher.URLShorten(long_url),
             'short url')
-        lookup_mock.is_shortened.assert_called_once_with(long_url)
+        short_mock.assert_called_once_with(long_url)
         self.dispatcher.settings.get_boolean.assert_called_once_with(
             'shorten-urls')
-        lookup_mock.lookup.assert_called_once_with('is.gd')
-        lookup_mock.lookup.return_value.shorten.assert_called_once_with(
+        lookup_mock.assert_called_once_with('is.gd')
+        lookup_mock.return_value.shorten.assert_called_once_with(
             long_url)
 
     @mock.patch('friends.service.dispatcher.GLib')
