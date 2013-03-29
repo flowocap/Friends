@@ -58,6 +58,13 @@ class TestShorteners(unittest.TestCase):
             Short('tinyurl.com').make('http://www.python.org'),
             'http://sho.rt/')
 
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'durlme.dat'))
+    def test_durlme(self):
+        self.assertEqual(
+            Short('durl.me').make('http://www.python.org'),
+            'http://durl.me/5o')
+
     def test_missing_or_disabled_lookup(self):
         # Looking up a non-existent or disabled shortener gives you one that
         # returns the original url back unchanged.
@@ -74,6 +81,7 @@ class TestShorteners(unittest.TestCase):
         self.assertTrue(Short.already('http://is.gd/foo'))
         self.assertTrue(Short.already('http://linkee.com/foo'))
         self.assertTrue(Short.already('http://ou.gd/foo'))
+        self.assertTrue(Short.already('http://durl.me/foo'))
 
     def test_is_not_shortened(self):
         # Test a URL that has not been shortened.
@@ -108,6 +116,16 @@ class TestShorteners(unittest.TestCase):
         dl_mock.assert_called_once_with(
             'http://tinyurl.com/api-create.php?url=http%3A%2F%2Fexample.com'
             '%2F%7Euser%2Fstuff%2F%2Bthings')
+
+    @mock.patch('friends.utils.shorteners.Downloader')
+    def test_durlme_quoted_properly(self, dl_mock):
+        dl_mock().get_string().strip.return_value = ''
+        dl_mock.reset_mock()
+        Short('durl.me').make(
+            'http://example.com/~user/stuff/+things')
+        dl_mock.assert_called_once_with(
+            'http://durl.me/api/Create.do?type=json&longurl='
+            'http%3A%2F%2Fexample.com%2F%7Euser%2Fstuff%2F%2Bthings')
 
     @mock.patch('friends.utils.shorteners.Downloader')
     def test_dont_over_shorten(self, dl_mock):

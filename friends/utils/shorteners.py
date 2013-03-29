@@ -40,6 +40,7 @@ URLS = {
     'linkee.com':  'http://api.linkee.com/1.0/shorten?format=text&input={}',
     'ou.gd':       'http://ou.gd/api.php?format=simple&action=shorturl&url={}',
     'tinyurl.com': 'http://tinyurl.com/api-create.php?url={}',
+    'durl.me':     'http://durl.me/api/Create.do?type=json&longurl={}',
     }
 
 
@@ -49,10 +50,15 @@ class Short:
     def __init__(self, domain=None):
         """Determine which shortening service this instance will use."""
         self.template = URLS.get(domain)
+        self.domain = domain
 
         # Disable shortening if no shortener found.
         if None in (domain, self.template):
             self.make = lambda url: url
+            return
+
+        if "json" in self.template:
+            self.make = self.json
 
     def make(self, url):
         """Shorten the URL by querying the shortening service."""
@@ -65,6 +71,14 @@ class Short:
     def sub(self, message):
         """Find *all* of the URLs in a string and shorten all of them."""
         return replace_urls(lambda match: self.make(match.group(0)), message)
+
+    def json(self, url):
+        """Grab URLs swiftly with regex."""
+        # Avoids writing JSON code that is service-specific.
+        find = re.compile('https?://{}[^\"]+'.format(self.domain)).findall
+        for short in find(Short.make(self, url)):
+            return short
+        return url
 
     # Used for checking if URLs have already been shortened.
     already = re.compile(r'https?://({})/'.format('|'.join(URLS))).match
