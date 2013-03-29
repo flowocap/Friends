@@ -1,3 +1,10 @@
+friends (0.1.3daily13.03.29-0ubuntu1) UNRELEASED; urgency=low
+
+  * Don't delete stale avatars, just redownload periodically (LP: #1153896)
+  * Quote URLs properly during shortening.
+
+ -- Robert Bruce Park <robert.park@canonical.com>  Fri, 29 Mar 2013 08:58:45 -0700
+
 friends (0.1.3daily13.03.28-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]
@@ -29,13 +36,13 @@ friends (0.1.3daily13.03.20-0ubuntu1) raring; urgency=low
   [ Robert Bruce Park ]
   * Keep the Dispatcher alive for 30s beyond the return of the final
     method invocation.
-  * Stop deduplicating messages across protocols, simplifying model 
+  * Stop deduplicating messages across protocols, simplifying model
     schema (LP: #1156941)
   * Add schema columns for latitude, longitude, and location name.
   * Fix 'likes' column from gdouble to guint64.
   * Add geotagging support from foursquare, facebook, flickr.
   * Implement since= for Facebook, reducing bandwidth usage.
-  * Automatically prepend the required @mention to Twitter 
+  * Automatically prepend the required @mention to Twitter
     replies (LP: #1156829)
   * Automatically linkify URLs that get published to the model.
   * Fix the publishing of Facebook Stories (LP: #1155785)
