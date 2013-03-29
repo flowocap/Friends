@@ -23,6 +23,27 @@ __all__ = [
     ]
 
 
+try:
+    from contextlib import ignored
+except ImportError:
+    from contextlib import contextmanager
+
+    # This is a fun toy from Python 3.4, but I want it NOW!!
+    @contextmanager
+    def ignored(*exceptions):
+        """Context manager to ignore specifed exceptions.
+
+             with ignored(OSError):
+                 os.remove(somefile)
+
+        Thanks to Raymond Hettinger for this.
+        """
+        try:
+            yield
+        except exceptions:
+            pass
+
+
 class FriendsError(Exception):
     """Base class for all internal Friends exceptions."""
 

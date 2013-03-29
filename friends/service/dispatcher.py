@@ -36,6 +36,7 @@ from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model, persist_model
 from friends.utils.shorteners import Short
+from friends.errors import ignored
 
 
 log = logging.getLogger(__name__)
@@ -123,11 +124,8 @@ class Dispatcher(dbus.service.Object):
         # immediately, so there is no delay or blocking during the
         # execution of this method.
         for account in self.accounts.values():
-            try:
+            with ignored(NotImplementedError):
                 account.protocol('receive')
-            except NotImplementedError:
-                # If a protocol doesn't support receive then ignore it.
-                pass
 
     @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)
@@ -179,12 +177,10 @@ class Dispatcher(dbus.service.Object):
         for account in accounts:
             log.debug('{}: {} {}'.format(account.id, action, arg))
             args = (action, arg) if arg else (action,)
-            try:
+            # Not all accounts are expected to implement every action.
+            with ignored(NotImplementedError):
                 account.protocol(*args, success=success, failure=failure)
                 called = True
-            except NotImplementedError:
-                # Not all accounts are expected to implement every action.
-                pass
         if not called:
             failure('No accounts supporting {} found.'.format(action))
 

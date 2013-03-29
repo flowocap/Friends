@@ -32,7 +32,7 @@ from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
-from friends.errors import FriendsError
+from friends.errors import FriendsError, ignored
 
 
 TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
@@ -252,12 +252,10 @@ class Twitter(Base):
         order for Twitter to actually accept this as a reply.  Otherwise it
         will just be an ordinary tweet.
         """
-        try:
+        with ignored(FriendsError):
             sender = '@{}'.format(self._fetch_cell(message_id, 'sender_nick'))
             if message.find(sender) < 0:
                 message = sender + ' ' + message
-        except FriendsError:
-            pass
         url = self._api_base.format(endpoint='statuses/update')
         tweet = self._get_url(url, dict(in_reply_to_status_id=message_id,
                                         status=message))
