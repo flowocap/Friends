@@ -33,7 +33,7 @@ from friends.utils.http import Downloader
 
 CACHE_DIR = os.path.realpath(os.path.join(
     GLib.get_user_cache_dir(), 'friends', 'avatars'))
-CACHE_AGE = timedelta(weeks=4)
+AGE_LIMIT = date.today() - timedelta(weeks=4)
 
 
 try:
@@ -60,13 +60,14 @@ class Avatar:
         local_path = Avatar.get_path(url)
         try:
             size = os.stat(local_path).st_size
+            mtime = date.fromtimestamp(os.stat(local_path).st_mtime)
         except OSError as error:
             if error.errno != errno.ENOENT:
                 # Some other error occurred, so propagate it up.
                 raise
             # Treat a missing file as zero length.
             size = 0
-        if size == 0:
+        if size == 0 or mtime < AGE_LIMIT:
             log.debug('Getting: {}'.format(url))
             image_data = Downloader(url).get_bytes()
 
@@ -89,11 +90,10 @@ class Avatar:
     def expire_old_avatars():
         """Evict old files from the cache."""
         log.debug('Checking if anything needs to expire.')
-        limit = date.today() - CACHE_AGE
         for filename in os.listdir(CACHE_DIR):
             path = os.path.join(CACHE_DIR, filename)
             mtime = date.fromtimestamp(os.stat(path).st_mtime)
-            if mtime < limit:
+            if mtime < AGE_LIMIT:
                 # The file's last modification time is earlier than the oldest
                 # time we'll allow in the cache.  However, due to race
                 # conditions, ignore it if the file has already been removed.
