@@ -67,15 +67,15 @@ def initialize(console=False, debug=False, filename=None):
     text_formatter = logging.Formatter(LOG_FORMAT, style='{')
     text_handler.setFormatter(text_formatter)
 
-    console_handler = logging.StreamHandler()
-    console_formatter = logging.Formatter(CSL_FORMAT, style='{')
-    console_handler.setFormatter(console_formatter)
-
     log = logging.getLogger()
+    log.addHandler(text_handler)
+
     if debug:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
     if console:
+        console_handler = logging.StreamHandler()
+        console_formatter = logging.Formatter(CSL_FORMAT, style='{')
+        console_handler.setFormatter(console_formatter)
         log.addHandler(console_handler)
-    log.addHandler(text_handler)

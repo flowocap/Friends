@@ -27,96 +27,47 @@ import tempfile
 import unittest
 
 from friends.utils.logging import initialize
+from friends.tests.mocks import mock
 
 
 class TestLogging(unittest.TestCase):
     """Test the logging utilities."""
 
-    def setUp(self):
-        # Preserve the original logger, but restore the global logging system
-        # to pre-initialized state.
-        self._loggers = logging.Logger.manager.loggerDict.copy()
-        logging.Logger.manager.loggerDict.clear()
+    @mock.patch('friends.utils.logging.logging')
+    @mock.patch('friends.utils.logging.os')
+    def test_initialize(self, os_mock, log_mock):
+        os_mock.path.dirname.return_value = '/dev'
+        initialize(filename='/dev/null')
+        os_mock.makedirs.assert_called_once_with('/dev')
+        os_mock.path.dirname.assert_called_once_with('/dev/null')
 
-    def tearDown(self):
-        # Restore the original loggers.
-        logging.Logger.manager.loggerDict.update(self._loggers)
+        rot = log_mock.handlers.RotatingFileHandler
+        rot.assert_called_once_with(
+            '/dev/null', maxBytes=20971520, backupCount=5)
+        log_mock.Formatter.assert_called_with(
+            '{levelname:5}  {threadName:10}  {asctime}  {name:18}  {message}',
+            style='{')
+        rot().setFormatter.assert_called_once_with(log_mock.Formatter())
 
-    def test_logger_has_filehandler(self):
-        initialize()
-        # The top level logger should be available.
-        log = logging.getLogger()
-        # Try to find the file opened by the default file handler.
-        filenames = []
-        for handler in log.handlers:
-            if hasattr(handler, 'baseFilename'):
-                filenames.append(handler.baseFilename)
-        self.assertGreater(len(filenames), 0)
+        log_mock.getLogger.assert_called_once_with()
+        log_mock.getLogger().setLevel.assert_called_once_with(log_mock.INFO)
+        log_mock.getLogger().addHandler.assert_called_once_with(rot())
 
-    def test_logger_message(self):
-        # Write an error message to the log and test that it shows up.
-        tempdir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, tempdir)
-        logfile = os.path.join(tempdir, 'friends-test.log')
-        initialize(filename=logfile)
-        # Get another handle on the log file.
-        log = logging.getLogger()
-        self.assertEqual(os.stat(logfile).st_size, 0)
-        # Log messages at INFO or higher should be written.
-        log.info('friends at your service')
-        self.assertGreater(os.stat(logfile).st_size, 0)
-        # Read the contents, which should be just one line of output.
-        with open(logfile, encoding='utf-8') as fp:
-            contents = fp.read()
-        lines = contents.splitlines()
-        self.assertEqual(len(lines), 1)
-        # The log message will have a variable timestamp, so ignore
-        # that, but check everything else.
-        self.assertRegex(
-            lines[0],
-            r'INFO\s+MainThread.*root\s+friends at your service')
+    @mock.patch('friends.utils.logging.logging')
+    @mock.patch('friends.utils.logging.os')
+    def test_initialize_console(self, os_mock, log_mock):
+        os_mock.path.dirname.return_value = '/dev'
+        initialize(True, True, filename='/dev/null')
+        os_mock.makedirs.assert_called_once_with('/dev')
+        os_mock.path.dirname.assert_called_once_with('/dev/null')
 
-    def test_console_logger(self):
-        # The logger can support an optional console logger.
-        tempdir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, tempdir)
-        logfile = os.path.join(tempdir, 'friends-test.log')
-        initialize(console=True, filename=logfile)
-        log = logging.getLogger()
-        # Can we do better than testing that there are now two handlers for
-        # the logger?
-        self.assertEqual(3, sum(1 for handler in log.handlers))
+        stream = log_mock.StreamHandler
+        stream.assert_called_once_with()
+        log_mock.Formatter.assert_called_with(
+            '{levelname:5}  {threadName:10}  {name:18}  {message}',
+            style='{')
+        stream().setFormatter.assert_called_once_with(log_mock.Formatter())
 
-    def test_default_logger_level(self):
-        # By default, the logger level is INFO.
-        tempdir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, tempdir)
-        logfile = os.path.join(tempdir, 'friends-test.log')
-        initialize(filename=logfile)
-        # Get another handle on the log file.
-        log = logging.getLogger()
-        # By default, debug messages won't get written since they are less
-        # severe than INFO.
-        log.debug('friends is ready')
-        self.assertEqual(os.stat(logfile).st_size, 0)
-
-    def test_debug_logger_level(self):
-        # Set the logger up for debugging.
-        tempdir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, tempdir)
-        logfile = os.path.join(tempdir, 'friends-test.log')
-        initialize(filename=logfile, debug=True)
-        # Get another handle on the log file.
-        log = logging.getLogger()
-        log.debug('friends is ready')
-        self.assertGreater(os.stat(logfile).st_size, 0)
-        # Read the contents, which should be just one line of output.
-        with open(logfile, encoding='utf-8') as fp:
-            contents = fp.read()
-        lines = contents.splitlines()
-        self.assertEqual(len(lines), 1)
-        # The log message will have a variable timestamp at the front, so
-        # ignore that, but check everything else.
-        self.assertRegex(
-            lines[0],
-            r'DEBUG\s+MainThread.*root\s+friends is ready')
+        log_mock.getLogger.assert_called_once_with()
+        log_mock.getLogger().setLevel.assert_called_once_with(log_mock.DEBUG)
+        log_mock.getLogger().addHandler.assert_called_with(stream())
