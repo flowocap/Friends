@@ -17,9 +17,8 @@
 
 
 __all__ = [
-    'SHORTENERS',
+    'Shortener',
     'is_shortened',
-    'lookup',
     ]
 
 
@@ -36,9 +35,13 @@ class Shortener:
     Once instantiated, you can call the .shorten(url) instance method
     to have your URLs shortened easily.
     """
-    def __init__(self, template):
-        """Define which shortening service this instance will use."""
-        self.template = template
+    def __init__(self, domain=None):
+        """Determine which shortening service this instance will use."""
+        self.template = URLS.get(domain)
+
+        # Disable shortening if no shortener found.
+        if None in (domain, self.template):
+            self.shorten = lambda url: url
 
     def shorten(self, url):
         """Return the shortened URL by querying the shortening service."""
@@ -46,17 +49,6 @@ class Shortener:
             return url
         return Downloader(
             self.template.format(quote(url, safe=''))).get_string().strip()
-
-
-class NullShortener(Shortener):
-    """The default URL 'shortener' which doesn't shorten at all.
-
-    If the chosen shortener isn't found, or is disabled, then this one is
-    returned.  It supports the standard API but just returns the original URL
-    unchanged.
-    """
-    def shorten(self, url):
-        return url
 
 
 # These strings define the shortening services. If you want to add a
@@ -79,11 +71,3 @@ URLS = {
 # about is "matched or not?"
 is_shortened = re.compile(
     r'https?://({})/'.format('|'.join(sorted(URLS)))).match
-
-
-SHORTENERS = {domain: Shortener(url) for domain, url in URLS.items()}
-
-
-def lookup(domain):
-    """Look up a URL shortener by domain name."""
-    return SHORTENERS.get(domain, NullShortener(None))

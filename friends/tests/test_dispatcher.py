@@ -208,10 +208,8 @@ class TestDispatcher(unittest.TestCase):
             self.dispatcher.URLShorten('http://tinyurl.com/foo'))
 
     @mock.patch('friends.service.dispatcher.logging')
-    @mock.patch('friends.service.dispatcher.lookup')
-    @mock.patch('friends.service.dispatcher.is_shortened')
-    def test_urlshorten(self, short_mock, lookup_mock, logging_mock):
-        short_mock.return_value = False
+    @mock.patch('friends.service.dispatcher.Shortener')
+    def test_urlshorten(self, lookup_mock, logging_mock):
         lookup_mock().shorten.return_value = 'short url'
         lookup_mock.reset_mock()
         self.dispatcher.settings.get_string.return_value = 'is.gd'
@@ -219,7 +217,6 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(
             self.dispatcher.URLShorten(long_url),
             'short url')
-        short_mock.assert_called_once_with(long_url)
         self.dispatcher.settings.get_boolean.assert_called_once_with(
             'shorten-urls')
         lookup_mock.assert_called_once_with('is.gd')
