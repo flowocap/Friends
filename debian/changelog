@@ -4,6 +4,16 @@ friends (0.1.3daily13.03.29-0ubuntu1) UNRELEASED; urgency=low
 
  -- Robert Bruce Park <robert.park@canonical.com>  Fri, 29 Mar 2013 08:58:45 -0700
 
+friends (0.1.3daily13.03.28-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * Flickr photos are 404ing (LP: #1159979)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 170
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 28 Mar 2013 05:01:41 +0000
+
 friends (0.1.3daily13.03.22-0ubuntu1) raring; urgency=low
 
   * Automatic snapshot from revision 168
