@@ -105,3 +105,11 @@ class TestShorteners(unittest.TestCase):
     def test_is_not_shortened(self):
         # Test a URL that has not been shortened.
         self.assertFalse(lookup.is_shortened('http://www.python.org/bar'))
+
+    @mock.patch('friends.shorteners.base.Downloader')
+    def test_urls_quoted_properly(self, dl_mock):
+        lookup.lookup('tinyurl.com').shorten(
+            'http://example.com/~user/stuff/+things')
+        dl_mock.assert_called_once_with(
+            'http://tinyurl.com/api-create.php?url=http%3A%2F%2Fexample.com'
+            '%2F%7Euser%2Fstuff%2F%2Bthings')

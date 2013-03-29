@@ -20,6 +20,8 @@ __all__ = [
     ]
 
 
+from urllib.parse import quote
+
 from friends.utils.http import Downloader
 
 
@@ -29,4 +31,5 @@ class ShortenerBase:
     fqdn = None
 
     def shorten(self, url):
-        return Downloader(self.URL_TEMPLATE.format(url)).get_string().rstrip()
+        return Downloader(
+            self.URL_TEMPLATE.format(quote(url, safe=''))).get_string().rstrip()
