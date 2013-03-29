@@ -332,10 +332,11 @@ class Dispatcher(dbus.service.Object):
 
     @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
-    def URLShorten(self, url):
-        """Shorten a URL.
+    def URLShorten(self, message):
+        """Shorten all the URLs in a message.
 
-        Takes a url as a string and returns a shortened url as a string.
+        Takes a message as a string, and returns the message with all
+        it's URLs shortened.
 
         example:
             import dbus
@@ -346,10 +347,10 @@ class Dispatcher(dbus.service.Object):
             short_url = service.URLShorten(url)
         """
         service_name = self.settings.get_string('urlshorter')
-        log.info('Shortening URL {} with {}'.format(url, service_name))
+        log.info('Shortening with {}'.format(service_name))
         if not self.settings.get_boolean('shorten-urls'):
-            return url
-        return Short(service_name).make(url)
+            return message
+        return Short(service_name).sub(message)
 
     @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)

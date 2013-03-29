@@ -25,6 +25,7 @@ import re
 
 from urllib.parse import quote
 
+from friends.utils.base import LINKIFY_REGEX as replace_urls
 from friends.utils.http import Downloader
 
 
@@ -60,6 +61,10 @@ class Short:
             return url
         return Downloader(
             self.template.format(quote(url, safe=''))).get_string().strip()
+
+    def sub(self, message):
+        """Find *all* of the URLs in a string and shorten all of them."""
+        return replace_urls(lambda match: self.make(match.group(0)), message)
 
     # Used for checking if URLs have already been shortened.
     already = re.compile(r'https?://({})/'.format('|'.join(URLS))).match

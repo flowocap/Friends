@@ -116,3 +116,14 @@ class TestShorteners(unittest.TestCase):
         Short('is.gd').make('http://is.gd/page_id')
         Short('ou.gd').make('http://linkee.com/page_id')
         self.assertEqual(dl_mock.call_count, 0)
+
+    def test_find_all_in_string(self):
+        shorter = Short()
+        shorter.make = lambda url: 'zombo.com'
+        self.assertEqual(
+            'Welcome to zombo.com, anything is possible. '
+            'You can do anything at zombo.com!',
+            shorter.sub(
+                'Welcome to http://example.com/really/really/long/url, '
+                'anything is possible. You can do anything at '
+                'http://example.com!'))
