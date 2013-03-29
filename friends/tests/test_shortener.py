@@ -22,7 +22,7 @@ __all__ = [
 
 import unittest
 
-from friends.utils.shorteners import Shortener, is_shortened
+from friends.utils.shorteners import Short
 from friends.tests.mocks import FakeSoupMessage, mock
 
 
@@ -33,70 +33,69 @@ class TestShorteners(unittest.TestCase):
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'short.dat'))
     def test_isgd(self):
-        # Test the shortener.
         self.assertEqual(
-            Shortener('is.gd').shorten('http://www.python.org'),
+            Short('is.gd').make('http://www.python.org'),
             'http://sho.rt/')
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'short.dat'))
     def test_ougd(self):
-        # Test the shortener.
         self.assertEqual(
-            Shortener('ou.gd').shorten('http://www.python.org'),
+            Short('ou.gd').make('http://www.python.org'),
             'http://sho.rt/')
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'short.dat'))
     def test_linkeecom(self):
-        # Test the shortener.
         self.assertEqual(
-            Shortener('linkee.com').shorten('http://www.python.org'),
+            Short('linkee.com').make('http://www.python.org'),
             'http://sho.rt/')
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'short.dat'))
     def test_tinyurlcom(self):
-        # Test the shortener.
         self.assertEqual(
-            Shortener('tinyurl.com').shorten('http://www.python.org'),
+            Short('tinyurl.com').make('http://www.python.org'),
             'http://sho.rt/')
 
     def test_missing_or_disabled_lookup(self):
         # Looking up a non-existent or disabled shortener gives you one that
         # returns the original url back unchanged.
         self.assertEqual(
-            Shortener('nonexistant').shorten('http://www.python.org'),
+            Short('nonexistant').make('http://www.python.org'),
+            'http://www.python.org')
+        self.assertEqual(
+            Short().make('http://www.python.org'),
             'http://www.python.org')
 
     def test_is_shortened(self):
-        # Test a URL that has been shortened.
-        self.assertTrue(is_shortened('http://tinyurl.com/foo'))
-        self.assertTrue(is_shortened('http://is.gd/foo'))
-        self.assertTrue(is_shortened('http://linkee.com/foo'))
-        self.assertTrue(is_shortened('http://ou.gd/foo'))
+        # Test URLs that have been shortened.
+        self.assertTrue(Short.already('http://tinyurl.com/foo'))
+        self.assertTrue(Short.already('http://is.gd/foo'))
+        self.assertTrue(Short.already('http://linkee.com/foo'))
+        self.assertTrue(Short.already('http://ou.gd/foo'))
 
     def test_is_not_shortened(self):
         # Test a URL that has not been shortened.
-        self.assertFalse(is_shortened('http://www.python.org/bar'))
+        self.assertFalse(Short.already('http://www.python.org/bar'))
 
     @mock.patch('friends.utils.shorteners.Downloader')
     def test_isgd_quoted_properly(self, dl_mock):
-        Shortener('is.gd').shorten('http://example.com/~user/stuff/+things')
+        Short('is.gd').make('http://example.com/~user/stuff/+things')
         dl_mock.assert_called_once_with(
             'http://is.gd/api.php?longurl=http%3A%2F%2Fexample.com'
             '%2F%7Euser%2Fstuff%2F%2Bthings')
 
     @mock.patch('friends.utils.shorteners.Downloader')
     def test_ougd_quoted_properly(self, dl_mock):
-        Shortener('ou.gd').shorten('http://example.com/~user/stuff/+things')
+        Short('ou.gd').make('http://example.com/~user/stuff/+things')
         dl_mock.assert_called_once_with(
             'http://ou.gd/api.php?format=simple&action=shorturl&url='
             'http%3A%2F%2Fexample.com%2F%7Euser%2Fstuff%2F%2Bthings')
 
     @mock.patch('friends.utils.shorteners.Downloader')
     def test_linkeecom_quoted_properly(self, dl_mock):
-        Shortener('linkee.com').shorten(
+        Short('linkee.com').make(
             'http://example.com/~user/stuff/+things')
         dl_mock.assert_called_once_with(
             'http://api.linkee.com/1.0/shorten?format=text&input='
@@ -104,7 +103,7 @@ class TestShorteners(unittest.TestCase):
 
     @mock.patch('friends.utils.shorteners.Downloader')
     def test_tinyurl_quoted_properly(self, dl_mock):
-        Shortener('tinyurl.com').shorten(
+        Short('tinyurl.com').make(
             'http://example.com/~user/stuff/+things')
         dl_mock.assert_called_once_with(
             'http://tinyurl.com/api-create.php?url=http%3A%2F%2Fexample.com'
@@ -112,8 +111,8 @@ class TestShorteners(unittest.TestCase):
 
     @mock.patch('friends.utils.shorteners.Downloader')
     def test_dont_over_shorten(self, dl_mock):
-        Shortener('tinyurl.com').shorten('http://tinyurl.com/page_id')
-        Shortener('linkee.com').shorten('http://ou.gd/page_id')
-        Shortener('is.gd').shorten('http://is.gd/page_id')
-        Shortener('ou.gd').shorten('http://linkee.com/page_id')
+        Short('tinyurl.com').make('http://tinyurl.com/page_id')
+        Short('linkee.com').make('http://ou.gd/page_id')
+        Short('is.gd').make('http://is.gd/page_id')
+        Short('ou.gd').make('http://linkee.com/page_id')
         self.assertEqual(dl_mock.call_count, 0)

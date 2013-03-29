@@ -35,7 +35,7 @@ from friends.utils.account import find_accounts
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model, persist_model
-from friends.utils.shorteners import Shortener
+from friends.utils.shorteners import Short
 
 
 log = logging.getLogger(__name__)
@@ -349,7 +349,7 @@ class Dispatcher(dbus.service.Object):
         log.info('Shortening URL {} with {}'.format(url, service_name))
         if not self.settings.get_boolean('shorten-urls'):
             return url
-        return Shortener(service_name).shorten(url)
+        return Short(service_name).make(url)
 
     @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)

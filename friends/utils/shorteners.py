@@ -17,8 +17,7 @@
 
 
 __all__ = [
-    'Shortener',
-    'is_shortened',
+    'Short',
     ]
 
 
@@ -27,28 +26,6 @@ import re
 from urllib.parse import quote
 
 from friends.utils.http import Downloader
-
-
-class Shortener:
-    """Each instance of this class represents a unique shortening service.
-
-    Once instantiated, you can call the .shorten(url) instance method
-    to have your URLs shortened easily.
-    """
-    def __init__(self, domain=None):
-        """Determine which shortening service this instance will use."""
-        self.template = URLS.get(domain)
-
-        # Disable shortening if no shortener found.
-        if None in (domain, self.template):
-            self.shorten = lambda url: url
-
-    def shorten(self, url):
-        """Return the shortened URL by querying the shortening service."""
-        if is_shortened(url):
-            return url
-        return Downloader(
-            self.template.format(quote(url, safe=''))).get_string().strip()
 
 
 # These strings define the shortening services. If you want to add a
@@ -65,9 +42,24 @@ URLS = {
     }
 
 
-# Returns None if the URL does not begin with a known shortener,
-# returns a match object otherwise. The match object evaluates as
-# True, so the return value here can be truth-tested if all you care
-# about is "matched or not?"
-is_shortened = re.compile(
-    r'https?://({})/'.format('|'.join(sorted(URLS)))).match
+class Short:
+    """Each instance of this class represents a unique shortening service."""
+
+    def __init__(self, domain=None):
+        """Determine which shortening service this instance will use."""
+        self.template = URLS.get(domain)
+
+        # Disable shortening if no shortener found.
+        if None in (domain, self.template):
+            self.make = lambda url: url
+
+    def make(self, url):
+        """Shorten the URL by querying the shortening service."""
+        if Short.already(url):
+            # Don't re-shorten an already-short URL.
+            return url
+        return Downloader(
+            self.template.format(quote(url, safe=''))).get_string().strip()
+
+    # Used for checking if URLs have already been shortened.
+    already = re.compile(r'https?://({})/'.format('|'.join(URLS))).match
