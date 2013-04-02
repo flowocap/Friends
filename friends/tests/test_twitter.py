@@ -383,7 +383,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                 'Why yes, I would love to respond to your tweet @pumpichank!'),
             'tweet permalink')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='reply_to/1234')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/update.json',
             dict(status='Why yes, I would love to respond to your '

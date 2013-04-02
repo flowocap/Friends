@@ -150,7 +150,7 @@ class TestIdentica(unittest.TestCase):
             '1234',
             'Why yes, I would love to respond to your tweet @pumpichank!')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='reply_to/1234')
         get_url.assert_called_with(
             'http://identi.ca/api/statuses/update.json',
             dict(status=

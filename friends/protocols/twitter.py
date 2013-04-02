@@ -248,9 +248,10 @@ class Twitter(Base):
     def send_thread(self, message_id, message):
         """Send a reply message to message_id.
 
-        Note that you have to @mention the message_id owner's screen name in
-        order for Twitter to actually accept this as a reply.  Otherwise it
-        will just be an ordinary tweet.
+        This method takes care to prepend the @mention to the start of
+        your tweet if you forgot it. Without this, Twitter will just
+        consider it a regular message, and it won't be part of any
+        conversation.
         """
         try:
             sender = '@{}'.format(self._fetch_cell(message_id, 'sender_nick'))
@@ -261,7 +262,8 @@ class Twitter(Base):
         url = self._api_base.format(endpoint='statuses/update')
         tweet = self._get_url(url, dict(in_reply_to_status_id=message_id,
                                         status=message))
-        return self._publish_tweet(tweet)
+        return self._publish_tweet(
+            tweet, stream='reply_to/{}'.format(message_id))
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/destroy/%3Aid
     @feature
