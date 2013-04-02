@@ -237,7 +237,7 @@ class Facebook(Base):
         self._like(obj_id, 'DELETE')
         return obj_id
 
-    def _send(self, obj_id, message, endpoint):
+    def _send(self, obj_id, message, endpoint, stream='messages'):
         url = API_BASE.format(id=obj_id) + endpoint
         token = self._get_access_token()
 
@@ -251,7 +251,9 @@ class Facebook(Base):
 
         url = API_BASE.format(id=new_id)
         entry = Downloader(url, params=dict(access_token=token)).get_json()
-        return self._publish_entry(entry)
+        return self._publish_entry(
+            stream=stream,
+            entry=entry)
 
     @feature
     def send(self, message, obj_id='me'):
@@ -270,7 +272,8 @@ class Facebook(Base):
         obj_id can be the id of any Facebook object that supports being
         commented on, which will generally be Posts.
         """
-        return self._send(obj_id, message, '/comments')
+        return self._send(obj_id, message, '/comments',
+                          stream='reply_to/{}'.format(obj_id))
 
     @feature
     def delete(self, obj_id):

@@ -269,7 +269,8 @@ Facebook UID: None
             'http://facebook.com/post_id')
 
         token.assert_called_once_with()
-        publish.assert_called_with({'id': 'post_id'})
+        publish.assert_called_with(entry={'id': 'post_id'},
+                                   stream='messages')
         self.assertEqual(
             dload.mock_calls,
             [mock.call(),
@@ -298,7 +299,8 @@ Facebook UID: None
             'http://facebook.com/new_post_id')
 
         token.assert_called_once_with()
-        publish.assert_called_with({'id': 'post_id'})
+        publish.assert_called_with(entry={'id': 'post_id'},
+                                   stream='messages')
         self.assertEqual(
             dload.mock_calls,
             [mock.call(),
@@ -327,7 +329,8 @@ Facebook UID: None
             'http://facebook.com/private_message_id')
 
         token.assert_called_once_with()
-        publish.assert_called_with({'id': 'comment_id'})
+        publish.assert_called_with(entry={'id': 'comment_id'},
+                                   stream='reply_to/post_id')
         self.assertEqual(
             dload.mock_calls,
             [mock.call(),
