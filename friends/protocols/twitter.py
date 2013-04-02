@@ -305,10 +305,9 @@ class Twitter(Base):
         """Announce to the world your undying love for a tweet."""
         url = self._api_base.format(endpoint='favorites/create')
         self._get_url(url, dict(id=message_id))
+        self._inc_cell(message_id, 'likes')
+        self._set_cell(message_id, 'liked', True)
         return message_id
-        # I don't think we need to publish this tweet because presumably the
-        # user has clicked the 'favorite' button on the message that's already
-        # in the stream.
 
 # https://dev.twitter.com/docs/api/1.1/post/favorites/destroy
     @feature
@@ -316,6 +315,8 @@ class Twitter(Base):
         """Renounce your undying love for a tweet."""
         url = self._api_base.format(endpoint='favorites/destroy')
         self._get_url(url, dict(id=message_id))
+        self._dec_cell(message_id, 'likes')
+        self._set_cell(message_id, 'liked', False)
         return message_id
 
 # https://dev.twitter.com/docs/api/1.1/get/search/tweets

@@ -471,18 +471,26 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
     def test_like(self):
         get_url = self.protocol._get_url = mock.Mock()
+        inc_cell = self.protocol._inc_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
 
         self.assertEqual(self.protocol.like('1234'), '1234')
 
+        inc_cell.assert_called_once_with('1234', 'likes')
+        set_cell.assert_called_once_with('1234', 'liked', True)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/favorites/create.json',
             dict(id='1234'))
 
     def test_unlike(self):
         get_url = self.protocol._get_url = mock.Mock()
+        dec_cell = self.protocol._dec_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
 
         self.assertEqual(self.protocol.unlike('1234'), '1234')
 
+        dec_cell.assert_called_once_with('1234', 'likes')
+        set_cell.assert_called_once_with('1234', 'liked', False)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/favorites/destroy.json',
             dict(id='1234'))
