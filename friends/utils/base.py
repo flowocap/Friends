@@ -503,15 +503,33 @@ class Base:
             message = None
         raise FriendsError(message or str(error))
 
-    def _fetch_cell(self, message_id, column_name):
-        """Find a column value associated with a specific message_id."""
+    def _calculate_row_cell(self, message_id, column_name):
+        """Find x,y coords in the model based on message_id and column_name."""
         row_id = _seen_ids.get(message_id)
         col_idx = COLUMN_INDICES.get(column_name)
-        if None not in (row_id, col_idx):
-            row = Model.get_row(row_id)
-            return row[col_idx]
-        else:
-            raise FriendsError('Value could not be found.')
+        if None in (row_id, col_idx):
+            raise FriendsError('Cell could not be found.')
+        return row_id, col_idx
+
+    def _fetch_cell(self, message_id, column_name):
+        """Find a column value associated with a specific message_id."""
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        return Model.get_row(row_id)[col_idx]
+
+    def _set_cell(self, message_id, column_name, value):
+        """Set a column value associated with a specific message_id."""
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        Model.get_row(row_id)[col_idx] = value
+
+    def _inc_cell(self, message_id, column_name):
+        """Increment a column value associated with a specific message_id."""
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        Model.get_row(row_id)[col_idx] += 1
+
+    def _dec_cell(self, message_id, column_name):
+        """Decrement a column value associated with a specific message_id."""
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        Model.get_row(row_id)[col_idx] -= 1
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)

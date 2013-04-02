@@ -351,4 +351,7 @@ class Dispatcher(dbus.service.Object):
     @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)
     def ExpireAvatars(self):
-        Avatar.expire_old_avatars()
+        pass
+        # Disabled because we don't currently have a way of re-fetching
+        # expired avatars if they're needed again later.
+        # Avatar.expire_old_avatars()

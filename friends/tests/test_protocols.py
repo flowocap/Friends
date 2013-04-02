@@ -370,6 +370,55 @@ class TestProtocols(unittest.TestCase):
         self.assertEqual(TestModel.get_row(1)[COLUMN_INDICES['sender']],
                          'tedtholomew')
 
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_inc_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        base._inc_cell('1234', 'likes')
+        row = TestModel.get_row(0)
+        self.assertEqual(
+            list(row),
+            ['base', 88, '1234', '', '', '', '', False, '', '', '', '', 11,
+             True, '', '', '', '', '', '', '', 0.0, 0.0])
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_dec_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        base._dec_cell('1234', 'likes')
+        row = TestModel.get_row(0)
+        self.assertEqual(
+            list(row),
+            ['base', 88, '1234', '', '', '', '', False, '', '', '', '', 9,
+             True, '', '', '', '', '', '', '', 0.0, 0.0])
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_set_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        base._set_cell('1234', 'likes', 500)
+        base._set_cell('1234', 'liked', False)
+        base._set_cell('1234', 'message_id', '5678')
+        row = TestModel.get_row(0)
+        self.assertEqual(
+            list(row),
+            ['base', 88, '5678', '', '', '', '', False, '', '', '', '', 500,
+             False, '', '', '', '', '', '', '', 0.0, 0.0])
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_fetch_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        self.assertEqual(base._fetch_cell('1234', 'likes'), 10)
+
     def test_basic_login(self):
         # Try to log in twice.  The second login attempt returns False because
         # it's already logged in.
