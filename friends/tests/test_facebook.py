@@ -430,9 +430,13 @@ Facebook UID: None
         dload().get_json.return_value = True
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
+        inc_cell = self.protocol._inc_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
 
         self.assertEqual(self.protocol.like('post_id'), 'post_id')
 
+        inc_cell.assert_called_once_with('post_id', 'likes')
+        set_cell.assert_called_once_with('post_id', 'liked', True)
         token.assert_called_once_with()
         dload.assert_called_with(
             'https://graph.facebook.com/post_id/likes',
@@ -444,9 +448,13 @@ Facebook UID: None
         dload.get_json.return_value = True
         token = self.protocol._get_access_token = mock.Mock(
             return_value='face')
+        dec_cell = self.protocol._dec_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
 
         self.assertEqual(self.protocol.unlike('post_id'), 'post_id')
 
+        dec_cell.assert_called_once_with('post_id', 'likes')
+        set_cell.assert_called_once_with('post_id', 'liked', False)
         token.assert_called_once_with()
         dload.assert_called_once_with(
             'https://graph.facebook.com/post_id/likes',

@@ -226,6 +226,8 @@ class Facebook(Base):
         This includes messages, statuses, wall posts, events, etc.
         """
         self._like(obj_id, 'POST')
+        self._inc_cell(obj_id, 'likes')
+        self._set_cell(obj_id, 'liked', True)
         return obj_id
 
     @feature
@@ -235,6 +237,8 @@ class Facebook(Base):
         This includes messages, statuses, wall posts, events, etc.
         """
         self._like(obj_id, 'DELETE')
+        self._dec_cell(obj_id, 'likes')
+        self._set_cell(obj_id, 'liked', False)
         return obj_id
 
     def _send(self, obj_id, message, endpoint, stream='messages'):
