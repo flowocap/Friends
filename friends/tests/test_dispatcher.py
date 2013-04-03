@@ -193,9 +193,10 @@ class TestDispatcher(unittest.TestCase):
                           'retweet', 'search', 'send', 'send_private',
                           'send_thread', 'tag', 'unfollow', 'unlike', 'user'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('identica')),
-                         ['contacts', 'delete', 'follow', 'home', 'mentions',
-                          'private', 'receive', 'retweet', 'search', 'send',
-                          'send_private', 'send_thread', 'unfollow', 'user'])
+                         ['contacts', 'delete', 'follow', 'home', 'like', 
+                          'mentions', 'private', 'receive', 'retweet',
+                          'search', 'send', 'send_private', 'send_thread',
+                          'unfollow', 'unlike', 'user'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('flickr')),
                          ['receive', 'upload'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('foursquare')),

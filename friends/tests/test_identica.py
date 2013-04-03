@@ -203,14 +203,6 @@ class TestIdentica(unittest.TestCase):
             'http://identi.ca/api/friendships/create.json',
             dict(screen_name='pumpichank', follow='true'))
 
-    def test_like(self):
-        self.protocol._get_url = mock.Mock()
-        self.assertRaises(NotImplementedError, self.protocol.like, '1234')
-
-    def test_unlike(self):
-        self.protocol._get_url = mock.Mock()
-        self.assertRaises(NotImplementedError, self.protocol.unlike, '1234')
-
     def test_tag(self):
         self.protocol._get_url = mock.Mock(
             return_value=dict(statuses=['tweet']))
@@ -245,6 +237,32 @@ class TestIdentica(unittest.TestCase):
             'http://identi.ca/api/users/show.json?user_id=1'
             )
         self.assertEqual(userdata, {"name":"Alice"})
+
+    def test_like(self):
+        get_url = self.protocol._get_url = mock.Mock()
+        inc_cell = self.protocol._inc_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
+
+        self.assertEqual(self.protocol.like('1234'), '1234')
+
+        inc_cell.assert_called_once_with('1234', 'likes')
+        set_cell.assert_called_once_with('1234', 'liked', True)
+        get_url.assert_called_with(
+            'http://identi.ca/api/favorites/create/1234.json',
+            dict(id='1234'))
+
+    def test_unlike(self):
+        get_url = self.protocol._get_url = mock.Mock()
+        dec_cell = self.protocol._dec_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
+
+        self.assertEqual(self.protocol.unlike('1234'), '1234')
+
+        dec_cell.assert_called_once_with('1234', 'likes')
+        set_cell.assert_called_once_with('1234', 'liked', False)
+        get_url.assert_called_with(
+            'http://identi.ca/api/favorites/destroy/1234.json',
+            dict(id='1234'))
 
     def test_create_contact(self, *mocks):
         # Receive the users friends.
