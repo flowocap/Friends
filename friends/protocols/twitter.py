@@ -62,6 +62,9 @@ class Twitter(Base):
     _search = _api_base.format(endpoint='search/tweets')
     _search_result_key = 'statuses'
 
+    _favorite = _api_base.format(endpoint='favorites/create')
+    _del_favorite = _api_base.format(endpoint='favorites/destroy')
+
     _tweet_permalink = 'https://twitter.com/{user_id}/status/{tweet_id}'
 
     def __init__(self, account):
@@ -303,7 +306,7 @@ class Twitter(Base):
     @feature
     def like(self, message_id):
         """Announce to the world your undying love for a tweet."""
-        url = self._api_base.format(endpoint='favorites/create')
+        url = self._favorite.format(message_id)
         self._get_url(url, dict(id=message_id))
         self._inc_cell(message_id, 'likes')
         self._set_cell(message_id, 'liked', True)
@@ -313,7 +316,7 @@ class Twitter(Base):
     @feature
     def unlike(self, message_id):
         """Renounce your undying love for a tweet."""
-        url = self._api_base.format(endpoint='favorites/destroy')
+        url = self._del_favorite.format(message_id)
         self._get_url(url, dict(id=message_id))
         self._dec_cell(message_id, 'likes')
         self._set_cell(message_id, 'liked', False)

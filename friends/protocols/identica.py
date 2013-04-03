@@ -36,6 +36,9 @@ class Identica(Twitter):
     _search = _api_base.format(endpoint='search')
     _search_result_key = 'results'
 
+    _favorite = _api_base.format(endpoint='favorites/create/{}')
+    _del_favorite = _api_base.format(endpoint='favorites/destroy/{}')
+
     _tweet_permalink = 'http://identi.ca/notice/{tweet_id}'
 
     def _whoami(self, authdata):
@@ -52,14 +55,6 @@ class Identica(Twitter):
 
     def lists(self):
         """Identi.ca does not have this feature."""
-        raise NotImplementedError
-
-    def like(self, tweet_id):
-        """I get 404s on this in spite of Identi.ca's claim to support it."""
-        raise NotImplementedError
-
-    def unlike(self, tweet_id):
-        """I get 404s on this in spite of Identi.ca's claim to support it."""
         raise NotImplementedError
 
     def tag(self, tweet_id):
