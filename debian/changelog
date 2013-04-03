@@ -1,3 +1,9 @@
+friends (0.1.3daily13.04.03-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 176
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 03 Apr 2013 05:01:53 +0000
+
 friends (0.1.3daily13.04.01-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]
