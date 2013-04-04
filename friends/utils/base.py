@@ -520,16 +520,19 @@ class Base:
         """Set a column value associated with a specific message_id."""
         row_id, col_idx = self._calculate_row_cell(message_id, column_name)
         Model.get_row(row_id)[col_idx] = value
+        persist_model()
 
     def _inc_cell(self, message_id, column_name):
         """Increment a column value associated with a specific message_id."""
         row_id, col_idx = self._calculate_row_cell(message_id, column_name)
         Model.get_row(row_id)[col_idx] += 1
+        persist_model()
 
     def _dec_cell(self, message_id, column_name):
         """Decrement a column value associated with a specific message_id."""
         row_id, col_idx = self._calculate_row_cell(message_id, column_name)
         Model.get_row(row_id)[col_idx] -= 1
+        persist_model()
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)
