@@ -19,6 +19,7 @@ class Slave:
         print('Joining model ' + model_name)
         self.model = Dee.SharedModel.new(model_name)
         self.model.connect('row-added', self.on_row_added)
+        self.model.connect('row-changed', self.on_row_added)
 
     def on_row_added(self, model, itr):
         row = self.model.get_row(itr)
