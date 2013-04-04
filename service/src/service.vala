@@ -74,29 +74,20 @@ public class Master : Object
             debug ("Failed to load model from resource manager: %s", e.message);
         }
 
-        string[] SCHEMA = {"s",
-                           "t",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "b",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "t",
-                           "b",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "s",
-                           "d",
-                           "d"};
+        string[] SCHEMA = {};
+
+        var file = FileStream.open("/usr/share/friends/model-schema.csv", "r");
+        var find_type = new Regex("([^,]+)$");
+        MatchInfo match_info = null;
+        string line = null;
+        while (true)
+        {
+            line = file.read_line();
+            if (line == null) break;
+            find_type.match(line, 0, out match_info);
+            var match = match_info.fetch(0);
+            if (match != null) SCHEMA += match;
+        }
 
         bool schemaReset = false;
 
@@ -109,7 +100,7 @@ public class Master : Object
                 schemaReset = true;
             else
             {
-                for (int i=0; i < _SCHEMA.length;i++ )
+                for (int i=0; i < _SCHEMA.length; i++)
                 {
                     if (_SCHEMA[i] != SCHEMA[i])
                     {

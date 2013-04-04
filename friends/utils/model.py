@@ -41,32 +41,22 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# DO NOT EDIT THIS WITHOUT ADJUSTING service.vala IN LOCKSTEP
-SCHEMA = (
-    ('protocol',       's'), # Same as UOA 'provider_name'
-    ('account_id',     't'), # Same as UOA account id
-    ('message_id',     's'),
-    ('stream',         's'),
-    ('sender',         's'),
-    ('sender_id',      's'),
-    ('sender_nick',    's'),
-    ('from_me',        'b'),
-    ('timestamp',      's'),
-    ('message',        's'),
-    ('icon_uri',       's'),
-    ('url',            's'),
-    ('likes',          't'),
-    ('liked',          'b'),
-    ('link_picture',   's'),
-    ('link_name',      's'),
-    ('link_url',       's'),
-    ('link_desc',      's'),
-    ('link_caption',   's'),
-    ('link_icon',      's'),
-    ('location',       's'),
-    ('latitude',       'd'),
-    ('longitude',      'd'),
-    )
+def parse_schema(fd, schema=[]):
+    """Iterate over a file descrptor's lines, parsing CSV."""
+    for line in fd:
+        name, variant = line.rstrip().split(',')
+        schema.append((name, variant))
+    return schema
+
+
+try:
+    # Get the schema from the system if it's there
+    with open('/usr/share/friends/model-schema.csv') as schema:
+        SCHEMA = parse_schema(schema)
+except IOError:
+    # If it's missing, we're probably running from the source tree.
+    with open('data/model-schema.csv') as schema:
+        SCHEMA = parse_schema(schema)
 
 
 # It's useful to have separate lists of the column names and types.

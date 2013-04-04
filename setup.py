@@ -33,7 +33,9 @@ setup(
         },
     data_files = [
         ('/usr/share/glib-2.0/schemas',
-         ['data/com.canonical.friends.gschema.xml'])
+         ['data/com.canonical.friends.gschema.xml']),
+        ('/usr/share/friends',
+         ['data/model-schema.csv']),
         ],
     entry_points = {
         'console_scripts': ['friends-dispatcher = friends.main:main'],
