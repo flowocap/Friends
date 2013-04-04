@@ -495,6 +495,11 @@ class TestProtocols(unittest.TestCase):
             'Like <a href="http://example.com?foo=bar&grill=true">'
             'http://example.com?foo=bar&grill=true</a>?',
             linkify_string('Like http://example.com?foo=bar&grill=true?'))
+        # URLs can contain encoded spaces and parentheses.
+        self.assertEqual(
+            '<a href="http://example.com/foo%20(3).JPG">'
+            'http://example.com/foo%20(3).JPG</a>!',
+            linkify_string('http://example.com/foo%20(3).JPG!'))
         # Multi-line strings are also supported.
         self.assertEqual(
             'Hey, visit us online!\n\n'
