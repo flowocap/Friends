@@ -21,7 +21,6 @@ __all__ = [
     'FakeAccount',
     'FakeSoupMessage',
     'LogMock',
-    'SettingsIterMock',
     'mock',
     ]
 
@@ -37,19 +36,13 @@ from io import StringIO
 from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
 from queue import Empty, Queue
+from unittest import mock
 from urllib.parse import urlsplit
 from gi.repository import Dee
 
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
 from friends.utils.model import COLUMN_TYPES
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 NEWLINE = '\n'
@@ -183,23 +176,6 @@ class FakeSoupMessage:
         self.method = method
         self.url = url
         return self
-
-
-class SettingsIterMock:
-    """Mimic the weird libaccounts AgAccountSettingIter semantics.
-
-    The default Python mapping of this object does not follow standard Python
-    iterator semantics.
-    """
-
-    def __init__(self):
-        self.items = [(True, 'send_enabled', True)]
-
-    def next(self):
-        if self.items:
-            return self.items.pop()
-        else:
-            return (False, None, None)
 
 
 class LogMock:
