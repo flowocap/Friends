@@ -40,7 +40,10 @@ from queue import Empty, Queue
 from urllib.parse import urlsplit
 from gi.repository import Dee
 
-# Ignore system-installed schema.
+# By default, Schema.FILES will look for the system-installed schema
+# file first, and then failing that will look for the one in the
+# source tree, for performance reasons. During testing though, we want
+# to look at the source tree first, so we reverse the list here.
 from friends.utils.model import Schema
 Schema.FILES = list(reversed(Schema.FILES))
 SCHEMA = Schema()
