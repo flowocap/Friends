@@ -41,36 +41,44 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def parse_schema(fd, schema=[]):
-    """Iterate over a file descrptor's lines, parsing CSV."""
-    for line in fd:
-        name, variant = line.rstrip().split(',')
-        schema.append((name, variant))
-    return schema
+class Schema:
+    """Represents the DeeModel schema data that we defined in CSV."""
+    DEFAULTS = {
+        'b': False,
+        's': '',
+        'd': 0,
+        't': 0,
+        }
 
+    FILES = [
+        'data/model-schema.csv',
+        '/usr/share/friends/model-schema.csv',
+        ]
 
-try:
-    # Get the schema from the system if it's there
-    with open('/usr/share/friends/model-schema.csv') as schema:
-        SCHEMA = parse_schema(schema)
-except IOError:
-    # If it's missing, we're probably running from the source tree.
-    with open('data/model-schema.csv') as schema:
-        SCHEMA = parse_schema(schema)
+    def __init__(self):
+        """Parse CSV from disk."""
+        self.COLUMNS = []
+        self.NAMES = []
+        self.TYPES = []
+        self.INDICES = {}
 
-
-# It's useful to have separate lists of the column names and types.
-COLUMN_NAMES, COLUMN_TYPES = zip(*SCHEMA)
-# A reverse mapping from column name to the column index.  This is useful for
-# pulling column values out of a row of data.
-COLUMN_INDICES = {name: i for i, name in enumerate(COLUMN_NAMES)}
-# This defines default values for the different data types
-DEFAULTS = {
-    'b': False,
-    's': '',
-    'd': 0,
-    't': 0,
-    }
+        files = self.FILES.copy()
+        while files:
+            filename = files.pop()
+            log.debug('Looking for SCHEMA in {}'.format(filename))
+            try:
+                with open(filename) as schema:
+                    for col in schema:
+                        name, variant = col.rstrip().split(',')
+                        self.COLUMNS.append((name, variant))
+                        self.NAMES.append(name)
+                        self.TYPES.append(variant)
+                log.debug(
+                    'Found {} columns for SCHEMA'.format(len(self.COLUMNS)))
+                break
+            except IOError:
+                pass
+        self.INDICES = {name: i for i, name in enumerate(self.NAMES)}
 
 
 MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'

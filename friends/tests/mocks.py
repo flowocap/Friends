@@ -40,9 +40,13 @@ from queue import Empty, Queue
 from urllib.parse import urlsplit
 from gi.repository import Dee
 
+# Ignore system-installed schema.
+from friends.utils.model import Schema
+Schema.FILES = ['data/model-schema.csv']
+SCHEMA = Schema()
+
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
-from friends.utils.model import COLUMN_TYPES
 
 
 try:
@@ -58,7 +62,7 @@ NEWLINE = '\n'
 # Create a test model that will not interfere with the user's environment.
 # We'll use this object as a mock of the real model.
 TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+TestModel.set_schema_full(SCHEMA.TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())

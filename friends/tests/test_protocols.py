@@ -26,10 +26,10 @@ import threading
 
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
-from friends.tests.mocks import FakeAccount, LogMock, TestModel, mock
+from friends.tests.mocks import SCHEMA, FakeAccount, LogMock, TestModel, mock
 from friends.utils.base import Base, feature, linkify_string
 from friends.utils.manager import ProtocolManager
-from friends.utils.model import COLUMN_INDICES, Model
+from friends.utils.model import Model
 
 
 class TestProtocolManager(unittest.TestCase):
@@ -282,7 +282,7 @@ class TestProtocols(unittest.TestCase):
         self.assertEqual(1, TestModel.get_n_rows())
         # The first published message wins.
         row = TestModel.get_row(0)
-        self.assertEqual(row[COLUMN_INDICES['message']], 'hello, @jimmy')
+        self.assertEqual(row[SCHEMA.INDICES['message']], 'hello, @jimmy')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
@@ -364,10 +364,10 @@ class TestProtocols(unittest.TestCase):
         # See?  Two rows in the table.
         self.assertEqual(2, TestModel.get_n_rows())
         # The first row is the message from fred.
-        self.assertEqual(TestModel.get_row(0)[COLUMN_INDICES['sender']],
+        self.assertEqual(TestModel.get_row(0)[SCHEMA.INDICES['sender']],
                          'fred')
         # The second row is the message from tedtholomew.
-        self.assertEqual(TestModel.get_row(1)[COLUMN_INDICES['sender']],
+        self.assertEqual(TestModel.get_row(1)[SCHEMA.INDICES['sender']],
                          'tedtholomew')
 
     @mock.patch('friends.utils.base.Model', TestModel)

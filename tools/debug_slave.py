@@ -11,7 +11,11 @@ It is not intended for use with an installed friends package.
 from gi.repository import Dee
 from gi.repository import GLib
 
-from friends.utils.model import COLUMN_NAMES
+from friends.utils.model import Schema
+
+# Ignore system-installed schema.
+Schema.FILES = ['data/model-schema.csv']
+SCHEMA = Schema()
 
 class Slave:
     def __init__(self):
@@ -24,7 +28,7 @@ class Slave:
         row = self.model.get_row(itr)
         print('\n' * 5)
         for i, col in enumerate(row):
-            print('{:12}: {}'.format(COLUMN_NAMES[i], col))
+            print('{:12}: {}'.format(SCHEMA.NAMES[i], col))
         print('ROWS: ', len(self.model))
 
 
