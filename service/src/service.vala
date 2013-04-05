@@ -153,11 +153,11 @@ public class Master : Object
                     debug ("NOT LEADER");
             });
 
-            Timeout.add_seconds (30, () => {
+            Timeout.add_seconds (300, () => {
                 shared_model.flush_revision_queue();
                 debug ("Storing model with %u rows", model.get_n_rows());
                 resources.store ((Dee.SequenceModel)model, "com.canonical.Friends.Streams");
-                return false;
+                return true;
             });
         }
 
