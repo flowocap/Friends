@@ -77,17 +77,14 @@ public class Master : Object
         string[] SCHEMA = {};
 
         var file = FileStream.open("/usr/share/friends/model-schema.csv", "r");
-        var find_type = new Regex("([^,]+)$");
-        MatchInfo match_info = null;
         string line = null;
         while (true)
         {
             line = file.read_line();
             if (line == null) break;
-            find_type.match(line, 0, out match_info);
-            var match = match_info.fetch(0);
-            if (match != null) SCHEMA += match;
+            SCHEMA += line.split(",")[1];
         }
+        debug ("Found %u schema columns.", SCHEMA.length);
 
         bool schemaReset = false;
 
