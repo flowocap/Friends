@@ -25,8 +25,7 @@ import logging
 sys.path.insert(0, '.')
 
 # Ignore system-installed schema.
-from friends.utils.model import Schema
-Schema.FILES = ['data/model-schema.csv']
+from friends.tests.mocks import SCHEMA
 
 from gi.repository import GLib
 from friends.utils.logging import initialize

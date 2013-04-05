@@ -24,11 +24,8 @@ frontend, which knows to display the new messages there.
 
 
 __all__ = [
+    'Schema',
     'Model',
-    'COLUMN_NAMES',
-    'COLUMN_TYPES',
-    'COLUMN_INDICES',
-    'DEFAULTS',
     'MODEL_DBUS_NAME',
     'persist_model',
     'prune_model',

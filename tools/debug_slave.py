@@ -11,11 +11,8 @@ It is not intended for use with an installed friends package.
 from gi.repository import Dee
 from gi.repository import GLib
 
-from friends.utils.model import Schema
+from friends.tests.mocks import SCHEMA
 
-# Ignore system-installed schema.
-Schema.FILES = ['data/model-schema.csv']
-SCHEMA = Schema()
 
 class Slave:
     def __init__(self):

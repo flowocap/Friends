@@ -42,7 +42,7 @@ from gi.repository import Dee
 
 # Ignore system-installed schema.
 from friends.utils.model import Schema
-Schema.FILES = ['data/model-schema.csv']
+Schema.FILES = list(reversed(Schema.FILES))
 SCHEMA = Schema()
 
 from friends.utils.base import Base
