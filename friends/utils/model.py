@@ -59,7 +59,7 @@ class Schema:
         self.TYPES = []
         self.INDICES = {}
 
-        files = self.FILES.copy()
+        files = self.FILES[:]
         while files:
             filename = files.pop()
             log.debug('Looking for SCHEMA in {}'.format(filename))
