@@ -1,3 +1,9 @@
+friends (0.1.3daily13.04.09-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 183
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 09 Apr 2013 05:01:54 +0000
+
 friends (0.1.3daily13.04.08-0ubuntu1) raring; urgency=low
 
   * Automatic snapshot from revision 181
