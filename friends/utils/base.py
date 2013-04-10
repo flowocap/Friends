@@ -347,8 +347,9 @@ class Base:
                 account_id=self._account.id
                 )
             )
-        # linkify the message
-        kwargs['message'] = linkify_string(kwargs.get('message', ''))
+# linkify the message
+        orig_message = kwargs.get('message', '')
+        kwargs['message'] = linkify_string(orig_message)
         args = []
         # Now iterate through all the column names listed in the
         # SCHEMA, and pop matching column values from the kwargs, in
@@ -370,7 +371,7 @@ class Base:
                 if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
                     notify(
                         args[SENDER_IDX],
-                        args[MESSAGE_IDX],
+                        orig_message,
                         args[AVATAR_IDX],
                         )
             return message_id in _seen_ids
