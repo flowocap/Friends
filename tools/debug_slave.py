@@ -8,6 +8,10 @@ database model as it is updated over dbus.
 It is not intended for use with an installed friends package.
 """
 
+import sys
+
+sys.path.insert(0, '.')
+
 from gi.repository import Dee
 from gi.repository import GLib
 
