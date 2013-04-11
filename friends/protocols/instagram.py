@@ -56,7 +56,7 @@ class Instagram(Base):
         person_id = person.get('id')
         message= '%s shared a picture on Instagram.' % nick
         person_icon = person.get('profile_picture')
-        person_url = 'http://instagram.com/' + name
+        person_url = 'http://instagram.com/' + nick
         picture = entry.get('images').get('thumbnail').get('url')
         if entry.get('caption'):
             desc = entry.get('caption').get('text', '')
@@ -94,6 +94,31 @@ class Instagram(Base):
              )
 
         self._publish(**args)
+
+        # If there are any replies, publish them as well.
+        parent_id = message_id
+        for comment in entry.get('comments', {}).get('data', []):
+            if comment:
+                message_id = comment.get('id')
+                message = comment.get('text')
+                person = comment.get('from')
+                sender_nick = person.get('username')
+                timestamp = iso8601utc(parsetime(comment.get('created_time')))
+                icon_uri = person.get('profile_picture')
+                sender_id = person.get('id')
+                sender = person.get('full_name')
+                log.debug('Comment from: ' + sender_nick)
+                args = dict(
+                     stream='reply_to/{}'.format(parent_id),
+                     message_id=message_id,
+                     message=message,
+                     timestamp=timestamp,
+                     sender_nick=sender_nick,
+                     icon_uri=icon_uri,
+                     sender_id=sender_id,
+                     sender=sender
+                     )
+                self._publish(**args)
 
     @feature
     def home(self):
