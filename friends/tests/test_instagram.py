@@ -143,6 +143,34 @@ class TestInstagram(unittest.TestCase):
             0.0,
             ])
 
+    @mock.patch('friends.protocols.instagram.Downloader')
+    def test_send_thread(self, dload):
+        dload().get_json.return_value = dict(id='comment_id')
+        token = self.protocol._get_access_token = mock.Mock(
+            return_value='abc')
+        publish = self.protocol._publish_entry = mock.Mock(
+            return_value='http://instagram.com/p/post_id')
+
+        self.assertEqual(
+            self.protocol.send_thread('post_id', 'Some witty response!'),
+            'http://instagram.com/p/post_id')
+        token.assert_called_once_with()
+        publish.assert_called_with(entry={'id': 'comment_id'},
+                                   stream='reply_to/post_id')
+        self.assertEqual(
+            dload.mock_calls,
+            [mock.call(),
+             mock.call(
+                    'https://api.instagram.com/v1/media/post_id/comments?access_token=abc',
+                    method='POST',
+                    params=dict(
+                        access_token='abc',
+                        text='Some witty response!')),
+             mock.call().get_json(),
+             mock.call('https://api.instagram.com/v1/media/post_id/comments?access_token=abc',
+                       params=dict(access_token='abc')),
+             mock.call().get_json(),
+             ])
 
     @mock.patch('friends.protocols.instagram.Downloader')
     def test_like(self, dload):

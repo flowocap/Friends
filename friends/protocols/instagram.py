@@ -64,7 +64,9 @@ class Instagram(Base):
         else:
             desc = ''
         url = entry.get('link')
-        timestamp = iso8601utc(parsetime(entry.get('created_time')))
+        timestamp = entry.get('created_time')
+        if timestamp is not None:
+            timestamp = iso8601utc(parsetime(timestamp))
         likes = entry.get('likes').get('count')
         liked = entry.get('user_has_liked')
         location = entry.get('location', {})
@@ -102,28 +104,34 @@ class Instagram(Base):
             if comment:
                 self._publish_comment(
                     comment, stream='reply_to/{}'.format(parent_id))
+        return args['url']
 
     def _publish_comment(self, comment, stream):
-                message_id = comment.get('id')
-                message = comment.get('text')
-                person = comment.get('from')
-                sender_nick = person.get('username')
-                timestamp = iso8601utc(parsetime(comment.get('created_time')))
-                icon_uri = Avatar.get_image(person.get('profile_picture'))
-                sender_id = person.get('id')
-                sender = person.get('full_name')
+        message_id = comment.get('id')
+        if message_id is None:
+            return
+        message = comment.get('text', '')
+        person = comment.get('from', {})
+        sender_nick = person.get('username')
+        timestamp = comment.get('created_time')
+        if timestamp is not None:
+            timestamp = iso8601utc(parsetime(timestamp))
+        icon_uri = Avatar.get_image(person.get('profile_picture'))
+        sender_id = person.get('id')
+        sender = person.get('full_name')
 
-                args = dict(
-                     stream=stream,
-                     message_id=message_id,
-                     message=message,
-                     timestamp=timestamp,
-                     sender_nick=sender_nick,
-                     icon_uri=icon_uri,
-                     sender_id=sender_id,
-                     sender=sender
-                     )
-                self._publish(**args)
+        args = dict(
+             stream=stream,
+             message_id=message_id,
+             message=message,
+             timestamp=timestamp,
+             sender_nick=sender_nick,
+             icon_uri=icon_uri,
+             sender_id=sender_id,
+             sender=sender,
+             )
+#                print(args)
+        self._publish(**args)
 
     @feature
     def home(self):
@@ -154,10 +162,10 @@ class Instagram(Base):
         new_id = result.get('id')
         if new_id is None:
             raise FriendsError('Failed sending to Instagram: {!r}'.format(result))
-
-        url = _api_base.format(id=new_id)
+        enpoint = 'media/{}/comments'.format(new_id)
+        url = self._api_base.format(endpoint=endpoint, token=token)
         comment = Downloader(url, params=dict(access_token=token)).get_json()
-        return self._publish_comment(comment=comment, stream=stream)
+        return self._publish_entry(entry=comment, stream=stream)
 
     @feature
     def send_thread(self, obj_id, message):
