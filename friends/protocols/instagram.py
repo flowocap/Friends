@@ -131,7 +131,7 @@ class Instagram(Base):
             endpoint='users/self/feed',
             token=self._get_access_token())
         result = Downloader(url).get_json()
-        values = result.get('data')
+        values = result.get('data', {})
         for update in values:
             self._publish_entry(update)
     
