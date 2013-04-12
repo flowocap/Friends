@@ -23,6 +23,7 @@ __all__ = [
 import time
 import logging
 
+from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import Downloader, Uploader
@@ -55,7 +56,7 @@ class Instagram(Base):
         name = person.get('full_name')
         person_id = person.get('id')
         message= '%s shared a picture on Instagram.' % nick
-        person_icon = person.get('profile_picture')
+        person_icon = Avatar.get_image(person.get('profile_picture'))
         person_url = 'http://instagram.com/' + nick
         picture = entry.get('images').get('thumbnail').get('url')
         if entry.get('caption'):
@@ -108,7 +109,7 @@ class Instagram(Base):
                 person = comment.get('from')
                 sender_nick = person.get('username')
                 timestamp = iso8601utc(parsetime(comment.get('created_time')))
-                icon_uri = person.get('profile_picture')
+                icon_uri = Avatar.get_image(person.get('profile_picture'))
                 sender_id = person.get('id')
                 sender = person.get('full_name')
 
