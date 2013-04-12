@@ -169,12 +169,13 @@ class TestIdentica(unittest.TestCase):
             dict(trim_user='true'))
 
     def test_retweet(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        tweet=dict(tweet='twit')
+        get_url = self.protocol._get_url = mock.Mock(return_value=tweet)
         publish = self.protocol._publish_tweet = mock.Mock()
 
         self.protocol.retweet('1234')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with(tweet)
         get_url.assert_called_with(
             'http://identi.ca/api/statuses/retweet/1234.json',
             dict(trim_user='true'))
