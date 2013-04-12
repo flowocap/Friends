@@ -101,7 +101,8 @@ class TestInstagram(unittest.TestCase):
             False,
             '2013-04-11T04:50:01Z',
             'joshwolp shared a picture on Instagram.',
-            'http://images.ak.instagram.com/profiles/profile_223207800_75sq_1347753109.jpg',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/ca55b643e7b440762c7c6292399eed6542a84b90',
             'http://instagram.com/joshwolp',
             8,
             False,
@@ -126,7 +127,8 @@ class TestInstagram(unittest.TestCase):
             False,
             '2013-04-11T04:25:15Z',
             'I remember pushing that little guy of the swings a few times....',
-            'http://images.ak.instagram.com/profiles/profile_5917696_75sq_1336705905.jpg',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/e61c8d91e37fec3e1dec9325fa4edc52ebeb96bb',
             '',
             0,
             False,
