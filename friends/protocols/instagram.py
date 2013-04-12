@@ -164,3 +164,28 @@ class Instagram(Base):
         """
         return self._send(obj_id, message, 'media/{}/comments'.format(obj_id),
                           stream='reply_to/{}'.format(obj_id))
+
+    def _like(self, obj_id, endpoint, method):
+        token = self._get_access_token()
+        url = self._api_base.format(endpoint=endpoint, token=token)
+
+        if not Downloader(url, method=method,
+                          params=dict(access_token=token)).get_json():
+            raise FriendsError('Failed to {} like {} on Instagram'.format(
+                method, obj_id))
+
+    @feature
+    def like(self, obj_id):
+        endpoint = 'media/{}/likes'.format(obj_id)
+        self._like(obj_id, endpoint, 'POST')
+        self._inc_cell(obj_id, 'likes')
+        self._set_cell(obj_id, 'liked', True)
+        return obj_id
+
+    @feature
+    def unlike(self, obj_id):
+        endpoint = 'media/{}/likes'.format(obj_id)
+        self._like(obj_id, endpoint, 'DELETE')
+        self._dec_cell(obj_id, 'likes')
+        self._set_cell(obj_id, 'liked', False)
+        return obj_id
