@@ -39,8 +39,8 @@ class Instagram(Base):
             endpoint='users/self',
             token=self._get_access_token())
         result = Downloader(url).get_json()
-        self._account.user_id = result.get('id')
-        self._account.user_name = result.get('username')
+        self._account.user_id = result.get('data').get('id')
+        self._account.user_name = result.get('data').get('username')
 
     def _publish_entry(self, entry, stream='messages'):
         """Publish a single update into the Dee.SharedModel."""
@@ -99,6 +99,10 @@ class Instagram(Base):
         parent_id = message_id
         for comment in entry.get('comments', {}).get('data', []):
             if comment:
+                self._publish_comment(
+                    comment, stream='reply_to/{}'.format(parent_id))
+
+    def _publish_comment(self, comment, stream):
                 message_id = comment.get('id')
                 message = comment.get('text')
                 person = comment.get('from')
@@ -107,9 +111,9 @@ class Instagram(Base):
                 icon_uri = person.get('profile_picture')
                 sender_id = person.get('id')
                 sender = person.get('full_name')
-                log.debug('Comment from: ' + sender_nick)
+
                 args = dict(
-                     stream='reply_to/{}'.format(parent_id),
+                     stream=stream,
                      message_id=message_id,
                      message=message,
                      timestamp=timestamp,
@@ -136,3 +140,27 @@ class Instagram(Base):
         """Gather and publish all incoming messages."""
         self.home()
         return self._get_n_rows()
+
+    def _send(self, obj_id, message, endpoint, stream='messages'):
+        token = self._get_access_token()
+
+        url = self._api_base.format(endpoint=endpoint, token=token)
+
+        result = Downloader(
+            url,
+            method='POST',
+            params=dict(access_token=token, text=message)).get_json()
+        new_id = result.get('id')
+        if new_id is None:
+            raise FriendsError('Failed sending to Instagram: {!r}'.format(result))
+
+        url = _api_base.format(id=new_id)
+        comment = Downloader(url, params=dict(access_token=token)).get_json()
+        return self._publish_comment(comment=comment, stream=stream)
+
+    @feature
+    def send_thread(self, obj_id, message):
+        """Write a comment on some existing picture.
+        """
+        return self._send(obj_id, message, 'media/{}/comments'.format(obj_id),
+                          stream='reply_to/{}'.format(obj_id))
