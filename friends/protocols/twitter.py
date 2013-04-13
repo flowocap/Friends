@@ -129,7 +129,7 @@ class Twitter(Base):
             begin, end = url.get('indices', (None, None))
             destination = (url.get('expanded_url') or
                            url.get('display_url') or
-                           url.get('url') or '')
+                           url.get('url'))
             if None not in (begin, end, destination):
                 message = message[:begin] + destination + message[end:]
 
