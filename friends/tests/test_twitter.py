@@ -143,7 +143,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
              'with twitter" class at @cal with @othman  '
-             '<a href="http://t.co/bfj7zkDJ">http://t.co/bfj7zkDJ</a>',
+             '<a href="http://blogs.ischool.berkeley.edu/i290-abdt-s12/">'
+             'http://blogs.ischool.berkeley.edu/i290-abdt-s12/</a>',
              GLib.get_user_cache_dir() +
              '/friends/avatars/0219effc03a3049a622476e6e001a4014f33dc31',
              'https://twitter.com/raffi/status/240556426106372096',
