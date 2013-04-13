@@ -130,7 +130,7 @@ class Twitter(Base):
             destination = (url.get('expanded_url') or
                            url.get('display_url') or
                            url.get('url') or '')
-            if begin and end and destination:
+            if None not in (begin, end, destination):
                 message = message[:begin] + destination + message[end:]
 
         self._publish(
