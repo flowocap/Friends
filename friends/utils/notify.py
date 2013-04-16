@@ -28,13 +28,6 @@ __all__ = [
 from gi.repository import GObject, GdkPixbuf
 
 
-# This is used to prevent spamming too many notifications. Note that
-# friends-dispatcher is not a long running process; this log gets
-# reset every time it exits. The effect is that we won't notify more
-# than 5 times per-invocation, which is every 15 minutes by default.
-NOTIFICATION_LOG = []
-
-
 # This gets conditionally imported at the end of this file, which
 # allows for easier overriding of the following function definition.
 Notify = None
@@ -42,10 +35,8 @@ Notify = None
 
 def notify(title, message, icon_uri='', pixbuf=None):
     """Display the message along with sender's name and avatar."""
-    if (len(NOTIFICATION_LOG) >= 5) or not (title and message):
+    if not (title and message):
         return
-
-    NOTIFICATION_LOG.append(title)
 
     notification = Notify.Notification.new(
         title, message, 'friends')

@@ -141,13 +141,6 @@ class TestNotifications(unittest.TestCase):
         notify('', 'hello, friend!')
         self.assertEqual(Notify.Notification.new.call_count, 0)
 
-    @mock.patch('friends.utils.notify.NOTIFICATION_LOG', [])
-    @mock.patch('friends.utils.notify.Notify')
-    def test_dont_spam(self, Notify):
-        for i in range(100):
-            notify('a', 'b')
-        self.assertEqual(Notify.Notification.new.call_count, 5)
-
     @mock.patch('friends.utils.notify.Notify')
     def test_notify(self, Notify):
         notify('Bob Loblaw', 'hello, friend!', pixbuf='hi!')
