@@ -79,7 +79,7 @@ Architecture: all
 Depends: friends, 
          ${misc:Depends},
          ${python3:Depends},
-         account-plugin-facebook
+         account-plugin-facebook,
 Description: Social integration with the desktop - Facebook
  Provides social networking integration with the desktop
 
@@ -88,7 +88,7 @@ Architecture: all
 Depends: friends, 
          ${misc:Depends},
          ${python3:Depends},
-         account-plugin-twitter
+         account-plugin-twitter,
 Description: Social integration with the desktop - Twitter
  Provides social networking integration with the desktop
 
@@ -97,7 +97,7 @@ Architecture: all
 Depends: friends, 
          ${misc:Depends},
          ${python3:Depends},
-         account-plugin-identica
+         account-plugin-identica,
 Description: Social integration with the desktop - Identi.ca
  Provides social networking integration with the desktop
 
@@ -106,7 +106,7 @@ Architecture: all
 Depends: friends, 
          ${misc:Depends},
          ${python3:Depends},
-         account-plugin-foursquare
+         account-plugin-foursquare,
 Description: Social integration with the desktop - Foursquare
  Provides social networking integration with the desktop
 
@@ -115,6 +115,6 @@ Architecture: all
 Depends: friends, 
          ${misc:Depends},
          ${python3:Depends},
-         account-plugin-flickr
+         account-plugin-flickr,
 Description: Social integration with the desktop - Flickr
  Provides social networking integration with the desktop
