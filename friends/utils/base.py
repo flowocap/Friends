@@ -469,15 +469,17 @@ class Base:
 
     def _get_oauth_headers(self, method, url, data=None, headers=None):
         """Basic wrapper around oauthlib that we use for Twitter and Flickr."""
+        params = self._account.auth.parameters
+
         # "Client" == "Consumer" in oauthlib parlance.
-        client_key = self._account.auth.parameters['ConsumerKey']
-        client_secret = self._account.auth.parameters['ConsumerSecret']
+        key = params.get('ConsumerKey') or params.get('ClientId')
+        secret = params.get('ConsumerSecret') or params.get('ClientSecret')
 
         # "resource_owner" == secret and token.
         resource_owner_key = self._get_access_token()
         resource_owner_secret = self._account.secret_token
-        oauth_client = Client(client_key, client_secret,
-                              resource_owner_key, resource_owner_secret)
+        oauth_client = Client(
+            key, secret, resource_owner_key, resource_owner_secret)
 
         headers = headers or {}
         if data is not None:

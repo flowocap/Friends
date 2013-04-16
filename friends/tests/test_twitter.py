@@ -83,14 +83,17 @@ class TestTwitter(unittest.TestCase):
                 lambda: 'once upon a nonce')
     @mock.patch('oauthlib.oauth1.rfc5849.generate_timestamp',
                 lambda: '1348690628')
-    def test_signatures(self, dload):
+    def test_signatures(self, dload, params=None):
+        if params is None:
+            params = dict(ConsumerKey='consume',
+                          ConsumerSecret='obey')
         self.account.secret_token = 'alpha'
         self.account.access_token = 'omega'
         self.account.auth.id = 6
         self.account.auth.method = 'oauth2'
         self.account.auth.mechanism = 'HMAC-SHA1'
-        self.account.auth.parameters = dict(ConsumerKey='consume',
-                                            ConsumerSecret='obey')
+        self.account.auth.parameters = params
+
         result = '''\
 OAuth oauth_nonce="once%20upon%20a%20nonce", \
 oauth_timestamp="1348690628", \
@@ -112,6 +115,11 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             rate_limiter='limits',
             params=None,
             method='GET')
+
+    def test_signatures_sohu(self):
+        params = dict(ClientId='consume',
+                      ClientSecret='obey')
+        self.test_signatures(params=params)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
