@@ -469,21 +469,17 @@ class Base:
 
     def _get_oauth_headers(self, method, url, data=None, headers=None):
         """Basic wrapper around oauthlib that we use for Twitter and Flickr."""
-        # "Client" == "Consumer" in oauthlib parlance.
+        params = self._account.auth.parameters
 
-        # some plugin has ClientId and ClientSecret, such as Sohu(LP: 1169018).
-        if 'ClientId' in self._account.auth.parameters and 'ClientSecret' in self._account.auth.parameters:
-            client_key = self._account.auth.parameters['ClientId']
-            client_secret = self._account.auth.parameters['ClientSecret']
-        else:
-            client_key = self._account.auth.parameters['ConsumerKey']
-            client_secret = self._account.auth.parameters['ConsumerSecret']
+        # "Client" == "Consumer" in oauthlib parlance.
+        key = params.get('ConsumerKey') or params.get('ClientId')
+        secret = params.get('ConsumerSecret') or params.get('ClientSecret')
 
         # "resource_owner" == secret and token.
         resource_owner_key = self._get_access_token()
         resource_owner_secret = self._account.secret_token
-        oauth_client = Client(client_key, client_secret,
-                              resource_owner_key, resource_owner_secret)
+        oauth_client = Client(
+            key, secret, resource_owner_key, resource_owner_secret)
 
         headers = headers or {}
         if data is not None:
