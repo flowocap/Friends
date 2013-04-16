@@ -1,9 +1,16 @@
-friends (0.1.3daily13.04.10.1-0ubuntu2) UNRELEASED; urgency=low
+friends (0.1.3daily13.04.16.1~13.04-0ubuntu1) raring; urgency=low
 
+  [ Ken VanDine ]
   * debian/control
     - make the service plugins depend on the appropriate account plugins
 
- -- Ken VanDine <ken.vandine@canonical.com>  Tue, 16 Apr 2013 10:19:21 -0400
+  [ Robert Bruce Park ]
+  * Sender information empty for retweets (LP: #1168427)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 190
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 16 Apr 2013 15:51:43 +0000
 
 friends (0.1.3daily13.04.10.1-0ubuntu1) raring; urgency=low
 
