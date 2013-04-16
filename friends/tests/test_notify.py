@@ -36,6 +36,19 @@ class TestNotifications(unittest.TestCase):
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
     @mock.patch('friends.utils.base.notify')
+    def test_publish_no_html(self, notify):
+        Base._do_notify = lambda protocol, stream: True
+        base = Base(FakeAccount())
+        base._publish(
+            message='http://example.com!',
+            message_id='1234',
+            sender='Benjamin',
+            )
+        notify.assert_called_once_with('Benjamin', 'http://example.com!', '')
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base.notify')
     def test_publish_all(self, notify):
         Base._do_notify = lambda protocol, stream: True
         base = Base(FakeAccount())

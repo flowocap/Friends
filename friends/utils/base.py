@@ -35,22 +35,22 @@ from gi.repository import GLib, GObject, EDataServer, EBook
 
 from friends.errors import FriendsError, ContactsError
 from friends.utils.authentication import Authentication
-from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
-from friends.utils.model import Model, persist_model
+from friends.utils.model import Schema, Model, persist_model
 from friends.utils.notify import notify
 from friends.utils.time import ISO8601_FORMAT
 
 
 STUB = lambda *ignore, **kwignore: None
 COMMA_SPACE = ', '
-AVATAR_IDX = COLUMN_INDICES['icon_uri']
-FROM_ME_IDX = COLUMN_INDICES['from_me']
-STREAM_IDX = COLUMN_INDICES['stream']
-SENDER_IDX = COLUMN_INDICES['sender']
-MESSAGE_IDX = COLUMN_INDICES['message']
-ID_IDX = COLUMN_INDICES['message_id']
-ACCT_IDX = COLUMN_INDICES['account_id']
-TIME_IDX = COLUMN_INDICES['timestamp']
+SCHEMA = Schema()
+AVATAR_IDX = SCHEMA.INDICES['icon_uri']
+FROM_ME_IDX = SCHEMA.INDICES['from_me']
+STREAM_IDX = SCHEMA.INDICES['stream']
+SENDER_IDX = SCHEMA.INDICES['sender']
+MESSAGE_IDX = SCHEMA.INDICES['message']
+ID_IDX = SCHEMA.INDICES['message_id']
+ACCT_IDX = SCHEMA.INDICES['account_id']
+TIME_IDX = SCHEMA.INDICES['timestamp']
 
 # See friends/tests/test_protocols.py for further documentation
 LINKIFY_REGEX = re.compile(
@@ -347,16 +347,17 @@ class Base:
                 account_id=self._account.id
                 )
             )
-        # linkify the message
-        kwargs['message'] = linkify_string(kwargs.get('message', ''))
+# linkify the message
+        orig_message = kwargs.get('message', '')
+        kwargs['message'] = linkify_string(orig_message)
         args = []
         # Now iterate through all the column names listed in the
         # SCHEMA, and pop matching column values from the kwargs, in
         # the order which they appear in the SCHEMA. If any are left
         # over at the end of this, raise a TypeError indicating the
         # unexpected column names.
-        for column_name, column_type in SCHEMA:
-            args.append(kwargs.pop(column_name, DEFAULTS[column_type]))
+        for column_name, column_type in SCHEMA.COLUMNS:
+            args.append(kwargs.pop(column_name, SCHEMA.DEFAULTS[column_type]))
         if len(kwargs) > 0:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
@@ -370,7 +371,7 @@ class Base:
                 if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
                     notify(
                         args[SENDER_IDX],
-                        args[MESSAGE_IDX],
+                        orig_message,
                         args[AVATAR_IDX],
                         )
             return message_id in _seen_ids
@@ -506,7 +507,7 @@ class Base:
     def _calculate_row_cell(self, message_id, column_name):
         """Find x,y coords in the model based on message_id and column_name."""
         row_id = _seen_ids.get(message_id)
-        col_idx = COLUMN_INDICES.get(column_name)
+        col_idx = SCHEMA.INDICES.get(column_name)
         if None in (row_id, col_idx):
             raise FriendsError('Cell could not be found.')
         return row_id, col_idx
@@ -520,16 +521,19 @@ class Base:
         """Set a column value associated with a specific message_id."""
         row_id, col_idx = self._calculate_row_cell(message_id, column_name)
         Model.get_row(row_id)[col_idx] = value
+        persist_model()
 
     def _inc_cell(self, message_id, column_name):
         """Increment a column value associated with a specific message_id."""
         row_id, col_idx = self._calculate_row_cell(message_id, column_name)
         Model.get_row(row_id)[col_idx] += 1
+        persist_model()
 
     def _dec_cell(self, message_id, column_name):
         """Decrement a column value associated with a specific message_id."""
         row_id, col_idx = self._calculate_row_cell(message_id, column_name)
         Model.get_row(row_id)[col_idx] -= 1
+        persist_model()
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)

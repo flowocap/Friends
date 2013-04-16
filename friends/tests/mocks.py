@@ -40,9 +40,16 @@ from unittest import mock
 from urllib.parse import urlsplit
 from gi.repository import Dee
 
+# By default, Schema.FILES will look for the system-installed schema
+# file first, and then failing that will look for the one in the
+# source tree, for performance reasons. During testing though, we want
+# to look at the source tree first, so we reverse the list here.
+from friends.utils.model import Schema
+Schema.FILES = list(reversed(Schema.FILES))
+SCHEMA = Schema()
+
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
-from friends.utils.model import COLUMN_TYPES
 
 
 NEWLINE = '\n'
@@ -51,7 +58,7 @@ NEWLINE = '\n'
 # Create a test model that will not interfere with the user's environment.
 # We'll use this object as a mock of the real model.
 TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+TestModel.set_schema_full(SCHEMA.TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -110,6 +117,7 @@ class FakeAccount:
         self.consumer_key = 'consume'
         self.access_token = None
         self.secret_token = None
+        self.avatar_url = None
         self.user_full_name = None
         self.user_name = None
         self.user_id = None

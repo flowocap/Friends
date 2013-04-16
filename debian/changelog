@@ -4,6 +4,40 @@ friends (0.2.0-0ubuntu1) UNRELEASED; urgency=low
 
  -- Robert Bruce Park <robert.park@canonical.com>  Tue, 19 Mar 2013 15:03:58 -0700
 
+friends (0.1.3daily13.04.10.1-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * notifications contain unparsed html around URLs (LP: #1166053)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 187
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 10 Apr 2013 14:41:52 +0000
+
+friends (0.1.3daily13.04.10-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 185
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 10 Apr 2013 05:01:49 +0000
+
+friends (0.1.3daily13.04.09-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 183
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 09 Apr 2013 05:01:54 +0000
+
+friends (0.1.3daily13.04.08-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 181
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 08 Apr 2013 05:01:47 +0000
+
+friends (0.1.3daily13.04.05-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 179
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 05 Apr 2013 05:01:55 +0000
+
 friends (0.1.3daily13.04.03-0ubuntu1) raring; urgency=low
 
   * Automatic snapshot from revision 176

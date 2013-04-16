@@ -24,6 +24,9 @@ import logging
 
 sys.path.insert(0, '.')
 
+# Ignore system-installed schema.
+from friends.tests.mocks import SCHEMA
+
 from gi.repository import GLib
 from friends.utils.logging import initialize
 

@@ -75,12 +75,17 @@ class TestTwitter(unittest.TestCase):
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='some clever fake data',
                                   TokenSecret='sssssshhh!',
-                                  UserId='rickygervais',
-                                  ScreenName='Ricky Gervais'))
+                                  UserId='1234',
+                                  ScreenName='stephenfry'))
+    @mock.patch('friends.protocols.twitter.Twitter._showuser',
+                return_value=dict(name='Stephen Fry',
+                                  profile_image_url='http://example.com/me.jpg'))
     def test_successful_authentication(self, *mocks):
         self.assertTrue(self.protocol._login())
-        self.assertEqual(self.account.user_name, 'Ricky Gervais')
-        self.assertEqual(self.account.user_id, 'rickygervais')
+        self.assertEqual(self.account.avatar_url, 'http://example.com/me.jpg')
+        self.assertEqual(self.account.user_full_name, 'Stephen Fry')
+        self.assertEqual(self.account.user_name, 'stephenfry')
+        self.assertEqual(self.account.user_id, '1234')
         self.assertEqual(self.account.access_token, 'some clever fake data')
         self.assertEqual(self.account.secret_token, 'sssssshhh!')
 
@@ -435,16 +440,51 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             dict(trim_user='true'))
 
     def test_retweet(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        tweet = dict(tweet='twit')
+        get_url = self.protocol._get_url = mock.Mock(return_value=tweet)
         publish = self.protocol._publish_tweet = mock.Mock(
             return_value='tweet permalink')
 
         self.assertEqual(self.protocol.retweet('1234'), 'tweet permalink')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with(tweet)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/retweet/1234.json',
             dict(trim_user='true'))
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-retweet.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_retweet_with_data(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.user_name = 'some_guy'
+        self.account.user_full_name = 'Guy Man'
+        self.account.avatar_url = 'http://example.com/me.jpg'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(
+            self.protocol.retweet('240558470661799936'),
+            'https://twitter.com/some_guy/status/322807141108944896')
+        self.assertEqual(1, TestModel.get_n_rows())
+
+        expected_row = [
+            'twitter', 88, '322807141108944896',
+            'messages', 'Guy Man', '836242932', 'some_guy', True,
+            '2013-04-12T20:23:14Z', 'RT @ubuntudesigners: Reading \'Core utility'
+            ' apps visual exploration\' at Design <a href="http://t.co/'
+            '36tT53C37n">http://t.co/36tT53C37n</a>',
+            GLib.get_user_cache_dir() +
+            '/friends/avatars/6e8af1e6860da04a6f42cb1e6934e191f7c38c6d',
+            'https://twitter.com/some_guy/status/322807141108944896',
+            0, False, '', '', '', '', '', '', '', 0.0, 0.0,
+            ]
+        self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
     def test_unfollow(self):
         get_url = self.protocol._get_url = mock.Mock()
