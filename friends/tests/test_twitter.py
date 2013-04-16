@@ -76,8 +76,6 @@ class TestTwitter(unittest.TestCase):
                                   profile_image_url='http://example.com/me.jpg'))
     def test_successful_authentication(self, *mocks):
         self.assertTrue(self.protocol._login())
-        self.assertEqual(self.account.avatar_url, 'http://example.com/me.jpg')
-        self.assertEqual(self.account.user_full_name, 'Stephen Fry')
         self.assertEqual(self.account.user_name, 'stephenfry')
         self.assertEqual(self.account.user_id, '1234')
         self.assertEqual(self.account.access_token, 'some clever fake data')
@@ -455,7 +453,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         publish.assert_called_with(tweet)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/retweet/1234.json',
-            dict(trim_user='true'))
+            dict(trim_user='false'))
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
@@ -466,27 +464,26 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_retweet_with_data(self, *mocks):
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
-        self.account.user_name = 'some_guy'
-        self.account.user_full_name = 'Guy Man'
-        self.account.avatar_url = 'http://example.com/me.jpg'
+        self.account.user_name = 'therealrobru'
         self.account.auth.parameters = dict(
             ConsumerKey='key',
             ConsumerSecret='secret')
         self.assertEqual(0, TestModel.get_n_rows())
         self.assertEqual(
             self.protocol.retweet('240558470661799936'),
-            'https://twitter.com/some_guy/status/322807141108944896')
+            'https://twitter.com/therealrobru/status/324220250889543682')
         self.assertEqual(1, TestModel.get_n_rows())
 
+        self.maxDiff = None
         expected_row = [
-            'twitter', 88, '322807141108944896',
-            'messages', 'Guy Man', '836242932', 'some_guy', True,
-            '2013-04-12T20:23:14Z', 'RT @ubuntudesigners: Reading \'Core utility'
-            ' apps visual exploration\' at Design <a href="http://t.co/'
-            '36tT53C37n">http://t.co/36tT53C37n</a>',
+            'twitter', 88, '324220250889543682',
+            'messages', 'Robert Bruce', '836242932', 'therealrobru', True,
+            '2013-04-16T17:58:26Z', 'RT @tarek_ziade: Just found a "Notification '
+            'of Inspection" card in the bottom of my bag. looks like they were '
+            'curious about those raspbe ...',
             GLib.get_user_cache_dir() +
-            '/friends/avatars/6e8af1e6860da04a6f42cb1e6934e191f7c38c6d',
-            'https://twitter.com/some_guy/status/322807141108944896',
+            '/friends/avatars/1444c8a86dbbe7a6f5f89a8135e770824d7b22bc',
+            'https://twitter.com/therealrobru/status/324220250889543682',
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
