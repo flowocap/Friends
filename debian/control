@@ -103,7 +103,6 @@ Description: Social integration with the desktop - Identi.ca
 
 Package: friends-foursquare
 Architecture: all
-Depends: friends, ${misc:Depends}, ${python3:Depends}
 Depends: friends, 
          ${misc:Depends},
          ${python3:Depends},
