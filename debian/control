@@ -76,30 +76,46 @@ Description: Social integration with the desktop
 
 Package: friends-facebook
 Architecture: all
-Depends: friends, ${misc:Depends}, ${python3:Depends}
+Depends: friends, 
+         ${misc:Depends},
+         ${python3:Depends},
+         account-plugin-facebook
 Description: Social integration with the desktop - Facebook
  Provides social networking integration with the desktop
 
 Package: friends-twitter
 Architecture: all
-Depends: friends, ${misc:Depends}, ${python3:Depends}
+Depends: friends, 
+         ${misc:Depends},
+         ${python3:Depends},
+         account-plugin-twitter
 Description: Social integration with the desktop - Twitter
  Provides social networking integration with the desktop
 
 Package: friends-identica
 Architecture: all
-Depends: friends, ${misc:Depends}, ${python3:Depends}
+Depends: friends, 
+         ${misc:Depends},
+         ${python3:Depends},
+         account-plugin-identica
 Description: Social integration with the desktop - Identi.ca
  Provides social networking integration with the desktop
 
 Package: friends-foursquare
 Architecture: all
 Depends: friends, ${misc:Depends}, ${python3:Depends}
+Depends: friends, 
+         ${misc:Depends},
+         ${python3:Depends},
+         account-plugin-foursquare
 Description: Social integration with the desktop - Foursquare
  Provides social networking integration with the desktop
 
 Package: friends-flickr
 Architecture: all
-Depends: friends, ${misc:Depends}, ${python3:Depends}
+Depends: friends, 
+         ${misc:Depends},
+         ${python3:Depends},
+         account-plugin-flickr
 Description: Social integration with the desktop - Flickr
  Provides social networking integration with the desktop
