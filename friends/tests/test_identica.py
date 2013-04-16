@@ -178,7 +178,7 @@ class TestIdentica(unittest.TestCase):
         publish.assert_called_with(tweet)
         get_url.assert_called_with(
             'http://identi.ca/api/statuses/retweet/1234.json',
-            dict(trim_user='true'))
+            dict(trim_user='false'))
 
     def test_unfollow(self):
         get_url = self.protocol._get_url = mock.Mock()

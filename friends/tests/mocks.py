@@ -119,7 +119,6 @@ class FakeAccount:
     def __init__(self, service=None, account_id=88):
         self.access_token = None
         self.secret_token = None
-        self.avatar_url = None
         self.user_full_name = None
         self.user_name = None
         self.user_id = None

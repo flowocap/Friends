@@ -78,11 +78,6 @@ class Twitter(Base):
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('UserId')
         self._account.user_name = authdata.get('ScreenName')
-        user = self._showuser(self._account.user_id)
-        self._account.user_full_name = user.get('name', '')
-        self._account.avatar_url = (user.get('profile_image_url_https') or
-                                    user.get('profile_image_url') or
-                                    '')
 
     def _get_url(self, url, data=None):
         """Access the Twitter API with correct OAuth signed headers."""
@@ -288,15 +283,7 @@ class Twitter(Base):
     def retweet(self, message_id):
         """Republish somebody else's tweet with your name on it."""
         url = self._retweet.format(message_id)
-        tweet = self._get_url(url, dict(trim_user='true'))
-        user = tweet.get('user', {}) or tweet.get('sender', {})
-
-        # Fill in the blanks...
-        user.update(
-            name=self._account.user_full_name,
-            screen_name=self._account.user_name,
-            profile_image_url=self._account.avatar_url,
-        )
+        tweet = self._get_url(url, dict(trim_user='false'))
 
         return self._publish_tweet(tweet)
 
