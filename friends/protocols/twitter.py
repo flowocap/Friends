@@ -120,9 +120,22 @@ class Twitter(Base):
         permalink = self._tweet_permalink.format(
             user_id=screen_name,
             tweet_id=tweet_id)
+
+        message = tweet.get('text', '')
+
+        # Resolve t.co links.
+        entities = tweet.get('entities', {})
+        for url in (entities.get('urls', []) + entities.get('media', [])):
+            begin, end = url.get('indices', (None, None))
+            destination = (url.get('expanded_url') or
+                           url.get('display_url') or
+                           url.get('url'))
+            if None not in (begin, end, destination):
+                message = message[:begin] + destination + message[end:]
+
         self._publish(
             message_id=tweet_id,
-            message=tweet.get('text', ''),
+            message=message,
             timestamp=iso8601utc(parsetime(tweet.get('created_at', ''))),
             stream=stream,
             sender=user.get('name', ''),
