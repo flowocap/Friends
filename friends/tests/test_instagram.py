@@ -85,6 +85,25 @@ class TestInstagram(unittest.TestCase):
         self.assertIsNone(self.account.access_token)
         self.assertIsNone(self.account.user_name)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
+    @mock.patch('friends.utils.authentication.Authentication.login',
+                return_value=dict(AccessToken='abc'))
+    @mock.patch('friends.protocols.instagram.Downloader.get_json',
+                return_value=dict(
+                    error=dict(message='Bad access token',
+                               type='OAuthException',
+                               code=190)))
+    def test_error_response(self, *mocks):
+        with LogMock('friends.utils.base',
+                     'friends.protocols.instagram') as log_mock:
+            self.assertRaises(
+                FriendsError,
+                self.protocol.home,
+                )
+            contents = log_mock.empty(trim=False)
+        self.assertEqual(contents, 'Logging in to Instagram\n')
+
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'instagram-full.dat'))
     @mock.patch('friends.utils.base.Model', TestModel)
