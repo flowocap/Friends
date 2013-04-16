@@ -6,10 +6,7 @@ friends (0.1.3daily13.04.10.1-0ubuntu1) raring; urgency=low
   [ Ubuntu daily release ]
   * Automatic snapshot from revision 187
 
-  [ Kobe Lee ]
-  * Add a judgement about "ClientId" and "ClientSecret" in function _get_oauth_headers(base.py) (LP: #1169018)
-
- -- Kobe Lee (kylinkobe) <kobe24_lixiang@126.com>  Mon, 15 Apr 2013 11:31:58 +0800
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 10 Apr 2013 14:41:52 +0000
 
 friends (0.1.3daily13.04.10-0ubuntu1) raring; urgency=low
 
