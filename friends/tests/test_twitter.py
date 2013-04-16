@@ -71,9 +71,6 @@ class TestTwitter(unittest.TestCase):
                                   TokenSecret='sssssshhh!',
                                   UserId='1234',
                                   ScreenName='stephenfry'))
-    @mock.patch('friends.protocols.twitter.Twitter._showuser',
-                return_value=dict(name='Stephen Fry',
-                                  profile_image_url='http://example.com/me.jpg'))
     def test_successful_authentication(self, *mocks):
         self.assertTrue(self.protocol._login())
         self.assertEqual(self.account.user_name, 'stephenfry')
