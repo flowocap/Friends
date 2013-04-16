@@ -3,15 +3,29 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to friends's documentation!
-===================================
+The Superclass of all Protocols
+===============================
 
-Contents:
+.. automodule:: friends.utils.base
+   :members:
+   :special-members:
+   :private-members:
 
-.. toctree::
-   :maxdepth: 2
+Dispatcher
+==========
 
+.. automodule:: friends.service.dispatcher
+   :members:
+   :special-members:
+   :private-members:
 
+libsoup wrappers
+================
+
+.. automodule:: friends.utils.http
+   :members:
+   :special-members:
+   :private-members:
 
 Indices and tables
 ==================
@@ -19,4 +33,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
