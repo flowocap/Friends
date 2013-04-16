@@ -32,7 +32,7 @@ from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
-from friends.errors import FriendsError
+from friends.errors import FriendsError, ignored
 
 
 TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
@@ -78,6 +78,11 @@ class Twitter(Base):
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('UserId')
         self._account.user_name = authdata.get('ScreenName')
+        user = self._showuser(self._account.user_id)
+        self._account.user_full_name = user.get('name', '')
+        self._account.avatar_url = (user.get('profile_image_url_https') or
+                                    user.get('profile_image_url') or
+                                    '')
 
     def _get_url(self, url, data=None):
         """Access the Twitter API with correct OAuth signed headers."""
@@ -256,12 +261,10 @@ class Twitter(Base):
         consider it a regular message, and it won't be part of any
         conversation.
         """
-        try:
+        with ignored(FriendsError):
             sender = '@{}'.format(self._fetch_cell(message_id, 'sender_nick'))
             if message.find(sender) < 0:
                 message = sender + ' ' + message
-        except FriendsError:
-            pass
         url = self._api_base.format(endpoint='statuses/update')
         tweet = self._get_url(url, dict(in_reply_to_status_id=message_id,
                                         status=message))
@@ -284,6 +287,15 @@ class Twitter(Base):
         """Republish somebody else's tweet with your name on it."""
         url = self._retweet.format(message_id)
         tweet = self._get_url(url, dict(trim_user='true'))
+        user = tweet.get('user', {}) or tweet.get('sender', {})
+
+        # Fill in the blanks...
+        user.update(
+            name=self._account.user_full_name,
+            screen_name=self._account.user_name,
+            profile_image_url=self._account.avatar_url,
+        )
+
         return self._publish_tweet(tweet)
 
 # https://dev.twitter.com/docs/api/1.1/post/friendships/destroy
@@ -356,7 +368,8 @@ class Twitter(Base):
 # https://dev.twitter.com/docs/api/1.1/get/users/show
     def _showuser(self, uid):
         """Get all the information about a twitter user."""
-        url = self._api_base.format(endpoint="users/show") + "?user_id={}".format(uid)
+        url = self._api_base.format(
+            endpoint='users/show') + '?user_id={}'.format(uid)
         return self._get_url(url)
 
     def _create_contact(self, userdata):

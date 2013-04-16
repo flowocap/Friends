@@ -29,6 +29,8 @@ from calendar import timegm
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
+from friends.errors import ignored
+
 
 # Date time formats.  Assume no microseconds and no timezone.
 ISO8601_FORMAT = '%Y-%m-%dT%H:%M:%S'
@@ -119,11 +121,8 @@ def parsetime(t):
             # No timezone string was found.
             tz_offset = timedelta()
         for parser in PARSERS:
-            try:
+            with ignored(ValueError):
                 parsed_dt = parser(naive_t)
-            except ValueError:
-                pass
-            else:
                 break
         else:
             # Nothing matched.

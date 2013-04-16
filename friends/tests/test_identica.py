@@ -53,6 +53,8 @@ class TestIdentica(unittest.TestCase):
         self.log_mock.stop()
         shutil.rmtree(self._temp_cache)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Downloader.get_json',
@@ -62,6 +64,10 @@ class TestIdentica(unittest.TestCase):
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='some clever fake data',
                                   TokenSecret='sssssshhh!'))
@@ -169,12 +175,13 @@ class TestIdentica(unittest.TestCase):
             dict(trim_user='true'))
 
     def test_retweet(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        tweet=dict(tweet='twit')
+        get_url = self.protocol._get_url = mock.Mock(return_value=tweet)
         publish = self.protocol._publish_tweet = mock.Mock()
 
         self.protocol.retweet('1234')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with(tweet)
         get_url.assert_called_with(
             'http://identi.ca/api/statuses/retweet/1234.json',
             dict(trim_user='true'))

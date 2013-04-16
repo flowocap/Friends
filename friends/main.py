@@ -36,6 +36,7 @@ from gi.repository import GLib
 DBusGMainLoop(set_as_default=True)
 loop = GLib.MainLoop()
 
+from friends.errors import ignored
 
 # Short-circuit everything else if we are going to enter test-mode.
 from friends.utils.options import Options
@@ -48,10 +49,8 @@ if args.test:
     populate_fake_data()
     Dispatcher()
 
-    try:
+    with ignored(KeyboardInterrupt):
         loop.run()
-    except KeyboardInterrupt:
-        pass
 
     sys.exit(0)
 
@@ -102,11 +101,8 @@ def main():
         sys.exit('friends-dispatcher is already running! Abort!')
 
     if args.performance:
-        try:
+        with ignored(ImportError):
             import yappi
-        except ImportError:
-            pass
-        else:
             yappi.start()
 
     # Initialize the logging subsystem.
@@ -138,11 +134,9 @@ def main():
     # Don't initialize caches until the model is synchronized
     Model.connect('notify::synchronized', setup)
 
-    try:
+    with ignored(KeyboardInterrupt):
         log.info('Starting friends-dispatcher main loop')
         loop.run()
-    except KeyboardInterrupt:
-        pass
 
     log.info('Stopped friends-dispatcher main loop')
 
@@ -167,13 +161,10 @@ def setup(model, param):
     # data for the purposes of faster duplicate checks.
     initialize_caches()
 
-    # Allow publishing.
-    try:
+    # Exception indicates that lock was already released, which is harmless.
+    with ignored(RuntimeError):
+        # Allow publishing.
         _publish_lock.release()
-    except RuntimeError:
-        # Happens if the lock was already released previously, which
-        # is safe to ignore. Dispatcher goes on to publish normally.
-        pass
 
 
 if __name__ == '__main__':

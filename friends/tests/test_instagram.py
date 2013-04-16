@@ -59,11 +59,15 @@ class TestInstagram(unittest.TestCase):
         self.assertEqual(Instagram.get_features(),
             ['home', 'like', 'receive', 'send_thread', 'unlike'])
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='abc'))
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'instagram-login.dat'))
-    def test_successful_login(self, mock):
+    def test_successful_login(self, *mock):
         # Test that a successful response from instagram.com returning
         # the user's data, sets up the account dict correctly.
         self.protocol._login()
@@ -71,9 +75,11 @@ class TestInstagram(unittest.TestCase):
         self.assertEqual(self.account.user_name, 'bpersons')
         self.assertEqual(self.account.user_id, '801')
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
-    def test_login_unsuccessful_authentication(self, mock):
+    def test_login_unsuccessful_authentication(self, *mock):
         # The user is not already logged in, but the act of logging in fails.
         self.assertRaises(AuthorizationError, self.protocol._login)
         self.assertIsNone(self.account.access_token)

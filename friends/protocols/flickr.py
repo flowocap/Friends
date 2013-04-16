@@ -82,7 +82,7 @@ class Flickr(Base):
 # http://www.flickr.com/services/api/flickr.people.getInfo.html
     def _get_avatar(self, nsid):
         args = dict(
-            api_key=self._account.auth.parameters.get('ConsumerKey'),
+            api_key=self._account.consumer_key,
             method='flickr.people.getInfo',
             format='json',
             nojsoncallback='1',
@@ -109,7 +109,7 @@ class Flickr(Base):
         self._get_access_token()
 
         args = dict(
-            api_key=self._account.auth.parameters.get('ConsumerKey'),
+            api_key=self._account.consumer_key,
             method='flickr.photos.getContactsPhotos',
             format='json',
             nojsoncallback='1',
@@ -186,7 +186,7 @@ class Flickr(Base):
         self._get_access_token()
 
         args = dict(
-            api_key=self._account.auth.parameters.get('ConsumerKey'),
+            api_key=self._account.consumer_key,
             title=title,
             )
 

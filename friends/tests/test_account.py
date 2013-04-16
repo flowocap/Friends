@@ -17,7 +17,6 @@
 
 __all__ = [
     'TestAccount',
-    'TestAccountManager',
     ]
 
 
@@ -25,15 +24,16 @@ import unittest
 
 from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
-from friends.tests.mocks import FakeAccount, LogMock, SettingsIterMock
-from friends.tests.mocks import TestModel, mock
-from friends.utils.account import Account, AccountManager
+from friends.tests.mocks import FakeAccount, LogMock
+from friends.tests.mocks import TestModel, LogMock, mock
+from friends.utils.account import Account, _find_accounts_uoa
 
 
 class TestAccount(unittest.TestCase):
     """Test Account class."""
 
     def setUp(self):
+        self.log_mock = LogMock('friends.utils.account')
         def connect_side_effect(signal, callback, account):
             # The account service provides a .connect method that connects a
             # signal to a callback.  We have to mock a side effect into the
@@ -49,10 +49,12 @@ class TestAccount(unittest.TestCase):
                 'get_credentials_id.return_value': 'fake credentials',
                 'get_method.return_value': 'fake method',
                 'get_mechanism.return_value': 'fake mechanism',
-                'get_parameters.return_value': 'fake parameters',
+                'get_parameters.return_value': {
+                            'ConsumerKey': 'fake_key',
+                            'ConsumerSecret': 'fake_secret'},
                 }),
             'get_account.return_value': mock.Mock(**{
-                'get_settings_iter.return_value': SettingsIterMock(),
+                'get_settings_dict.return_value': dict(send_enabled=True),
                 'id': 'fake_id',
                 'get_provider_name.return_value': 'flickr',
                 }),
@@ -63,17 +65,21 @@ class TestAccount(unittest.TestCase):
             })
         self.account = Account(self.account_service)
 
+    def tearDown(self):
+        self.log_mock.stop()
+
     def test_account_auth(self):
         # Test that the constructor initializes the 'auth' attribute.
         auth = self.account.auth
-        self.assertEqual(auth.id, 'fake credentials')
-        self.assertEqual(auth.method, 'fake method')
-        self.assertEqual(auth.mechanism, 'fake mechanism')
-        self.assertEqual(auth.parameters, 'fake parameters')
+        self.assertEqual(auth.get_credentials_id(), 'fake credentials')
+        self.assertEqual(auth.get_method(), 'fake method')
+        self.assertEqual(auth.get_mechanism(), 'fake mechanism')
+        self.assertEqual(auth.get_parameters(),
+                         dict(ConsumerKey='fake_key',
+                              ConsumerSecret='fake_secret'))
 
     def test_account_id(self):
         self.assertEqual(self.account.id, 'fake_id')
-        self.assertEqual(self.account.protocol_name, 'flickr')
 
     def test_account_service(self):
         # The protocol attribute refers directly to the protocol used.
@@ -92,24 +98,23 @@ class TestAccount(unittest.TestCase):
         # constructor.  Test that it has the expected original key value.
         self.assertEqual(self.account.send_enabled, True)
 
-    def test_iter_filter(self):
-        # The get_settings_iter() filters everything that doesn't start with
+    def test_dict_filter(self):
+        # The get_settings_dict() filters everything that doesn't start with
         # 'friends/'
-        self._callback_account.get_settings_iter.assert_called_with('friends/')
+        self._callback_account.get_settings_dict.assert_called_with('friends/')
 
     def test_on_account_changed_signal(self):
         # Test that when the account changes, and a 'changed' signal is
         # received, the callback is called and the account is updated.
         #
         # Start by simulating a change in the account service.
-        other_iter = SettingsIterMock()
-        other_iter.items = [
-            (True, 'send_enabled', False),
-            (True, 'bee', 'two'),
-            (True, 'cat', 'three'),
-            ]
-        iter = self.account_service.get_account().get_settings_iter
-        iter.return_value = other_iter
+        other_dict = dict(
+            send_enabled=False,
+            bee='two',
+            cat='three',
+            )
+        adict = self.account_service.get_account().get_settings_dict
+        adict.return_value = other_dict
         # Check that the signal has been connected.
         self.assertEqual(self._callback_signal, 'changed')
         # Check that the account is the object we expect it to be.
@@ -122,102 +127,18 @@ class TestAccount(unittest.TestCase):
         self.assertFalse(hasattr(self.account, 'bee'))
         self.assertFalse(hasattr(self.account, 'cat'))
 
-    def test_enabled(self):
-        # .enabled() just passes through from the account service.
-        self.account_service.get_enabled.return_value = True
-        self.assertTrue(self.account.enabled)
-        self.account_service.get_enabled.return_value = False
-        self.assertFalse(self.account.enabled)
-
-    def test_equal(self):
-        # Two accounts are equal if their account services are equal.
-        other = Account(self.account_service)
-        self.assertEqual(self.account, other)
-        assert not self.account == None
-
-    def test_unequal(self):
-        # Two accounts are unequal if their account services are unequal.  The
-        # other mock service has to at least support the basic required API.
-        other = Account(mock.Mock(**{
-            'get_account.return_value': mock.Mock(**{
-                'get_settings_iter.return_value': SettingsIterMock(),
-                    # It's okay if the provider names are the same; the test
-                    # is for whether the account services are the same or not,
-                    # and in this test, they'll be different mock instances.
-                    'get_provider_name.return_value': 'flickr',
-                }),
-            }))
-        self.assertNotEqual(self.account, other)
-        assert self.account != None
-
-
-accounts_manager = mock.Mock()
-accounts_manager.new_for_service_type(
-    'microblogging').get_enabled_account_services.return_value = []
-
-
-@mock.patch('gi.repository.Accounts.Manager', accounts_manager)
-@mock.patch('friends.utils.account.Account', FakeAccount)
-class TestAccountManager(unittest.TestCase):
-    """Test the AccountManager API."""
-
-    def setUp(self):
-        TestModel.clear()
-        self.account_service = mock.Mock()
-
+    @mock.patch('friends.utils.account.manager')
+    @mock.patch('friends.utils.account.Account')
     @mock.patch('friends.utils.account.Accounts')
-    def test_get_service(self, accounts_mock):
-        manager = AccountManager()
-        manager_mock = mock.Mock()
-        account_mock = mock.Mock()
-        service_mock = mock.Mock()
-        manager_mock.get_account.return_value = account_mock
-        account_mock.list_services.return_value = [service_mock]
-        account_service_mock = accounts_mock.AccountService.new(account_mock,
-                                                                service_mock)
-        account_service_mock.get_service(
-            ).get_display_name().lower.return_value = 'protocol'
-
-        service = manager._get_service(manager_mock, 10)
-
-        manager_mock.get_account.assert_called_once_with(10)
-        account_mock.list_services.assert_called_once_with()
-        accounts_mock.AccountService.new.assert_called_with(account_mock,
-                                                            service_mock)
-
-    def test_account_manager_add_new_account(self):
-        # Explicitly adding a new account puts the account's global_id into
-        # the account manager's mapping.
-        manager = AccountManager()
-        manager._add_new_account(self.account_service)
-        self.assertIn(88, manager._accounts)
-
-    def test_account_manager_enabled_event(self):
-        manager = AccountManager()
-        manager._get_service = mock.Mock()
-        manager._get_service.return_value = mock.Mock()
-        manager._add_new_account = mock.Mock()
-        manager._add_new_account.return_value = account = mock.Mock()
-        manager._on_enabled_event(accounts_manager, 2)
-        account.protocol.assert_called_once_with('receive')
-
-
-@mock.patch('gi.repository.Accounts.Manager', accounts_manager)
-class TestAccountManagerRealAccount(unittest.TestCase):
-    """Test of the AccountManager API requiring the real Account class.
-
-    You'll need to guarantee other mocks are in place such that the real
-    accounts are not touched.
-    """
-    def setUp(self):
-        self.account_service = mock.Mock()
-
-    def test_account_manager_add_new_account_unsupported(self):
-        fake_account = self.account_service.get_account()
-        fake_account.get_provider_name.return_value = 'no service'
-        manager = AccountManager()
-        with LogMock('friends.utils.account') as log_mock:
-            manager._add_new_account(self.account_service)
-            log_contents = log_mock.empty(trim=False)
-        self.assertNotIn('no service', manager._accounts)
-        self.assertEqual(log_contents, 'Unsupported protocol: no service\n')
+    def test_find_accounts(self, accts, acct, manager):
+        service = mock.Mock()
+        get_enabled = manager.get_enabled_account_services
+        get_enabled.return_value = [service]
+        manager.reset_mock()
+        accounts = _find_accounts_uoa()
+        get_enabled.assert_called_once_with()
+        acct.assert_called_once_with(service)
+        self.assertEqual(accounts, {acct().id: acct()})
+        self.assertEqual(self.log_mock.empty(),
+                         'Flickr (fake_id) got send_enabled: True\n'
+                         'Accounts found: 1\n')

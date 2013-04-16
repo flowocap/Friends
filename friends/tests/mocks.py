@@ -21,7 +21,6 @@ __all__ = [
     'FakeAccount',
     'FakeSoupMessage',
     'LogMock',
-    'SettingsIterMock',
     'mock',
     ]
 
@@ -37,6 +36,7 @@ from io import StringIO
 from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
 from queue import Empty, Queue
+from unittest import mock
 from urllib.parse import urlsplit
 from gi.repository import Dee
 
@@ -50,13 +50,6 @@ SCHEMA = Schema()
 
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 NEWLINE = '\n'
@@ -107,18 +100,24 @@ def populate_fake_data():
 
 
 class FakeAuth:
-    id = 'fakeauth id'
-    method = 'fakeauth method'
-    parameters = {'ConsumerKey': 'fake', 'ConsumerSecret': 'alsofake'}
-    mechanism = 'fakeauth mechanism'
+    get_credentials_id = lambda *ignore: 'fakeauth id'
+    get_method = lambda *ignore: 'fakeauth method'
+    get_mechanism = lambda *ignore: 'fakeauth mechanism'
+    get_parameters = lambda *ignore: {
+        'ConsumerKey': 'fake',
+        'ConsumerSecret': 'alsofake',
+        }
 
 
 class FakeAccount:
     """A fake account object for testing purposes."""
 
     def __init__(self, service=None, account_id=88):
+        self.consumer_secret = 'secret'
+        self.consumer_key = 'consume'
         self.access_token = None
         self.secret_token = None
+        self.avatar_url = None
         self.user_full_name = None
         self.user_name = None
         self.user_id = None
@@ -185,23 +184,6 @@ class FakeSoupMessage:
         self.method = method
         self.url = url
         return self
-
-
-class SettingsIterMock:
-    """Mimic the weird libaccounts AgAccountSettingIter semantics.
-
-    The default Python mapping of this object does not follow standard Python
-    iterator semantics.
-    """
-
-    def __init__(self):
-        self.items = [(True, 'send_enabled', True)]
-
-    def next(self):
-        if self.items:
-            return self.items.pop()
-        else:
-            return (False, None, None)
 
 
 class LogMock:
