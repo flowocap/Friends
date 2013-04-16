@@ -1,3 +1,10 @@
+friends (0.1.3daily13.04.10.1-0ubuntu2) UNRELEASED; urgency=low
+
+  * debian/control
+    - make the service plugins depend on the appropriate account plugins
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Tue, 16 Apr 2013 10:19:21 -0400
+
 friends (0.1.3daily13.04.10.1-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]
