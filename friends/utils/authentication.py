@@ -55,6 +55,7 @@ class Authentication:
                 account_id,
                 'No AgService found, is your UOA plugin written correctly?')
         self._reply = None
+        self._error = None
 
     def login(self):
         auth = self.auth
@@ -73,6 +74,13 @@ class Authentication:
             # callback gets called to give us the response to return.
             time.sleep(0.5)
             timeout -= 1
+        if self._error is not None:
+            exception = AuthorizationError(self.account_id, self._error.message)
+            # Mardy says this error can happen during normal operation.
+            if exception.message.endswith('userActionFinished error: 10'):
+                log.error(str(exception))
+            else:
+                raise exception
         if self._reply is None:
             raise AuthorizationError(self.account_id, 'Login timed out.')
         if 'AccessToken' not in self._reply:
@@ -82,12 +90,9 @@ class Authentication:
         return self._reply
 
     def _login_cb(self, session, reply, error, user_data):
-        self._reply = reply
+        # Don't raise Exceptions here because this callback runs in
+        # MainThread, not the thread you expect it to.
         if error:
-            exception = AuthorizationError(self.account_id, error.message)
-            # Mardy says this error can happen during normal operation.
-            if error.message.endswith('userActionFinished error: 10'):
-                log.error(str(exception))
-            else:
-                raise exception
-        log.debug('Login completed')
+            self._error = error
+        self._reply = reply
+        log.debug('_login_cb completed')

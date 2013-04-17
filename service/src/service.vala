@@ -63,6 +63,15 @@ public class Master : Object
                 debug ("Purged %u rows.", purged);
             }
         );
+        acct_manager.account_created.connect ((manager, account_id) => {
+                debug ("Account %u created from UOA, refreshing", account_id);
+                try {
+                    dispatcher.Refresh ();
+                } catch (IOError e) {
+                    warning ("Failed to refresh - %s", e.message);
+                }
+            }
+        );
 
         resources = Dee.ResourceManager.get_default ();
         model = new Dee.SequenceModel ();

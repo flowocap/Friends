@@ -4,6 +4,12 @@ friends (0.2.0-0ubuntu1) UNRELEASED; urgency=low
 
  -- Robert Bruce Park <robert.park@canonical.com>  Tue, 19 Mar 2013 15:03:58 -0700
 
+friends (0.1.3daily13.04.17~13.04-0ubuntu2) UNRELEASED; urgency=low
+
+  * Initiate a refresh after a new account gets created
+
+ -- Ken VanDine <ken.vandine@canonical.com>  Wed, 17 Apr 2013 11:21:09 -0400
+
 friends (0.1.3daily13.04.17~13.04-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]
