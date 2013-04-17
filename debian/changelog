@@ -1,8 +1,16 @@
-friends (0.1.3daily13.04.17~13.04-0ubuntu2) UNRELEASED; urgency=low
+friends (0.1.3daily13.04.17.1~13.04-0ubuntu1) raring; urgency=low
 
+  [ Ken VanDine ]
   * Initiate a refresh after a new account gets created
 
- -- Ken VanDine <ken.vandine@canonical.com>  Wed, 17 Apr 2013 11:21:09 -0400
+  [ Robert Bruce Park ]
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb(): Timeout was reached (account: 1) (LP: #1159552)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 198
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 17 Apr 2013 20:30:54 +0000
 
 friends (0.1.3daily13.04.17~13.04-0ubuntu1) raring; urgency=low
 
