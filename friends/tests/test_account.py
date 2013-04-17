@@ -127,6 +127,26 @@ class TestAccount(unittest.TestCase):
         self.assertFalse(hasattr(self.account, 'bee'))
         self.assertFalse(hasattr(self.account, 'cat'))
 
+    @mock.patch('friends.utils.account.Account._on_account_changed')
+    @mock.patch('friends.utils.account.protocol_manager')
+    def test_account_consumer_key(self, *mocks):
+        account_service = mock.Mock()
+        account_service.get_auth_data().get_parameters.return_value = (
+            dict(ConsumerKey='key', ConsumerSecret='secret'))
+        acct = Account(account_service)
+        self.assertEqual(acct.consumer_key, 'key')
+        self.assertEqual(acct.consumer_secret, 'secret')
+
+    @mock.patch('friends.utils.account.Account._on_account_changed')
+    @mock.patch('friends.utils.account.protocol_manager')
+    def test_account_client_id_sohu_style(self, *mocks):
+        account_service = mock.Mock()
+        account_service.get_auth_data().get_parameters.return_value = (
+            dict(ClientId='key', ClientSecret='secret'))
+        acct = Account(account_service)
+        self.assertEqual(acct.consumer_key, 'key')
+        self.assertEqual(acct.consumer_secret, 'secret')
+
     @mock.patch('friends.utils.account.manager')
     @mock.patch('friends.utils.account.Account')
     @mock.patch('friends.utils.account.Accounts')

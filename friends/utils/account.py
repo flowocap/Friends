@@ -77,9 +77,11 @@ class Account:
     def __init__(self, account_service):
         self.auth = account_service.get_auth_data()
         if self.auth is not None:
-            auth_params = self.auth.get_parameters()
-            self.consumer_key = auth_params.get('ConsumerKey')
-            self.consumer_secret = auth_params.get('ConsumerSecret')
+            params = self.auth.get_parameters()
+            self.consumer_key = (params.get('ConsumerKey') or
+                                 params.get('ClientId'))
+            self.consumer_secret = (params.get('ConsumerSecret') or
+                                    params.get('ClientSecret'))
         else:
             raise UnsupportedProtocolError(
                 'This AgAccountService is missing AgAuthData!')

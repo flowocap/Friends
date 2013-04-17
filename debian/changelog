@@ -4,6 +4,32 @@ friends (0.2.0-0ubuntu1) UNRELEASED; urgency=low
 
  -- Robert Bruce Park <robert.park@canonical.com>  Tue, 19 Mar 2013 15:03:58 -0700
 
+friends (0.1.3daily13.04.17~13.04-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * No ConsumerKey in _get_oauth_headers (LP: #1169018)
+  * doesn't resolve destination of t.co links (LP: #1166080)
+  * limit notifications at statup. (LP: #1079865)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 195
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 17 Apr 2013 05:03:06 +0000
+
+friends (0.1.3daily13.04.16.1~13.04-0ubuntu1) raring; urgency=low
+
+  [ Ken VanDine ]
+  * debian/control
+    - make the service plugins depend on the appropriate account plugins
+
+  [ Robert Bruce Park ]
+  * Sender information empty for retweets (LP: #1168427)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 190
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 16 Apr 2013 15:51:43 +0000
+
 friends (0.1.3daily13.04.10.1-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]

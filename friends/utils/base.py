@@ -28,7 +28,7 @@ import time
 import logging
 import threading
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from oauthlib.oauth1 import Client
 
 from gi.repository import GLib, GObject, EDataServer, EBook
@@ -40,6 +40,7 @@ from friends.utils.notify import notify
 from friends.utils.time import ISO8601_FORMAT
 
 
+FIVE_DAYS_AGO = (datetime.now() - timedelta(5)).isoformat()
 STUB = lambda *ignore, **kwignore: None
 COMMA_SPACE = ', '
 SCHEMA = Schema()
@@ -366,9 +367,13 @@ class Base:
             # Don't let duplicate messages into the model
             if message_id not in _seen_ids:
                 _seen_ids[message_id] = Model.get_position(Model.append(*args))
-                # I think it's safe not to notify the user about
-                # messages that they sent themselves...
-                if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
+
+                # Don't notify messages from me, or older than five days.
+                if args[FROM_ME_IDX] or args[TIME_IDX] < FIVE_DAYS_AGO:
+                    return True
+
+                # Check if notifications are enabled before notifying.
+                if self._do_notify(args[STREAM_IDX]):
                     notify(
                         args[SENDER_IDX],
                         orig_message,
@@ -470,14 +475,14 @@ class Base:
     def _get_oauth_headers(self, method, url, data=None, headers=None):
         """Basic wrapper around oauthlib that we use for Twitter and Flickr."""
         # "Client" == "Consumer" in oauthlib parlance.
-        client_key = self._account.consumer_key
-        client_secret = self._account.consumer_secret
+        key = self._account.consumer_key
+        secret = self._account.consumer_secret
 
         # "resource_owner" == secret and token.
         resource_owner_key = self._get_access_token()
         resource_owner_secret = self._account.secret_token
-        oauth_client = Client(client_key, client_secret,
-                              resource_owner_key, resource_owner_secret)
+        oauth_client = Client(
+            key, secret, resource_owner_key, resource_owner_secret)
 
         headers = headers or {}
         if data is not None:
