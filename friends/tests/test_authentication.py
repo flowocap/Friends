@@ -92,7 +92,7 @@ class TestAuthentication(unittest.TestCase):
         authenticator = Authentication(self.account)
         reply = authenticator.login()
         self.assertEqual(reply, dict(AccessToken='auth reply'))
-        self.assertEqual(logger.debug_messages, ['Login completed'])
+        self.assertEqual(logger.debug_messages, ['_login_cb completed'])
         self.assertEqual(logger.error_messages, [])
 
     @mock.patch('friends.utils.authentication.log', logger)
@@ -112,3 +112,15 @@ class TestAuthentication(unittest.TestCase):
         self.account.auth.parameters = Error
         authenticator = Authentication(self.account)
         self.assertRaises(AuthorizationError, authenticator.login)
+
+    @mock.patch('friends.utils.authentication.log', logger)
+    @mock.patch('friends.utils.authentication.Signon', FakeSignon)
+    def test_exception_correct_thread(self):
+        authenticator = Authentication(self.account)
+        # If this were to raise any exception for any reason, this
+        # test will fail. This method can't be allowed to raise
+        # exceptions because it doesn't run in the safety of a
+        # subthread where those are caught and logged nicely.
+        authenticator._login_cb('session', 'reply', 'error', 'data')
+        self.assertEqual(authenticator._reply, 'reply')
+        self.assertEqual(authenticator._error, 'error')
