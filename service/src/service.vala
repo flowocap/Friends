@@ -64,6 +64,7 @@ public class Master : Object
             }
         );
         acct_manager.account_created.connect ((manager, account_id) => {
+                debug ("Account %u created from UOA, refreshing", account_id);
                 try {
                     dispatcher.Refresh ();
                 } catch (IOError e) {
