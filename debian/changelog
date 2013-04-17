@@ -1,3 +1,15 @@
+friends (0.1.3daily13.04.17~13.04-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * No ConsumerKey in _get_oauth_headers (LP: #1169018)
+  * doesn't resolve destination of t.co links (LP: #1166080)
+  * limit notifications at statup. (LP: #1079865)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 195
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 17 Apr 2013 05:03:06 +0000
+
 friends (0.1.3daily13.04.16.1~13.04-0ubuntu1) raring; urgency=low
 
   [ Ken VanDine ]
