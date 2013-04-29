@@ -126,7 +126,32 @@ class LinkedIn(Base):
         connections = result.get('values')
         
         for connection in connections:
-            if connection.get('id') != 'private':
+            if connection.get('id') == 'private':
                 # We cannot access information on profiles that are set to
                 # private.
-                self._create_contact(connection)
+                continue
+                
+            self._create_contact(connection)
+                
+            if self._previously_stored_contact(
+                source, 'linkedin-id', connection['id']):
+                continue
+
+            log.debug(
+                'Fetch full contact info for {} and id {}'.format(
+                    contact['name'], contact['id']))
+
+            full_connection_details = self._fetch_contact(connection['id'])
+
+            try:
+                eds_connection = self._create_contact(full_connection_details)
+            except FriendsError:
+                continue
+
+            self._push_to_eds(LINKEDIN_ADDRESS_BOOK, eds_connection)
+
+        return len(connections)
+
+    def delete_contacts(self):
+        source = self._get_eds_source(LINKEDIN_ADDRESS_BOOK)
+        return self._delete_service_contacts(source)
