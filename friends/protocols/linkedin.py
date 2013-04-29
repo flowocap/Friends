@@ -59,13 +59,12 @@ class LinkedIn(Base):
         person_id = person.get('id')
         status = person.get('currentStatus')
         picture = person.get('pictureUrl', '')
-        url = person.get('siteStandardProfileRequest').get('url')
+        url = person.get('siteStandardProfileRequest', {}).get('url', '')
         timestamp = entry.get('timestamp')
         # We need to divide by 1000 here, as LinkedIn's timestamps have
         # milliseconds.
         iso_time = iso8601utc(int(timestamp/1000))
         
-        # Posts gives us a likes dict, while replies give us an int.
         likes = entry.get('numLikes', 0)
         
         args = dict(
