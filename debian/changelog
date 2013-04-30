@@ -1,3 +1,9 @@
+friends (0.1.3daily13.04.30ubuntu.unity.next-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 199 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 30 Apr 2013 16:58:05 +0000
+
 friends (0.1.3daily13.04.17.1~13.04-0ubuntu1) raring; urgency=low
 
   [ Ken VanDine ]
