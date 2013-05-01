@@ -50,6 +50,8 @@ class TestFourSquare(unittest.TestCase):
         # The set of public features.
         self.assertEqual(FourSquare.get_features(), ['receive'])
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch.dict('friends.utils.authentication.__dict__', LOGIN_TIMEOUT=1)
     @mock.patch('friends.utils.authentication.Signon.AuthSession.new')
     @mock.patch('friends.utils.http.Downloader.get_json',
@@ -59,8 +61,12 @@ class TestFourSquare(unittest.TestCase):
         self.assertIsNone(self.account.user_name)
         self.assertIsNone(self.account.user_id)
 
+    @mock.patch('friends.utils.authentication.manager')
+    @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='tokeny goodness'))
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.protocols.foursquare.Downloader.get_json',
                 return_value=dict(
                     response=dict(

@@ -27,6 +27,8 @@ __all__ = [
 
 from gi.repository import GObject, GdkPixbuf
 
+from friends.errors import ignored
+
 
 # This gets conditionally imported at the end of this file, which
 # allows for easier overriding of the following function definition.
@@ -41,11 +43,9 @@ def notify(title, message, icon_uri='', pixbuf=None):
     notification = Notify.Notification.new(
         title, message, 'friends')
 
-    try:
+    with ignored(GObject.GError):
         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
             icon_uri, 48, 48)
-    except GObject.GError:
-        pass
 
     if pixbuf is not None:
         notification.set_icon_from_pixbuf(pixbuf)
@@ -53,12 +53,10 @@ def notify(title, message, icon_uri='', pixbuf=None):
     if _notify_can_append:
         notification.set_hint_string('x-canonical-append', 'allowed')
 
-    try:
-        notification.show()
-    except GObject.GError:
+    with ignored(GObject.GError):
         # Most likely we've spammed more than 50 notificatons,
         # not much we can do about that.
-        pass
+        notification.show()
 
 # Optional dependency on Notify library.
 try:

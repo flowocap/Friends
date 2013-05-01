@@ -34,17 +34,19 @@ from friends.tests.mocks import LogMock, mock
 DBusGMainLoop(set_as_default=True)
 
 
+@mock.patch('friends.service.dispatcher.GLib.timeout_add_seconds',
+            mock.Mock(return_value=42))
 class TestDispatcher(unittest.TestCase):
     """Test the dispatcher's ability to dispatch."""
 
     @mock.patch('dbus.service.BusName')
-    @mock.patch('friends.service.dispatcher.AccountManager')
-    @mock.patch('friends.service.dispatcher.Dispatcher.Refresh')
+    @mock.patch('friends.service.dispatcher.find_accounts')
     @mock.patch('dbus.service.Object.__init__')
     def setUp(self, *mocks):
         self.log_mock = LogMock('friends.service.dispatcher',
                                 'friends.utils.account')
         self.dispatcher = Dispatcher(mock.Mock(), mock.Mock())
+        self.dispatcher.accounts = {}
 
     def tearDown(self):
         self.log_mock.stop()
@@ -53,18 +55,17 @@ class TestDispatcher(unittest.TestCase):
     def test_refresh(self, threading_mock):
         account = mock.Mock()
         threading_mock.activeCount.return_value = 1
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get_all.return_value = [account]
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.values.return_value = [account]
 
         self.assertIsNone(self.dispatcher.Refresh())
 
-        self.dispatcher.account_manager.get_all.assert_called_once_with()
+        self.dispatcher.accounts.values.assert_called_once_with()
         account.protocol.assert_called_once_with('receive')
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Refresh requested\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_clear_indicators(self):
@@ -75,34 +76,31 @@ class TestDispatcher(unittest.TestCase):
     def test_do(self):
         account = mock.Mock()
         account.id = '345'
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = account
 
         self.dispatcher.Do('like', '345', '23346356767354626')
-        self.dispatcher.account_manager.get.assert_called_once_with(
-            '345')
+        self.dispatcher.accounts.get.assert_called_once_with(345)
         account.protocol.assert_called_once_with(
             'like', '23346356767354626', success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          '345: like 23346356767354626\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_failing_do(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = None
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = None
 
         self.dispatcher.Do('unlike', '6', '23346356767354626')
-        self.dispatcher.account_manager.get.assert_called_once_with('6')
+        self.dispatcher.accounts.get.assert_called_once_with(6)
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Could not find account: 6\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_send_message(self):
@@ -111,15 +109,15 @@ class TestDispatcher(unittest.TestCase):
         account3 = mock.Mock()
         account2.send_enabled = False
 
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get_all.return_value = [
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.values.return_value = [
             account1,
             account2,
             account3,
             ]
 
         self.dispatcher.SendMessage('Howdy friends!')
-        self.dispatcher.account_manager.get_all.assert_called_once_with()
+        self.dispatcher.accounts.values.assert_called_once_with()
         account1.protocol.assert_called_once_with(
             'send', 'Howdy friends!', success=STUB, failure=STUB)
         account3.protocol.assert_called_once_with(
@@ -128,41 +126,39 @@ class TestDispatcher(unittest.TestCase):
 
     def test_send_reply(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = account
 
         self.dispatcher.SendReply('2', 'objid', '[Hilarious Response]')
-        self.dispatcher.account_manager.get.assert_called_once_with('2')
+        self.dispatcher.accounts.get.assert_called_once_with(2)
         account.protocol.assert_called_once_with(
             'send_thread', 'objid', '[Hilarious Response]',
             success=STUB, failure=STUB)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Replying to 2, objid\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_send_reply_failed(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = None
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = None
 
         self.dispatcher.SendReply('2', 'objid', '[Hilarious Response]')
-        self.dispatcher.account_manager.get.assert_called_once_with('2')
+        self.dispatcher.accounts.get.assert_called_once_with(2)
         self.assertEqual(account.protocol.call_count, 0)
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Replying to 2, objid\n'
                          'Could not find account: 2\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_upload_async(self):
         account = mock.Mock()
-        self.dispatcher.account_manager = mock.Mock()
-        self.dispatcher.account_manager.get.return_value = account
+        self.dispatcher.accounts = mock.Mock()
+        self.dispatcher.accounts.get.return_value = account
 
         success = mock.Mock()
         failure = mock.Mock()
@@ -172,7 +168,7 @@ class TestDispatcher(unittest.TestCase):
                                'A thousand words',
                                success=success,
                                failure=failure)
-        self.dispatcher.account_manager.get.assert_called_once_with('2')
+        self.dispatcher.accounts.get.assert_called_once_with(2)
         account.protocol.assert_called_once_with(
             'upload',
             'file://path/to/image.png',
@@ -182,9 +178,8 @@ class TestDispatcher(unittest.TestCase):
             )
 
         self.assertEqual(self.log_mock.empty(),
-                         'Clearing 1 shutdown timer(s)...\n'
+                         'Clearing timer id: 42\n'
                          'Uploading file://path/to/image.png to 2\n'
-                         'Clearing 0 shutdown timer(s)...\n'
                          'Starting new shutdown timer...\n')
 
     def test_get_features(self):
@@ -214,21 +209,19 @@ class TestDispatcher(unittest.TestCase):
             self.dispatcher.URLShorten('http://tinyurl.com/foo'))
 
     @mock.patch('friends.service.dispatcher.logging')
-    @mock.patch('friends.service.dispatcher.lookup')
-    def test_urlshorten(self, lookup_mock, logging_mock):
-        lookup_mock.is_shortened.return_value = False
-        lookup_mock.lookup.return_value = mock.Mock()
-        lookup_mock.lookup.return_value.shorten.return_value = 'short url'
+    @mock.patch('friends.service.dispatcher.Short')
+    def test_urlshorten(self, short_mock, logging_mock):
+        short_mock().sub.return_value = 'short url'
+        short_mock.reset_mock()
         self.dispatcher.settings.get_string.return_value = 'is.gd'
         long_url = 'http://example.com/really/really/long'
         self.assertEqual(
             self.dispatcher.URLShorten(long_url),
             'short url')
-        lookup_mock.is_shortened.assert_called_once_with(long_url)
         self.dispatcher.settings.get_boolean.assert_called_once_with(
             'shorten-urls')
-        lookup_mock.lookup.assert_called_once_with('is.gd')
-        lookup_mock.lookup.return_value.shorten.assert_called_once_with(
+        short_mock.assert_called_once_with('is.gd')
+        short_mock.return_value.sub.assert_called_once_with(
             long_url)
 
     @mock.patch('friends.service.dispatcher.GLib')
@@ -243,6 +236,7 @@ class TestDispatcher(unittest.TestCase):
 
     @mock.patch('friends.service.dispatcher.GLib')
     def test_manage_timers_set(self, glib):
+        glib.timeout_add_seconds.reset_mock()
         manager = ManageTimers()
         manager.timers = set()
         manager.clear_all_timers = mock.Mock()

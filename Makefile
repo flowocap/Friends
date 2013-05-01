@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 check:
-	python3 -m unittest discover -vv
+	python3 -m unittest discover
 
 install:
 	python3 setup.py install

@@ -21,7 +21,6 @@ __all__ = [
 
 
 import os
-import errno
 import logging
 
 from datetime import date, timedelta
@@ -29,6 +28,7 @@ from gi.repository import Gio, GLib, GdkPixbuf
 from hashlib import sha1
 
 from friends.utils.http import Downloader
+from friends.errors import ignored
 
 
 CACHE_DIR = os.path.realpath(os.path.join(
@@ -36,13 +36,8 @@ CACHE_DIR = os.path.realpath(os.path.join(
 AGE_LIMIT = date.today() - timedelta(weeks=4)
 
 
-try:
+with ignored(FileExistsError):
     os.makedirs(CACHE_DIR)
-except OSError as error:
-    # It raises OSError if the dir already existed, which is fine,
-    # but don't ignore other errors.
-    if error.errno != errno.EEXIST:
-        raise
 
 
 log = logging.getLogger(__name__)
@@ -58,15 +53,14 @@ class Avatar:
         if not url:
             return url
         local_path = Avatar.get_path(url)
-        try:
-            size = os.stat(local_path).st_size
-            mtime = date.fromtimestamp(os.stat(local_path).st_mtime)
-        except OSError as error:
-            if error.errno != errno.ENOENT:
-                # Some other error occurred, so propagate it up.
-                raise
-            # Treat a missing file as zero length.
-            size = 0
+        size = 0
+        mtime = date.fromtimestamp(0)
+
+        with ignored(FileNotFoundError):
+            stat = os.stat(local_path)
+            size = stat.st_size
+            mtime = date.fromtimestamp(stat.st_mtime)
+
         if size == 0 or mtime < AGE_LIMIT:
             log.debug('Getting: {}'.format(url))
             image_data = Downloader(url).get_bytes()
@@ -97,9 +91,6 @@ class Avatar:
                 # The file's last modification time is earlier than the oldest
                 # time we'll allow in the cache.  However, due to race
                 # conditions, ignore it if the file has already been removed.
-                try:
+                with ignored(FileNotFoundError):
                     log.debug('Expiring: {}'.format(path))
                     os.remove(path)
-                except OSError as error:
-                    if error.errno != errno.ENOENT:
-                        raise
