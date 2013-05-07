@@ -28,7 +28,7 @@ from gi.repository import GObject, Accounts, Signon
 from friends.errors import AuthorizationError
 
 
-GObject.threads_init(None)
+GObject.threads_init()
 
 
 log = logging.getLogger(__name__)
