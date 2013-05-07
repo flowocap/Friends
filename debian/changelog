@@ -1,8 +1,18 @@
-friends (0.2.0-0ubuntu1) UNRELEASED; urgency=low
+friends (0.2.0daily13.05.07.1-0ubuntu1) saucy; urgency=low
 
+  [ Robert Bruce Park ]
   * Version bump for the next development series.
+  * Fix LP: #1154520
+  * Running «friends-app» from terminal gives a segfault. (LP: #1176991)
+  * friends-dispatcher crashed with TypeError in /usr/lib/python3/dist-
+    packages/friends/main.py: threads_init() takes 0 positional
+    arguments but 1 was given (LP: #1177047)
+  * Friends-dispatcher fails with "TypeError" at launch. (LP: #1176500)
 
- -- Robert Bruce Park <robert.park@canonical.com>  Tue, 19 Mar 2013 15:03:58 -0700
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 202
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 07 May 2013 17:53:19 +0000
 
 friends (0.1.3daily13.04.30ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
