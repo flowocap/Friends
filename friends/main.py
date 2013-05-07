@@ -58,7 +58,7 @@ if args.test:
 # Continue with normal loading...
 from gi.repository import Gio, GObject
 
-GObject.threads_init(None)
+GObject.threads_init()
 
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
 from friends.utils.base import Base, initialize_caches, _publish_lock
