@@ -39,7 +39,7 @@ PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
 FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
-
+STORY_PERMALINK = PERMALINK + '/posts/{post_id}'
 
 TEN_DAYS = 864000 # seconds
 
@@ -93,11 +93,13 @@ class Facebook(Base):
         if from_record is not None:
             args['sender'] = from_record.get('name', '')
             args['sender_id'] = sender_id = from_record.get('id', '')
-            args['url'] = PERMALINK.format(id=sender_id)
             args['icon_uri'] = Avatar.get_image(
                 API_BASE.format(id=sender_id) + '/picture?width=840&height=840')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
+
+        # Fix for LP:1185684 - JPM
+        args['url'] = STORY_PERMALINK.format(id=sender_id,post_id=message_id)
 
         # Normalize the timestamp.
         timestamp = entry.get('updated_time', entry.get('created_time'))
