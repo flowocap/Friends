@@ -99,7 +99,8 @@ class Facebook(Base):
             args['from_me'] = (sender_id == self._account.user_id)
 
         # Fix for LP:1185684 - JPM
-        args['url'] = STORY_PERMALINK.format(id=sender_id,post_id=message_id)
+        post_id= message_id.split('_')[1]
+        args['url'] = STORY_PERMALINK.format(id=sender_id,post_id=post_id)
 
         # Normalize the timestamp.
         timestamp = entry.get('updated_time', entry.get('created_time'))
