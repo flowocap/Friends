@@ -1,8 +1,16 @@
-friends (0.2.0daily13.05.07.1-0ubuntu2) UNRELEASED; urgency=low
+friends (0.2.0daily13.05.07.1-0ubuntu3) UNRELEASED; urgency=low
 
   * Updated for libaccounts-glib >= 1.10
 
  -- Ken VanDine <ken.vandine@canonical.com>  Thu, 06 Jun 2013 14:02:48 -0400
+
+friends (0.2.0daily13.05.07.1-0ubuntu2) saucy; urgency=low
+
+  * Port to EDS 3.8 - the contacts functionality was moved into an
+    EBookContacts library. Add Build-Deps and Deps on gir1.2-ebookcontacts-1.2
+    accordingly. Version the rest.
+
+ -- Iain Lane <iain.lane@canonical.com>  Wed, 29 May 2013 18:31:49 +0100
 
 friends (0.2.0daily13.05.07.1-0ubuntu1) saucy; urgency=low
 
