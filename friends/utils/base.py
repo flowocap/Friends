@@ -31,7 +31,7 @@ import threading
 from datetime import datetime, timedelta
 from oauthlib.oauth1 import Client
 
-from gi.repository import GLib, GObject, EDataServer, EBook
+from gi.repository import GLib, GObject, EDataServer, EBook, EBookContacts
 
 from friends.errors import FriendsError, ContactsError
 from friends.utils.authentication import Authentication
@@ -586,8 +586,8 @@ class Base:
 
     def _previously_stored_contact(self, source, field, search_term):
         client = self._new_book_client(source)
-        query = EBook.book_query_vcard_field_test(
-            field, EBook.BookQueryTest(0), search_term)
+        query = EBookContacts.BookQuery.vcard_field_test(
+            field, EBookContacts.BookQueryTest.IS, search_term)
         success, result = client.get_contacts_sync(query.to_string(), None)
         if not success:
             raise ContactsError('Search failed on field {}'.format(field))
@@ -610,22 +610,22 @@ class Base:
     def _create_contact(self, user_fullname, user_nickname,
                         social_network_attrs):
         """Build a VCard based on a dict representation of a contact."""
-        vcard = EBook.VCard.new()
+        vcard = EBookContacts.VCard.new()
         info = social_network_attrs
 
         for i in info:
-            attr = EBook.VCardAttribute.new('social-networking-attributes', i)
+            attr = EBookContacts.VCardAttribute.new('social-networking-attributes', i)
             if type(info[i]) == type(dict()):
                 for j in info[i]:
-                    param = EBook.VCardAttributeParam.new(j)
+                    param = EBookContacts.VCardAttributeParam.new(j)
                     param.add_value(info[i][j])
                     attr.add_param(param);
             else:
                 attr.add_value(info[i])
             vcard.add_attribute(attr)
 
-        contact = EBook.Contact.new_from_vcard(
-            vcard.to_string(EBook.VCardFormat(1)))
+        contact = EBookContacts.Contact.new_from_vcard(
+            vcard.to_string(EBookContacts.VCardFormat(1)))
         contact.set_property('full-name', user_fullname)
         if user_nickname is not None:
             contact.set_property('nickname', user_nickname)
