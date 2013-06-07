@@ -1,8 +1,12 @@
-friends (0.2.0daily13.05.07.1-0ubuntu3) UNRELEASED; urgency=low
+friends (0.2.0daily13.06.07.1-0ubuntu1) saucy; urgency=low
 
+  [ Ken VanDine ]
   * Updated for libaccounts-glib >= 1.10
 
- -- Ken VanDine <ken.vandine@canonical.com>  Thu, 06 Jun 2013 14:02:48 -0400
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 204
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 07 Jun 2013 11:42:43 +0000
 
 friends (0.2.0daily13.05.07.1-0ubuntu2) saucy; urgency=low
 
