@@ -119,7 +119,7 @@ class TestFacebook(unittest.TestCase):
         self.assertEqual(list(TestModel.get_row(0)), [
             'facebook',
             88,
-            'fake_id',
+            'userid_postid1',
             'mentions',
             'Yours Truly',
             '56789',
@@ -131,7 +131,7 @@ class TestFacebook(unittest.TestCase):
             'to test with, that\'d be super.',
             GLib.get_user_cache_dir() +
             '/friends/avatars/5c4e74c64b1a09343558afc1046c2b1d176a2ba2',
-            'https://www.facebook.com/56789',
+            'https://www.facebook.com/56789/posts/postid1',
             1,
             False,
             '',
@@ -147,8 +147,8 @@ class TestFacebook(unittest.TestCase):
         self.assertEqual(list(TestModel.get_row(2)), [
             'facebook',
             88,
-            'faker than cake!',
-            'reply_to/fake_id',
+            'postid1_commentid2',
+            'reply_to/userid_postid1',
             'Father',
             '234',
             'Father',
@@ -157,7 +157,7 @@ class TestFacebook(unittest.TestCase):
             'don\'t know how',
             GLib.get_user_cache_dir() +
             '/friends/avatars/9b9379ccc7948e4804dff7914bfa4c6de3974df5',
-            'https://www.facebook.com/234',
+            'https://www.facebook.com/234/posts/commentid2',
             0,
             False,
             '',
@@ -188,7 +188,7 @@ class TestFacebook(unittest.TestCase):
             'producer, Sean Keegan. Stanley is in the lobby.',
             GLib.get_user_cache_dir() +
             '/friends/avatars/5b2d70e788df790b9c8db4c6a138fc4a1f433ec9',
-            'https://www.facebook.com/161247843901324',
+            'https://www.facebook.com/161247843901324/posts/629147610444676',
             84,
             False,
             'https://fbcdn-photos-a.akamaihd.net/hphotos-ak-snc7/' +
@@ -215,7 +215,7 @@ class TestFacebook(unittest.TestCase):
             'Guy Frenchie did some things with some stuff.',
             GLib.get_user_cache_dir() +
             '/friends/avatars/3f5e276af0c43f6411d931b829123825ede1968e',
-            'https://www.facebook.com/1244414',
+            'https://www.facebook.com/1244414/posts/100085049977',
             3,
             False,
             '',
