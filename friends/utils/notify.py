@@ -27,6 +27,7 @@ __all__ = [
 
 from gi.repository import GObject, GdkPixbuf
 
+from friends.utils.avatar import Avatar
 from friends.errors import ignored
 
 
@@ -45,7 +46,7 @@ def notify(title, message, icon_uri='', pixbuf=None):
 
     with ignored(GObject.GError):
         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
-            icon_uri, 48, 48)
+            Avatar.get_image(icon_uri), 48, 48)
 
     if pixbuf is not None:
         notification.set_icon_from_pixbuf(pixbuf)
@@ -57,6 +58,7 @@ def notify(title, message, icon_uri='', pixbuf=None):
         # Most likely we've spammed more than 50 notificatons,
         # not much we can do about that.
         notification.show()
+
 
 # Optional dependency on Notify library.
 try:

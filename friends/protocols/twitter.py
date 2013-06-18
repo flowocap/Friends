@@ -27,7 +27,6 @@ import logging
 
 from urllib.parse import quote
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import BaseRateLimiter, Downloader
@@ -142,8 +141,7 @@ class Twitter(Base):
             sender_id=str(user.get('id', '')),
             sender_nick=screen_name,
             from_me=(screen_name == self._account.user_name),
-            icon_uri=Avatar.get_image(
-                avatar_url.replace('_normal.', '.')),
+            icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
             )
