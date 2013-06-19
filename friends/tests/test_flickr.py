@@ -22,8 +22,6 @@ __all__ = [
 
 import unittest
 
-from gi.repository import GLib
-
 from friends.errors import AuthorizationError, FriendsError
 from friends.protocols.flickr import Flickr
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
@@ -176,8 +174,7 @@ class TestFlickr(unittest.TestCase):
              True,
              '2013-03-12T19:51:42Z',
              'Chocolate chai #yegcoffee',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/7b30ff0140dd9b80f2b1782a2802c3ce785fa0ce',
+             'http://farm1.static.flickr.com/93/buddyicons/47303164@N00.jpg',
              'http://www.flickr.com/photos/47303164@N00/8552892154',
              0,
              False,
@@ -204,8 +201,7 @@ class TestFlickr(unittest.TestCase):
              True,
              '2013-03-12T13:54:10Z',
              'St. Michael - The Archangel',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/cae2939354a33fea5f008df91bb8e25920be5dc3',
+             'http://farm3.static.flickr.com/2047/buddyicons/27204141@N05.jpg',
              'http://www.flickr.com/photos/27204141@N05/8550829193',
              0,
              False,

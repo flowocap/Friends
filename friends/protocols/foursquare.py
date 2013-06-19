@@ -22,7 +22,6 @@ __all__ = [
 
 import logging
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader
 from friends.utils.time import iso8601utc
@@ -81,7 +80,6 @@ class FourSquare(Base):
         for checkin in checkins:
             user = checkin.get('user', {})
             avatar = user.get('photo', {})
-            avatar_url = '{prefix}100x100{suffix}'.format(**avatar)
             checkin_id = checkin.get('id', '')
             tz_offset = checkin.get('timeZoneOffset', 0)
             epoch = checkin.get('createdAt', 0)
@@ -95,7 +93,7 @@ class FourSquare(Base):
                 timestamp=iso8601utc(epoch, tz_offset),
                 message=checkin.get('shout', ''),
                 likes=checkin.get('likes', {}).get('count', 0),
-                icon_uri=Avatar.get_image(avatar_url),
+                icon_uri='{prefix}100x100{suffix}'.format(**avatar),
                 url=venue.get('canonicalUrl', ''),
                 location=venue.get('name', ''),
                 latitude=location.get('lat', 0.0),

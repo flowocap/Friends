@@ -95,7 +95,3 @@ class Dispatcher(dbus.service.Object):
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
     def URLShorten(self, url):
         return str(len(url))
-
-    @dbus.service.method(DBUS_INTERFACE)
-    def ExpireAvatars(self):
-        pass

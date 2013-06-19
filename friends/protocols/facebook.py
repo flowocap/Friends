@@ -24,7 +24,6 @@ __all__ = [
 import time
 import logging
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import Downloader, Uploader
@@ -99,8 +98,8 @@ class Facebook(Base):
             args['sender_id'] = sender_id = from_record.get('id', '')
             args['url'] = STORY_PERMALINK.format(
                 id=sender_id, post_id=post_id)
-            args['icon_uri'] = Avatar.get_image(
-                API_BASE.format(id=sender_id) + '/picture?width=840&height=840')
+            args['icon_uri'] = (API_BASE.format(id=sender_id) +
+                                '/picture?width=840&height=840')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
 
@@ -322,9 +321,8 @@ class Facebook(Base):
                 sender_nick=self._account.user_name,
                 timestamp=iso8601utc(int(time.time())),
                 url=destination_url,
-                icon_uri=Avatar.get_image(
-                    API_BASE.format(id=self._account.user_id) +
-                    '/picture?type=large'))
+                icon_uri=(API_BASE.format(id=self._account.user_id) +
+                          '/picture?type=large'))
             return destination_url
         else:
             raise FriendsError(str(response))

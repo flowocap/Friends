@@ -30,7 +30,6 @@ import dbus.service
 from gi.repository import GLib
 from contextlib import ContextDecorator
 
-from friends.utils.avatar import Avatar
 from friends.utils.account import find_accounts
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
@@ -347,11 +346,3 @@ class Dispatcher(dbus.service.Object):
         if not self.settings.get_boolean('shorten-urls'):
             return message
         return Short(service_name).sub(message)
-
-    @exit_after_idle
-    @dbus.service.method(DBUS_INTERFACE)
-    def ExpireAvatars(self):
-        pass
-        # Disabled because we don't currently have a way of re-fetching
-        # expired avatars if they're needed again later.
-        # Avatar.expire_old_avatars()

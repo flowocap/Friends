@@ -26,7 +26,6 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
@@ -138,8 +137,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             ['twitter', 88, '240558470661799936',
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
              '2012-08-28T21:16:23Z', 'just another test',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
+             'https://si0.twimg.com/profile_images/730275945/oauth-dancer.jpg',
              'https://twitter.com/oauth_dancer/status/240558470661799936',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -149,8 +147,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'with twitter" class at @cal with @othman  '
              '<a href="http://blogs.ischool.berkeley.edu/i290-abdt-s12/">'
              'http://blogs.ischool.berkeley.edu/i290-abdt-s12/</a>',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/0219effc03a3049a622476e6e001a4014f33dc31',
+             'https://si0.twimg.com/profile_images/1270234259/'
+             'raffi-headshot-casual.png',
              'https://twitter.com/raffi/status/240556426106372096',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -158,8 +156,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'messages', 'Taylor Singletary', '819797', 'episod', False,
              '2012-08-28T19:59:34Z',
              'You\'d be right more often if you thought you were wrong.',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/0c829cb2934ad76489be21ee5e103735d9b7b034',
+             'https://si0.twimg.com/profile_images/2546730059/'
+             'f6a8zq58mg1hn0ha8vie.jpeg',
              'https://twitter.com/episod/status/240539141056638977',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -209,8 +207,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'twitter', 88, '240558470661799936',
             'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', True,
             '2012-08-28T21:16:23Z', 'just another test',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
+            'https://si0.twimg.com/profile_images/730275945/oauth-dancer.jpg',
             'https://twitter.com/oauth_dancer/status/240558470661799936',
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
@@ -295,9 +292,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                        'direct_messages/sent.json?count=50')
              ])
 
-    @mock.patch('friends.protocols.twitter.Avatar.get_image',
-                return_value='~/.cache/friends/avatars/hash')
-    def test_private_avatars(self, image_mock):
+    def test_private_avatars(self):
         get_url = self.protocol._get_url = mock.Mock(
             return_value=[
                 dict(
@@ -317,7 +312,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         publish.assert_called_with(
             liked=False, sender='Bob', stream='private',
             url='https://twitter.com/some_guy/status/1452456',
-            icon_uri='~/.cache/friends/avatars/hash',
+            icon_uri='https://example.com/bob.jpg',
             sender_nick='some_guy', sender_id='', from_me=False,
             timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
             message_id='1452456')
@@ -474,8 +469,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             '2013-04-16T17:58:26Z', 'RT @tarek_ziade: Just found a "Notification '
             'of Inspection" card in the bottom of my bag. looks like they were '
             'curious about those raspbe ...',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/1444c8a86dbbe7a6f5f89a8135e770824d7b22bc',
+            'https://si0.twimg.com/profile_images/2631306428/'
+            '2a509db8a05b4310394b832d34a137a4.png',
             'https://twitter.com/therealrobru/status/324220250889543682',
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]

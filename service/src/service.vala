@@ -21,7 +21,6 @@ using Ag;
 [DBus (name = "com.canonical.Friends.Dispatcher")]
 private interface Dispatcher : GLib.Object {
         public abstract void Refresh () throws GLib.IOError;
-        public abstract void ExpireAvatars () throws GLib.IOError;
         public abstract async void Do (
             string action,
             string account_id,
@@ -184,7 +183,6 @@ public class Master : Object
         try {
             dispatcher = Bus.get_proxy.end(res);
             Timeout.add_seconds (120, fetch_contacts);
-            Timeout.add_seconds (300, expire_avatars);
             var ret = on_refresh ();
         } catch (IOError e) {
             warning (e.message);
@@ -215,20 +213,6 @@ public class Master : Object
             dispatcher.Do ("contacts", "", "");
         } catch (IOError e) {
             warning ("Failed to fetch contacts - %s", e.message);
-        }
-        return false;
-    }
-
-    bool expire_avatars ()
-    {
-        debug ("Expiring old avatars...");
-        // By default, this happens 5 minutes after startup, and then
-        // every 7 days thereafter.
-        Timeout.add_seconds (604800, expire_avatars);
-        try {
-            dispatcher.ExpireAvatars ();
-        } catch (IOError e) {
-            warning ("Failed to expire avatars - %s", e.message);
         }
         return false;
     }

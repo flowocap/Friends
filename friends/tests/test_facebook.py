@@ -129,8 +129,7 @@ class TestFacebook(unittest.TestCase):
             'Writing code that supports geotagging data from facebook. ' +
             'If y\'all could make some geotagged facebook posts for me ' +
             'to test with, that\'d be super.',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/5c4e74c64b1a09343558afc1046c2b1d176a2ba2',
+            'https://graph.facebook.com/56789/picture?width=840&height=840',
             'https://www.facebook.com/56789/posts/postid1',
             1,
             False,
@@ -155,8 +154,7 @@ class TestFacebook(unittest.TestCase):
             False,
             '2013-03-12T23:29:45Z',
             'don\'t know how',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/9b9379ccc7948e4804dff7914bfa4c6de3974df5',
+            'https://graph.facebook.com/234/picture?width=840&height=840',
             'https://www.facebook.com/234/posts/commentid2',
             0,
             False,
@@ -186,8 +184,7 @@ class TestFacebook(unittest.TestCase):
             'Texas. Monday, March 11th, 4:00pm to 7:00 pm. Also here ' +
             'Hannah Hart (My Drunk Kitchen) and Angry Video Game Nerd ' +
             'producer, Sean Keegan. Stanley is in the lobby.',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/5b2d70e788df790b9c8db4c6a138fc4a1f433ec9',
+            'https://graph.facebook.com/161247843901324/picture?width=840&height=840',
             'https://www.facebook.com/161247843901324/posts/629147610444676',
             84,
             False,
@@ -213,8 +210,7 @@ class TestFacebook(unittest.TestCase):
             False,
             '2013-03-15T19:57:14Z',
             'Guy Frenchie did some things with some stuff.',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/3f5e276af0c43f6411d931b829123825ede1968e',
+            'https://graph.facebook.com/1244414/picture?width=840&height=840',
             'https://www.facebook.com/1244414/posts/100085049977',
             3,
             False,
@@ -370,8 +366,7 @@ class TestFacebook(unittest.TestCase):
             timestamp='2012-11-06T13:49:08Z',
             sender_id=None,
             from_me=True,
-            icon_uri=GLib.get_user_cache_dir() +
-            '/friends/avatars/d49d72a384d50adf7c736ba27ca55bfa9fa5782d',
+            icon_uri='https://graph.facebook.com/None/picture?type=large',
             message='This is Ubuntu!',
             message_id='234125',
             sender=None)

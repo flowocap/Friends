@@ -23,17 +23,15 @@ __all__ = [
 import os
 import logging
 
-from datetime import date, timedelta
 from gi.repository import Gio, GLib, GdkPixbuf
+from tempfile import gettempdir
 from hashlib import sha1
 
 from friends.utils.http import Downloader
 from friends.errors import ignored
 
 
-CACHE_DIR = os.path.realpath(os.path.join(
-    GLib.get_user_cache_dir(), 'friends', 'avatars'))
-AGE_LIMIT = date.today() - timedelta(weeks=4)
+CACHE_DIR = os.path.join(gettempdir(), 'friends-avatars')
 
 
 with ignored(FileExistsError):
@@ -54,14 +52,11 @@ class Avatar:
             return url
         local_path = Avatar.get_path(url)
         size = 0
-        mtime = date.fromtimestamp(0)
 
         with ignored(FileNotFoundError):
-            stat = os.stat(local_path)
-            size = stat.st_size
-            mtime = date.fromtimestamp(stat.st_mtime)
+            size = os.stat(local_path).st_size
 
-        if size == 0 or mtime < AGE_LIMIT:
+        if size == 0:
             log.debug('Getting: {}'.format(url))
             image_data = Downloader(url).get_bytes()
 
@@ -79,18 +74,3 @@ class Avatar:
             except GLib.GError:
                 log.error('Failed to scale image: {}'.format(url))
         return local_path
-
-    @staticmethod
-    def expire_old_avatars():
-        """Evict old files from the cache."""
-        log.debug('Checking if anything needs to expire.')
-        for filename in os.listdir(CACHE_DIR):
-            path = os.path.join(CACHE_DIR, filename)
-            mtime = date.fromtimestamp(os.stat(path).st_mtime)
-            if mtime < AGE_LIMIT:
-                # The file's last modification time is earlier than the oldest
-                # time we'll allow in the cache.  However, due to race
-                # conditions, ignore it if the file has already been removed.
-                with ignored(FileNotFoundError):
-                    log.debug('Expiring: {}'.format(path))
-                    os.remove(path)
