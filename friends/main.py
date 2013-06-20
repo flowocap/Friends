@@ -31,7 +31,7 @@ import logging
 
 # Set up the DBus main loop.
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import GLib
+from gi.repository import GLib, Gio
 
 DBusGMainLoop(set_as_default=True)
 loop = GLib.MainLoop()
@@ -56,10 +56,6 @@ if args.test:
 
 
 # Continue with normal loading...
-from gi.repository import Gio, GObject
-
-GObject.threads_init()
-
 from friends.service.dispatcher import Dispatcher, DBUS_INTERFACE
 from friends.utils.base import Base, initialize_caches, _publish_lock
 from friends.utils.model import Model, prune_model

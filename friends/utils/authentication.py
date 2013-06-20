@@ -23,12 +23,9 @@ __all__ = [
 import logging
 import time
 
-from gi.repository import GObject, Accounts, Signon
+from gi.repository import Accounts, Signon
 
 from friends.errors import AuthorizationError
-
-
-GObject.threads_init()
 
 
 log = logging.getLogger(__name__)
