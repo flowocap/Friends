@@ -516,8 +516,19 @@ class TestProtocols(unittest.TestCase):
             '<a href="www.example.com">www.example.com</a> is our website',
             linkify_string(
                 '<a href="www.example.com">www.example.com</a> is our website'))
+        self.assertEqual(
+            "<a href='www.example.com'>www.example.com</a> is our website",
+            linkify_string(
+                "<a href='www.example.com'>www.example.com</a> is our website"))
         # This, apparently, is valid HTML.
         self.assertEqual(
             '<a href = "www.example.com">www.example.com</a>',
             linkify_string(
                 '<a href = "www.example.com">www.example.com</a>'))
+        # Pump.io is throwing doctypes at us!
+        self.assertEqual(
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" '
+            '"http://www.w3.org/TR/REC-html40/strict.dtd">',
+            linkify_string(
+                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" '
+                '"http://www.w3.org/TR/REC-html40/strict.dtd">'))
