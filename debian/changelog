@@ -1,3 +1,13 @@
+friends (0.2.0daily13.06.21-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Stop calling deprecated GObject.threads_init().
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 210
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 21 Jun 2013 05:01:05 +0000
+
 friends (0.2.0daily13.06.19-0ubuntu1) saucy; urgency=low
 
   [ Robert Bruce Park ]
