@@ -56,9 +56,9 @@ TIME_IDX = SCHEMA.INDICES['timestamp']
 # See friends/tests/test_protocols.py for further documentation
 LINKIFY_REGEX = re.compile(
     r"""
-    # Do not match if URL is preceded by '"' or '>'
+    # Do not match if URL is preceded by quotes, slash, or '>'
     # This is used to prevent duplication of linkification.
-    (?<![\"\>])
+    (?<![\'\"\>/])
     # Record everything that we're about to match.
     (
       # URLs can start with 'http://', 'https://', 'ftp://', or 'www.'
@@ -70,15 +70,14 @@ LINKIFY_REGEX = re.compile(
     # This section will peek ahead (without matching) in order to
     # determine precisely where the URL actually *ends*.
     (?=
-      # Do not include any trailing period, comma, exclamation mark,
-      # question mark, or closing parentheses, if any are present.
-      [.,!?\)]*
+      # Do not include any trailing punctuation, if any are present.
+      [.,!?\"\'\)\<\>]*
       # With "trailing" defined as immediately preceding the first
       # space, or end-of-string.
       (?:\s|$)
-      # But abort the whole thing if the URL ends with '</a>',
-      # again to prevent duplication of linkification.
-      (?!</a>)
+      # But abort the whole thing if the URL ends with a quote or angle
+      # bracket, again to prevent duplication of linkification.
+      (?![\'\"\<\>]+)
     )""",
     flags=re.VERBOSE).sub
 
