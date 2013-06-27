@@ -1,3 +1,14 @@
+friends (0.2.0+13.10.20130627-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Handle previously-uncaught exception when json cache contained
+    invalid data. (LP: #1189229). (LP: #1189229)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 214
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 27 Jun 2013 05:02:18 +0000
+
 friends (0.2.0daily13.06.22-0ubuntu1) saucy; urgency=low
 
   [ Robert Bruce Park ]
