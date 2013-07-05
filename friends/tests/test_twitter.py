@@ -26,7 +26,6 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
@@ -77,13 +76,8 @@ class TestTwitter(unittest.TestCase):
                                   TokenSecret='sssssshhh!',
                                   UserId='1234',
                                   ScreenName='stephenfry'))
-    @mock.patch('friends.protocols.twitter.Twitter._showuser',
-                return_value=dict(name='Stephen Fry',
-                                  profile_image_url='http://example.com/me.jpg'))
     def test_successful_authentication(self, *mocks):
         self.assertTrue(self.protocol._login())
-        self.assertEqual(self.account.avatar_url, 'http://example.com/me.jpg')
-        self.assertEqual(self.account.user_full_name, 'Stephen Fry')
         self.assertEqual(self.account.user_name, 'stephenfry')
         self.assertEqual(self.account.user_id, '1234')
         self.assertEqual(self.account.access_token, 'some clever fake data')
@@ -143,8 +137,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             ['twitter', 88, '240558470661799936',
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
              '2012-08-28T21:16:23Z', 'just another test',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
+             'https://si0.twimg.com/profile_images/730275945/oauth-dancer.jpg',
              'https://twitter.com/oauth_dancer/status/240558470661799936',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -152,9 +145,10 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
              'with twitter" class at @cal with @othman  '
-             '<a href="http://t.co/bfj7zkDJ">http://t.co/bfj7zkDJ</a>',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/0219effc03a3049a622476e6e001a4014f33dc31',
+             '<a href="http://blogs.ischool.berkeley.edu/i290-abdt-s12/">'
+             'http://blogs.ischool.berkeley.edu/i290-abdt-s12/</a>',
+             'https://si0.twimg.com/profile_images/1270234259/'
+             'raffi-headshot-casual.png',
              'https://twitter.com/raffi/status/240556426106372096',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -162,8 +156,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'messages', 'Taylor Singletary', '819797', 'episod', False,
              '2012-08-28T19:59:34Z',
              'You\'d be right more often if you thought you were wrong.',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/0c829cb2934ad76489be21ee5e103735d9b7b034',
+             'https://si0.twimg.com/profile_images/2546730059/'
+             'f6a8zq58mg1hn0ha8vie.jpeg',
              'https://twitter.com/episod/status/240539141056638977',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -213,8 +207,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'twitter', 88, '240558470661799936',
             'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', True,
             '2012-08-28T21:16:23Z', 'just another test',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
+            'https://si0.twimg.com/profile_images/730275945/oauth-dancer.jpg',
             'https://twitter.com/oauth_dancer/status/240558470661799936',
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
@@ -299,9 +292,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                        'direct_messages/sent.json?count=50')
              ])
 
-    @mock.patch('friends.protocols.twitter.Avatar.get_image',
-                return_value='~/.cache/friends/avatars/hash')
-    def test_private_avatars(self, image_mock):
+    def test_private_avatars(self):
         get_url = self.protocol._get_url = mock.Mock(
             return_value=[
                 dict(
@@ -321,7 +312,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         publish.assert_called_with(
             liked=False, sender='Bob', stream='private',
             url='https://twitter.com/some_guy/status/1452456',
-            icon_uri='~/.cache/friends/avatars/hash',
+            icon_uri='https://example.com/bob.jpg',
             sender_nick='some_guy', sender_id='', from_me=False,
             timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
             message_id='1452456')
@@ -450,7 +441,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         publish.assert_called_with(tweet)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/retweet/1234.json',
-            dict(trim_user='true'))
+            dict(trim_user='false'))
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
@@ -461,27 +452,26 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_retweet_with_data(self, *mocks):
         self.account.access_token = 'access'
         self.account.secret_token = 'secret'
-        self.account.user_name = 'some_guy'
-        self.account.user_full_name = 'Guy Man'
-        self.account.avatar_url = 'http://example.com/me.jpg'
+        self.account.user_name = 'therealrobru'
         self.account.auth.parameters = dict(
             ConsumerKey='key',
             ConsumerSecret='secret')
         self.assertEqual(0, TestModel.get_n_rows())
         self.assertEqual(
             self.protocol.retweet('240558470661799936'),
-            'https://twitter.com/some_guy/status/322807141108944896')
+            'https://twitter.com/therealrobru/status/324220250889543682')
         self.assertEqual(1, TestModel.get_n_rows())
 
+        self.maxDiff = None
         expected_row = [
-            'twitter', 88, '322807141108944896',
-            'messages', 'Guy Man', '836242932', 'some_guy', True,
-            '2013-04-12T20:23:14Z', 'RT @ubuntudesigners: Reading \'Core utility'
-            ' apps visual exploration\' at Design <a href="http://t.co/'
-            '36tT53C37n">http://t.co/36tT53C37n</a>',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/6e8af1e6860da04a6f42cb1e6934e191f7c38c6d',
-            'https://twitter.com/some_guy/status/322807141108944896',
+            'twitter', 88, '324220250889543682',
+            'messages', 'Robert Bruce', '836242932', 'therealrobru', True,
+            '2013-04-16T17:58:26Z', 'RT @tarek_ziade: Just found a "Notification '
+            'of Inspection" card in the bottom of my bag. looks like they were '
+            'curious about those raspbe ...',
+            'https://si0.twimg.com/profile_images/2631306428/'
+            '2a509db8a05b4310394b832d34a137a4.png',
+            'https://twitter.com/therealrobru/status/324220250889543682',
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)

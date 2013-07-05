@@ -60,7 +60,7 @@ class JsonCache(dict):
         try:
             with open(self._path, 'r') as cache:
                 self.update(json.loads(cache.read()))
-        except FileNotFoundError:
+        except (FileNotFoundError, ValueError, UnicodeDecodeError):
             # This writes '{}' to self._filename on first run.
             self.write()
 

@@ -28,10 +28,10 @@ import time
 import logging
 import threading
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from oauthlib.oauth1 import Client
 
-from gi.repository import GLib, GObject, EDataServer, EBook
+from gi.repository import GLib, GObject, EDataServer, EBook, EBookContacts
 
 from friends.errors import FriendsError, ContactsError
 from friends.utils.authentication import Authentication
@@ -40,6 +40,7 @@ from friends.utils.notify import notify
 from friends.utils.time import ISO8601_FORMAT
 
 
+FIVE_DAYS_AGO = (datetime.now() - timedelta(5)).isoformat()
 STUB = lambda *ignore, **kwignore: None
 COMMA_SPACE = ', '
 SCHEMA = Schema()
@@ -55,9 +56,9 @@ TIME_IDX = SCHEMA.INDICES['timestamp']
 # See friends/tests/test_protocols.py for further documentation
 LINKIFY_REGEX = re.compile(
     r"""
-    # Do not match if URL is preceded by '"' or '>'
+    # Do not match if URL is preceded by quotes, slash, or '>'
     # This is used to prevent duplication of linkification.
-    (?<![\"\>])
+    (?<![\'\"\>/])
     # Record everything that we're about to match.
     (
       # URLs can start with 'http://', 'https://', 'ftp://', or 'www.'
@@ -69,15 +70,14 @@ LINKIFY_REGEX = re.compile(
     # This section will peek ahead (without matching) in order to
     # determine precisely where the URL actually *ends*.
     (?=
-      # Do not include any trailing period, comma, exclamation mark,
-      # question mark, or closing parentheses, if any are present.
-      [.,!?\)]*
+      # Do not include any trailing punctuation, if any are present.
+      [.,!?\"\'\)\<\>]*
       # With "trailing" defined as immediately preceding the first
       # space, or end-of-string.
       (?:\s|$)
-      # But abort the whole thing if the URL ends with '</a>',
-      # again to prevent duplication of linkification.
-      (?!</a>)
+      # But abort the whole thing if the URL ends with a quote or angle
+      # bracket, again to prevent duplication of linkification.
+      (?![\'\"\<\>]+)
     )""",
     flags=re.VERBOSE).sub
 
@@ -366,9 +366,13 @@ class Base:
             # Don't let duplicate messages into the model
             if message_id not in _seen_ids:
                 _seen_ids[message_id] = Model.get_position(Model.append(*args))
-                # I think it's safe not to notify the user about
-                # messages that they sent themselves...
-                if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
+
+                # Don't notify messages from me, or older than five days.
+                if args[FROM_ME_IDX] or args[TIME_IDX] < FIVE_DAYS_AGO:
+                    return True
+
+                # Check if notifications are enabled before notifying.
+                if self._do_notify(args[STREAM_IDX]):
                     notify(
                         args[SENDER_IDX],
                         orig_message,
@@ -470,14 +474,14 @@ class Base:
     def _get_oauth_headers(self, method, url, data=None, headers=None):
         """Basic wrapper around oauthlib that we use for Twitter and Flickr."""
         # "Client" == "Consumer" in oauthlib parlance.
-        client_key = self._account.consumer_key
-        client_secret = self._account.consumer_secret
+        key = self._account.consumer_key
+        secret = self._account.consumer_secret
 
         # "resource_owner" == secret and token.
         resource_owner_key = self._get_access_token()
         resource_owner_secret = self._account.secret_token
-        oauth_client = Client(client_key, client_secret,
-                              resource_owner_key, resource_owner_secret)
+        oauth_client = Client(
+            key, secret, resource_owner_key, resource_owner_secret)
 
         headers = headers or {}
         if data is not None:
@@ -581,8 +585,8 @@ class Base:
 
     def _previously_stored_contact(self, source, field, search_term):
         client = self._new_book_client(source)
-        query = EBook.book_query_vcard_field_test(
-            field, EBook.BookQueryTest(0), search_term)
+        query = EBookContacts.BookQuery.vcard_field_test(
+            field, EBookContacts.BookQueryTest.IS, search_term)
         success, result = client.get_contacts_sync(query.to_string(), None)
         if not success:
             raise ContactsError('Search failed on field {}'.format(field))
@@ -605,22 +609,22 @@ class Base:
     def _create_contact(self, user_fullname, user_nickname,
                         social_network_attrs):
         """Build a VCard based on a dict representation of a contact."""
-        vcard = EBook.VCard.new()
+        vcard = EBookContacts.VCard.new()
         info = social_network_attrs
 
         for i in info:
-            attr = EBook.VCardAttribute.new('social-networking-attributes', i)
+            attr = EBookContacts.VCardAttribute.new('social-networking-attributes', i)
             if type(info[i]) == type(dict()):
                 for j in info[i]:
-                    param = EBook.VCardAttributeParam.new(j)
+                    param = EBookContacts.VCardAttributeParam.new(j)
                     param.add_value(info[i][j])
                     attr.add_param(param);
             else:
                 attr.add_value(info[i])
             vcard.add_attribute(attr)
 
-        contact = EBook.Contact.new_from_vcard(
-            vcard.to_string(EBook.VCardFormat(1)))
+        contact = EBookContacts.Contact.new_from_vcard(
+            vcard.to_string(EBookContacts.VCardFormat(1)))
         contact.set_property('full-name', user_fullname)
         if user_nickname is not None:
             contact.set_property('nickname', user_nickname)

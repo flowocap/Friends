@@ -25,7 +25,6 @@ import re
 import time
 import logging
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import iso8601utc, parsetime
@@ -93,13 +92,11 @@ class Flickr(Base):
         iconfarm = person.get('iconfarm')
         iconserver = person.get('iconserver')
         if None in (iconfarm, iconserver):
-            return Avatar.get_image(
-                'http://www.flickr.com/images/buddyicon.gif')
-        avatar = BUDDY_ICON_URL.format(
+            return 'http://www.flickr.com/images/buddyicon.gif'
+        return BUDDY_ICON_URL.format(
             farm=iconfarm,
             server=iconserver,
             nsid=nsid)
-        return Avatar.get_image(avatar)
 
 # http://www.flickr.com/services/api/flickr.photos.getContactsPhotos.html
     @feature
@@ -135,8 +132,8 @@ class Flickr(Base):
             url = ''
             from_me = (ownername == username)
             if None not in (icon_farm, icon_server, owner):
-                icon_uri = Avatar.get_image(BUDDY_ICON_URL.format(
-                    farm=icon_farm, server=icon_server, nsid=owner))
+                icon_uri = BUDDY_ICON_URL.format(
+                    farm=icon_farm, server=icon_server, nsid=owner)
                 url = IMAGE_PAGE_URL.format(owner=owner, photo=photo_id)
 
             # Calculate the ISO 8601 UTC time string.

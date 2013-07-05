@@ -26,12 +26,36 @@ from friends.tests.mocks import FakeAccount, TestModel, mock
 from friends.utils.base import Base
 from friends.utils.notify import notify
 
+from datetime import datetime, timedelta
+
+RIGHT_NOW = datetime.now().isoformat()
+YESTERDAY = (datetime.now() - timedelta(1)).isoformat()
+LAST_WEEK = (datetime.now() - timedelta(7)).isoformat()
 
 class TestNotifications(unittest.TestCase):
     """Test notification details."""
 
     def setUp(self):
         TestModel.clear()
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.notify.Avatar')
+    @mock.patch('friends.utils.notify.GdkPixbuf')
+    @mock.patch('friends.utils.notify.Notify')
+    def test_publish_avatar_cache(self, notify, gdkpixbuf, avatar):
+        Base._do_notify = lambda protocol, stream: True
+        base = Base(FakeAccount())
+        base._publish(
+            message='http://example.com!',
+            message_id='1234',
+            sender='Benjamin',
+            timestamp=RIGHT_NOW,
+            icon_uri='http://example.com/bob.jpg',
+            )
+        avatar.get_image.assert_called_once_with('http://example.com/bob.jpg')
+        gdkpixbuf.Pixbuf.new_from_file_at_size.assert_called_once_with(
+            avatar.get_image(), 48, 48)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
@@ -43,8 +67,23 @@ class TestNotifications(unittest.TestCase):
             message='http://example.com!',
             message_id='1234',
             sender='Benjamin',
+            timestamp=RIGHT_NOW,
             )
         notify.assert_called_once_with('Benjamin', 'http://example.com!', '')
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    @mock.patch('friends.utils.base.notify')
+    def test_publish_no_stale(self, notify):
+        Base._do_notify = lambda protocol, stream: True
+        base = Base(FakeAccount())
+        base._publish(
+            message='http://example.com!',
+            message_id='1234',
+            sender='Benjamin',
+            timestamp=LAST_WEEK,
+            )
+        self.assertEqual(notify.call_count, 0)
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
@@ -56,6 +95,7 @@ class TestNotifications(unittest.TestCase):
             message='notify!',
             message_id='1234',
             sender='Benjamin',
+            timestamp=YESTERDAY,
             )
         notify.assert_called_once_with('Benjamin', 'notify!', '')
 
@@ -71,6 +111,7 @@ class TestNotifications(unittest.TestCase):
             message_id='1234',
             sender='Benjamin',
             stream='private',
+            timestamp=RIGHT_NOW,
             )
         notify.assert_called_once_with('Benjamin', 'This message is private!', '')
 
@@ -86,6 +127,7 @@ class TestNotifications(unittest.TestCase):
             message_id='1234',
             sender='Benjamin',
             stream='messages',
+            timestamp=RIGHT_NOW,
             )
         self.assertEqual(notify.call_count, 0)
 
@@ -100,6 +142,7 @@ class TestNotifications(unittest.TestCase):
             message_id='1234',
             sender='Benjamin',
             stream='messages',
+            timestamp=RIGHT_NOW,
             )
         self.assertEqual(notify.call_count, 0)
 

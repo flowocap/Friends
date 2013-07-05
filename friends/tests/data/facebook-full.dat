@@ -1,7 +1,7 @@
 {
   "data": [
     {
-      "id": "fake_id",
+      "id": "userid_postid1",
       "from": {
         "name": "Yours Truly",
         "id": "56789"
@@ -10,11 +10,11 @@
       "actions": [
         {
           "name": "Comment",
-          "link": "https://www.facebook.com/fake/posts/id"
+          "link": "https://www.facebook.com/userid/posts/postid1"
         },
         {
           "name": "Like",
-          "link": "https://www.facebook.com/fake/posts/id"
+          "link": "https://www.facebook.com/userid/posts/postid1"
         }
       ],
       "privacy": {
@@ -46,7 +46,7 @@
       "comments": {
         "data": [
           {
-            "id": "fake as a snake",
+            "id": "postid1_commentid1",
             "from": {
               "name": "Grandma",
               "id": "9876"
@@ -55,7 +55,7 @@
             "created_time": "2013-03-12T22:56:17+0000"
           },
           {
-            "id": "faker than cake!",
+            "id": "postid1_commentid2",
             "from": {
               "name": "Father",
               "id": "234"
@@ -64,7 +64,7 @@
             "created_time": "2013-03-12T23:29:45+0000"
           },
           {
-            "id": "still fake",
+            "id": "postid1_commentid3",
             "from": {
               "name": "Mother",
               "id": "456"
@@ -73,7 +73,7 @@
             "created_time": "2013-03-13T02:20:27+0000"
           },
           {
-            "id": "this one is real",
+            "id": "postid1_commentid4",
             "from": {
               "name": "Yours Truly",
               "id": "56789"

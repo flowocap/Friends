@@ -117,7 +117,6 @@ class FakeAccount:
         self.consumer_key = 'consume'
         self.access_token = None
         self.secret_token = None
-        self.avatar_url = None
         self.user_full_name = None
         self.user_name = None
         self.user_id = None

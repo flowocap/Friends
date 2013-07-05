@@ -24,7 +24,6 @@ __all__ = [
 import time
 import logging
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import Downloader, Uploader
@@ -39,6 +38,7 @@ PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
 FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
+STORY_PERMALINK = PERMALINK + '/posts/{post_id}'
 
 
 TEN_DAYS = 864000 # seconds
@@ -89,13 +89,17 @@ class Facebook(Base):
             likes = likes.get('count', 0)
         args['likes'] = likes
 
+        # Fix for LP:1185684 - JPM
+        post_id = message_id.split('_')[1]
+
         from_record = entry.get('from')
         if from_record is not None:
             args['sender'] = from_record.get('name', '')
             args['sender_id'] = sender_id = from_record.get('id', '')
-            args['url'] = PERMALINK.format(id=sender_id)
-            args['icon_uri'] = Avatar.get_image(
-                API_BASE.format(id=sender_id) + '/picture?width=840&height=840')
+            args['url'] = STORY_PERMALINK.format(
+                id=sender_id, post_id=post_id)
+            args['icon_uri'] = (API_BASE.format(id=sender_id) +
+                                '/picture?width=840&height=840')
             args['sender_nick'] = from_record.get('name', '')
             args['from_me'] = (sender_id == self._account.user_id)
 
@@ -317,9 +321,8 @@ class Facebook(Base):
                 sender_nick=self._account.user_name,
                 timestamp=iso8601utc(int(time.time())),
                 url=destination_url,
-                icon_uri=Avatar.get_image(
-                    API_BASE.format(id=self._account.user_id) +
-                    '/picture?type=large'))
+                icon_uri=(API_BASE.format(id=self._account.user_id) +
+                          '/picture?type=large'))
             return destination_url
         else:
             raise FriendsError(str(response))

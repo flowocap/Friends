@@ -25,6 +25,7 @@ import shutil
 import tempfile
 import unittest
 
+from pkg_resources import resource_filename
 from friends.utils.cache import JsonCache
 
 
@@ -63,3 +64,17 @@ class TestJsonCache(unittest.TestCase):
         with open(self._root.format('stuff'), 'r') as fd:
             result = fd.read()
         self.assertEqual(result, '{"pi": 3.141304347826087}')
+
+    def test_invalid_json(self):
+        shutil.copyfile(
+            resource_filename('friends.tests.data', 'facebook_ids_not.json'),
+            os.path.join(self._temp_cache, 'invalid.json'))
+        cache = JsonCache('invalid')
+        self.assertEqual(repr(cache), '{}')
+
+    def test_total_corruption(self):
+        shutil.copyfile(
+            resource_filename('friends.tests.data', 'facebook_ids_corrupt.json'),
+            os.path.join(self._temp_cache, 'corrupt.json'))
+        cache = JsonCache('corrupt')
+        self.assertEqual(repr(cache), '{}')

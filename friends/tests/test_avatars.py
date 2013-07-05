@@ -130,32 +130,3 @@ class TestAvatars(unittest.TestCase):
             # This is the PNG file format magic number, living in the first 8
             # bytes of the file.
             self.assertEqual(raw.read(8), bytes.fromhex('89504E470D0A1A0A'))
-
-    def test_cache_expiration(self):
-        # Cache files which are more than 4 weeks old get expired.
-        #
-        # Start by copying two copies of ubuntu.png to the temporary cache
-        # dir.  Fiddle with their mtimes. so that one is just younger than 4
-        # weeks old and one is just older than 4 weeks old.  Run the cache
-        # eviction method and ensure that the young one is retained while the
-        # old one is removed.
-        with mock.patch('friends.utils.avatar.CACHE_DIR',
-                        self._avatar_cache) as cache_dir:
-            os.makedirs(cache_dir)
-            src = resource_filename('friends.tests.data', 'ubuntu.png')
-            aaa = os.path.join(cache_dir, 'aaa')
-            shutil.copyfile(src, aaa)
-            bbb = os.path.join(cache_dir, 'bbb')
-            shutil.copyfile(src, bbb)
-            # Leave the atime unchanged.
-            four_weeks_ago = date.today() - timedelta(weeks=4)
-            young = four_weeks_ago + timedelta(days=1)
-            old = four_weeks_ago - timedelta(days=1)
-            # aaa will be young enough to keep (i.e. 4 weeks less one day ago)
-            os.utime(aaa,
-                     (os.stat(aaa).st_atime, time.mktime(young.timetuple())))
-            # bbb will be too old to keep (i.e. 4 weeks plus one day ago)
-            os.utime(bbb,
-                     (os.stat(bbb).st_atime, time.mktime(old.timetuple())))
-            Avatar.expire_old_avatars()
-            self.assertEqual(os.listdir(cache_dir), ['aaa'])

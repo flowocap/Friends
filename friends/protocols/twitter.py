@@ -27,7 +27,6 @@ import logging
 
 from urllib.parse import quote
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import BaseRateLimiter, Downloader
@@ -78,11 +77,6 @@ class Twitter(Base):
         self._account.secret_token = authdata.get('TokenSecret')
         self._account.user_id = authdata.get('UserId')
         self._account.user_name = authdata.get('ScreenName')
-        user = self._showuser(self._account.user_id)
-        self._account.user_full_name = user.get('name', '')
-        self._account.avatar_url = (user.get('profile_image_url_https') or
-                                    user.get('profile_image_url') or
-                                    '')
 
     def _get_url(self, url, data=None):
         """Access the Twitter API with correct OAuth signed headers."""
@@ -125,17 +119,29 @@ class Twitter(Base):
         permalink = self._tweet_permalink.format(
             user_id=screen_name,
             tweet_id=tweet_id)
+
+        message = tweet.get('text', '')
+
+        # Resolve t.co links.
+        entities = tweet.get('entities', {})
+        for url in (entities.get('urls', []) + entities.get('media', [])):
+            begin, end = url.get('indices', (None, None))
+            destination = (url.get('expanded_url') or
+                           url.get('display_url') or
+                           url.get('url'))
+            if None not in (begin, end, destination):
+                message = message[:begin] + destination + message[end:]
+
         self._publish(
             message_id=tweet_id,
-            message=tweet.get('text', ''),
+            message=message,
             timestamp=iso8601utc(parsetime(tweet.get('created_at', ''))),
             stream=stream,
             sender=user.get('name', ''),
             sender_id=str(user.get('id', '')),
             sender_nick=screen_name,
             from_me=(screen_name == self._account.user_name),
-            icon_uri=Avatar.get_image(
-                avatar_url.replace('_normal.', '.')),
+            icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
             )
@@ -286,15 +292,7 @@ class Twitter(Base):
     def retweet(self, message_id):
         """Republish somebody else's tweet with your name on it."""
         url = self._retweet.format(message_id)
-        tweet = self._get_url(url, dict(trim_user='true'))
-        user = tweet.get('user', {}) or tweet.get('sender', {})
-
-        # Fill in the blanks...
-        user.update(
-            name=self._account.user_full_name,
-            screen_name=self._account.user_name,
-            profile_image_url=self._account.avatar_url,
-        )
+        tweet = self._get_url(url, dict(trim_user='false'))
 
         return self._publish_tweet(tweet)
 
