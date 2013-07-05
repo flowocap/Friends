@@ -26,14 +26,11 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib
-from pkg_resources import resource_filename
-
 from friends.protocols.instagram import Instagram
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
 from friends.tests.mocks import TestModel, mock
-from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
-from friends.errors import ContactsError, FriendsError, AuthorizationError
+from friends.tests.mocks import EDSRegistry
+from friends.errors import FriendsError, AuthorizationError
 from friends.utils.cache import JsonCache
 
 
@@ -126,8 +123,7 @@ class TestInstagram(unittest.TestCase):
             False,
             '2013-04-11T04:50:01Z',
             'joshwolp shared a picture on Instagram.',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/ca55b643e7b440762c7c6292399eed6542a84b90',
+            '/tmp/friends-avatars/ca55b643e7b440762c7c6292399eed6542a84b90',
             'http://instagram.com/joshwolp',
             8,
             False,
@@ -152,8 +148,7 @@ class TestInstagram(unittest.TestCase):
             False,
             '2013-04-11T04:25:15Z',
             'I remember pushing that little guy of the swings a few times....',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/e61c8d91e37fec3e1dec9325fa4edc52ebeb96bb',
+            '/tmp/friends-avatars/e61c8d91e37fec3e1dec9325fa4edc52ebeb96bb',
             '',
             0,
             False,
