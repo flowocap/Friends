@@ -126,6 +126,6 @@ Architecture: all
 Depends: friends,
          ${misc:Depends},
          ${python3:Depends},
-         account-plugin-instagram
+         account-plugin-instagram,
 Description: Social integration with the desktop - Instagram
  Provides social networking integration with the desktop
