@@ -1,3 +1,19 @@
+friends (0.2.0+13.10.20130708.2-0ubuntu1) saucy; urgency=low
+
+  [ Ken VanDine ]
+  * Added missing depends for account-plugin-instagram .
+
+  [ Andrew Starr-Bochicchio ]
+  * Add instagram support (LP: #1167449). (LP: #1167449)
+
+  [ Robert Bruce Park ]
+  * Add instagram support (LP: #1167449). (LP: #1167449)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 219
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 08 Jul 2013 15:23:46 +0000
+
 friends (0.2.0+13.10.20130704-0ubuntu1) saucy; urgency=low
 
   [ Robert Bruce Park ]
