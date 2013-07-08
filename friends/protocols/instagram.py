@@ -20,17 +20,17 @@ __all__ = [
     'Instagram',
     ]
 
-import time
+
 import logging
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.cache import JsonCache
-from friends.utils.http import Downloader, Uploader
+from friends.utils.http import Downloader
 from friends.utils.time import parsetime, iso8601utc
 from friends.errors import FriendsError
 
+
 log = logging.getLogger(__name__)
+
 
 class Instagram(Base):
     _api_base = 'https://api.instagram.com/v1/{endpoint}?access_token={token}'
@@ -56,7 +56,7 @@ class Instagram(Base):
         name = person.get('full_name')
         person_id = person.get('id')
         message= '%s shared a picture on Instagram.' % nick
-        person_icon = Avatar.get_image(person.get('profile_picture'))
+        person_icon = person.get('profile_picture')
         person_url = 'http://instagram.com/' + nick
         picture = entry.get('images').get('thumbnail').get('url')
         if entry.get('caption'):
@@ -107,6 +107,7 @@ class Instagram(Base):
         return args['url']
 
     def _publish_comment(self, comment, stream):
+        """Publish a single comment into the Dee.SharedModel."""
         message_id = comment.get('id')
         if message_id is None:
             return
@@ -116,7 +117,7 @@ class Instagram(Base):
         timestamp = comment.get('created_time')
         if timestamp is not None:
             timestamp = iso8601utc(parsetime(timestamp))
-        icon_uri = Avatar.get_image(person.get('profile_picture'))
+        icon_uri = person.get('profile_picture')
         sender_id = person.get('id')
         sender = person.get('full_name')
 
@@ -130,7 +131,6 @@ class Instagram(Base):
              sender_id=sender_id,
              sender=sender,
              )
-#                print(args)
         self._publish(**args)
 
     @feature
@@ -143,7 +143,7 @@ class Instagram(Base):
         values = result.get('data', {})
         for update in values:
             self._publish_entry(update)
-    
+
     @feature
     def receive(self):
         """Gather and publish all incoming messages."""
@@ -151,6 +151,7 @@ class Instagram(Base):
         return self._get_n_rows()
 
     def _send(self, obj_id, message, endpoint, stream='messages'):
+        """Used for posting a message or comment."""
         token = self._get_access_token()
 
         url = self._api_base.format(endpoint=endpoint, token=token)
@@ -161,27 +162,33 @@ class Instagram(Base):
             params=dict(access_token=token, text=message)).get_json()
         new_id = result.get('id')
         if new_id is None:
-            raise FriendsError('Failed sending to Instagram: {!r}'.format(result))
-        enpoint = 'media/{}/comments'.format(new_id)
+            raise FriendsError(
+                'Failed sending to Instagram: {!r}'.format(result))
         url = self._api_base.format(endpoint=endpoint, token=token)
         comment = Downloader(url, params=dict(access_token=token)).get_json()
         return self._publish_entry(entry=comment, stream=stream)
 
     @feature
     def send_thread(self, obj_id, message):
-        """Write a comment on some existing picture.
-        """
-        return self._send(obj_id, message, 'media/{}/comments'.format(obj_id),
-                          stream='reply_to/{}'.format(obj_id))
+        """Write a comment on some existing picture."""
+        return self._send(
+            obj_id,
+            message,
+            'media/{}/comments'.format(obj_id),
+            stream='reply_to/{}'.format(obj_id))
 
     def _like(self, obj_id, endpoint, method):
+        """Used for liking or unliking an object."""
         token = self._get_access_token()
         url = self._api_base.format(endpoint=endpoint, token=token)
 
-        if not Downloader(url, method=method,
-                          params=dict(access_token=token)).get_json():
-            raise FriendsError('Failed to {} like {} on Instagram'.format(
-                method, obj_id))
+        if not Downloader(
+                url,
+                method=method,
+                params=dict(access_token=token)).get_json():
+            raise FriendsError(
+                'Failed to {} like {} on Instagram'.format(
+                    method, obj_id))
 
     @feature
     def like(self, obj_id):
