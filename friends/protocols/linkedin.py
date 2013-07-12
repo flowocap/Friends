@@ -50,15 +50,11 @@ class LinkedIn(Base):
         """Publish a single update into the Dee.SharedModel."""
         message_id = entry.get('updateKey')
 
-        if message_id is None:
-            # We can't do much with this entry.
-            return
-
-        content = entry.get('updateContent', '')
+        content = entry.get('updateContent', {})
         person = content.get('person', {})
         name = '{firstName} {lastName}'.format(**person)
         person_id = person.get('id', '')
-        status = person.get('currentStatus', '')
+        status = person.get('currentStatus')
         picture = person.get('pictureUrl', '')
         url = person.get('siteStandardProfileRequest', {}).get('url', '')
         timestamp = entry.get('timestamp', 0)
@@ -68,6 +64,10 @@ class LinkedIn(Base):
 
         likes = entry.get('numLikes', 0)
 
+        if None in (message_id, status):
+            # Something went wrong; just ignore this malformed message.
+            return
+
         args = dict(
              message_id=message_id,
              stream=stream,
@@ -76,7 +76,7 @@ class LinkedIn(Base):
              sender_id=person_id,
              sender=name,
              icon_uri=picture,
-             link_url=url,
+             url=url,
              timestamp=iso_time
              )
 

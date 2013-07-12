@@ -348,7 +348,7 @@ class Base:
                 account_id=self._account.id
                 )
             )
-# linkify the message
+        # linkify the message
         orig_message = kwargs.get('message', '')
         kwargs['message'] = linkify_string(orig_message)
         args = []
