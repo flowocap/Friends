@@ -24,7 +24,7 @@ import unittest
 
 from friends.errors import UnsupportedProtocolError
 from friends.protocols.flickr import Flickr
-from friends.tests.mocks import FakeAccount, LogMock, SettingsIterMock
+from friends.tests.mocks import FakeAccount, LogMock
 from friends.tests.mocks import TestModel, LogMock, mock
 from friends.utils.account import Account, _find_accounts_uoa
 
@@ -54,7 +54,7 @@ class TestAccount(unittest.TestCase):
                             'ConsumerSecret': 'fake_secret'},
                 }),
             'get_account.return_value': mock.Mock(**{
-                'get_settings_iter.return_value': SettingsIterMock(),
+                'get_settings_dict.return_value': dict(send_enabled=True),
                 'id': 'fake_id',
                 'get_provider_name.return_value': 'flickr',
                 }),
@@ -98,24 +98,23 @@ class TestAccount(unittest.TestCase):
         # constructor.  Test that it has the expected original key value.
         self.assertEqual(self.account.send_enabled, True)
 
-    def test_iter_filter(self):
-        # The get_settings_iter() filters everything that doesn't start with
+    def test_dict_filter(self):
+        # The get_settings_dict() filters everything that doesn't start with
         # 'friends/'
-        self._callback_account.get_settings_iter.assert_called_with('friends/')
+        self._callback_account.get_settings_dict.assert_called_with('friends/')
 
     def test_on_account_changed_signal(self):
         # Test that when the account changes, and a 'changed' signal is
         # received, the callback is called and the account is updated.
         #
         # Start by simulating a change in the account service.
-        other_iter = SettingsIterMock()
-        other_iter.items = [
-            (True, 'send_enabled', False),
-            (True, 'bee', 'two'),
-            (True, 'cat', 'three'),
-            ]
-        iter = self.account_service.get_account().get_settings_iter
-        iter.return_value = other_iter
+        other_dict = dict(
+            send_enabled=False,
+            bee='two',
+            cat='three',
+            )
+        adict = self.account_service.get_account().get_settings_dict
+        adict.return_value = other_dict
         # Check that the signal has been connected.
         self.assertEqual(self._callback_signal, 'changed')
         # Check that the account is the object we expect it to be.
@@ -127,6 +126,26 @@ class TestAccount(unittest.TestCase):
         self.assertEqual(self.account.send_enabled, False)
         self.assertFalse(hasattr(self.account, 'bee'))
         self.assertFalse(hasattr(self.account, 'cat'))
+
+    @mock.patch('friends.utils.account.Account._on_account_changed')
+    @mock.patch('friends.utils.account.protocol_manager')
+    def test_account_consumer_key(self, *mocks):
+        account_service = mock.Mock()
+        account_service.get_auth_data().get_parameters.return_value = (
+            dict(ConsumerKey='key', ConsumerSecret='secret'))
+        acct = Account(account_service)
+        self.assertEqual(acct.consumer_key, 'key')
+        self.assertEqual(acct.consumer_secret, 'secret')
+
+    @mock.patch('friends.utils.account.Account._on_account_changed')
+    @mock.patch('friends.utils.account.protocol_manager')
+    def test_account_client_id_sohu_style(self, *mocks):
+        account_service = mock.Mock()
+        account_service.get_auth_data().get_parameters.return_value = (
+            dict(ClientId='key', ClientSecret='secret'))
+        acct = Account(account_service)
+        self.assertEqual(acct.consumer_key, 'key')
+        self.assertEqual(acct.consumer_secret, 'secret')
 
     @mock.patch('friends.utils.account.manager')
     @mock.patch('friends.utils.account.Account')

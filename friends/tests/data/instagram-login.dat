@@ -1,0 +1,18 @@
+{
+  "meta":  {
+    "code": 200
+  },
+  "data":  {
+    "username": "bpersons",
+    "bio": "",
+    "website": "",
+    "profile_picture": "http://images.ak.instagram.com/profiles/anonymousUser.jpg",
+    "full_name": "Bart Person",
+    "counts":  {
+      "media": 174,
+      "followed_by": 100,
+      "follows": 503
+    },
+    "id": "801"
+  }
+}

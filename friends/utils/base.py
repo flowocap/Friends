@@ -28,36 +28,37 @@ import time
 import logging
 import threading
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from oauthlib.oauth1 import Client
 
-from gi.repository import GLib, GObject, EDataServer, EBook
+from gi.repository import GLib, GObject, EDataServer, EBook, EBookContacts
 
 from friends.errors import FriendsError, ContactsError
 from friends.utils.authentication import Authentication
-from friends.utils.model import COLUMN_INDICES, SCHEMA, DEFAULTS
-from friends.utils.model import Model, persist_model
+from friends.utils.model import Schema, Model, persist_model
 from friends.utils.notify import notify
 from friends.utils.time import ISO8601_FORMAT
 
 
+FIVE_DAYS_AGO = (datetime.now() - timedelta(5)).isoformat()
 STUB = lambda *ignore, **kwignore: None
 COMMA_SPACE = ', '
-AVATAR_IDX = COLUMN_INDICES['icon_uri']
-FROM_ME_IDX = COLUMN_INDICES['from_me']
-STREAM_IDX = COLUMN_INDICES['stream']
-SENDER_IDX = COLUMN_INDICES['sender']
-MESSAGE_IDX = COLUMN_INDICES['message']
-ID_IDX = COLUMN_INDICES['message_id']
-ACCT_IDX = COLUMN_INDICES['account_id']
-TIME_IDX = COLUMN_INDICES['timestamp']
+SCHEMA = Schema()
+AVATAR_IDX = SCHEMA.INDICES['icon_uri']
+FROM_ME_IDX = SCHEMA.INDICES['from_me']
+STREAM_IDX = SCHEMA.INDICES['stream']
+SENDER_IDX = SCHEMA.INDICES['sender']
+MESSAGE_IDX = SCHEMA.INDICES['message']
+ID_IDX = SCHEMA.INDICES['message_id']
+ACCT_IDX = SCHEMA.INDICES['account_id']
+TIME_IDX = SCHEMA.INDICES['timestamp']
 
 # See friends/tests/test_protocols.py for further documentation
 LINKIFY_REGEX = re.compile(
     r"""
-    # Do not match if URL is preceded by '"' or '>'
+    # Do not match if URL is preceded by quotes, slash, or '>'
     # This is used to prevent duplication of linkification.
-    (?<![\"\>])
+    (?<![\'\"\>/])
     # Record everything that we're about to match.
     (
       # URLs can start with 'http://', 'https://', 'ftp://', or 'www.'
@@ -69,15 +70,14 @@ LINKIFY_REGEX = re.compile(
     # This section will peek ahead (without matching) in order to
     # determine precisely where the URL actually *ends*.
     (?=
-      # Do not include any trailing period, comma, exclamation mark,
-      # question mark, or closing parentheses, if any are present.
-      [.,!?\)]*
+      # Do not include any trailing punctuation, if any are present.
+      [.,!?\"\'\)\<\>]*
       # With "trailing" defined as immediately preceding the first
       # space, or end-of-string.
       (?:\s|$)
-      # But abort the whole thing if the URL ends with '</a>',
-      # again to prevent duplication of linkification.
-      (?!</a>)
+      # But abort the whole thing if the URL ends with a quote or angle
+      # bracket, again to prevent duplication of linkification.
+      (?![\'\"\<\>]+)
     )""",
     flags=re.VERBOSE).sub
 
@@ -130,6 +130,7 @@ def initialize_caches():
 
 def linkify_string(string):
     """Finds all URLs in a string and turns them into HTML links."""
+    log.debug(string)
     return LINKIFY_REGEX(r'<a href="\1">\1</a>', string)
 
 
@@ -347,16 +348,17 @@ class Base:
                 account_id=self._account.id
                 )
             )
-        # linkify the message
-        kwargs['message'] = linkify_string(kwargs.get('message', ''))
+# linkify the message
+        orig_message = kwargs.get('message', '')
+        kwargs['message'] = linkify_string(orig_message)
         args = []
         # Now iterate through all the column names listed in the
         # SCHEMA, and pop matching column values from the kwargs, in
         # the order which they appear in the SCHEMA. If any are left
         # over at the end of this, raise a TypeError indicating the
         # unexpected column names.
-        for column_name, column_type in SCHEMA:
-            args.append(kwargs.pop(column_name, DEFAULTS[column_type]))
+        for column_name, column_type in SCHEMA.COLUMNS:
+            args.append(kwargs.pop(column_name, SCHEMA.DEFAULTS[column_type]))
         if len(kwargs) > 0:
             raise TypeError('Unexpected keyword arguments: {}'.format(
                 COMMA_SPACE.join(sorted(kwargs))))
@@ -365,12 +367,16 @@ class Base:
             # Don't let duplicate messages into the model
             if message_id not in _seen_ids:
                 _seen_ids[message_id] = Model.get_position(Model.append(*args))
-                # I think it's safe not to notify the user about
-                # messages that they sent themselves...
-                if not args[FROM_ME_IDX] and self._do_notify(args[STREAM_IDX]):
+
+                # Don't notify messages from me, or older than five days.
+                if args[FROM_ME_IDX] or args[TIME_IDX] < FIVE_DAYS_AGO:
+                    return True
+
+                # Check if notifications are enabled before notifying.
+                if self._do_notify(args[STREAM_IDX]):
                     notify(
                         args[SENDER_IDX],
-                        args[MESSAGE_IDX],
+                        orig_message,
                         args[AVATAR_IDX],
                         )
             return message_id in _seen_ids
@@ -469,14 +475,14 @@ class Base:
     def _get_oauth_headers(self, method, url, data=None, headers=None):
         """Basic wrapper around oauthlib that we use for Twitter and Flickr."""
         # "Client" == "Consumer" in oauthlib parlance.
-        client_key = self._account.consumer_key
-        client_secret = self._account.consumer_secret
+        key = self._account.consumer_key
+        secret = self._account.consumer_secret
 
         # "resource_owner" == secret and token.
         resource_owner_key = self._get_access_token()
         resource_owner_secret = self._account.secret_token
-        oauth_client = Client(client_key, client_secret,
-                              resource_owner_key, resource_owner_secret)
+        oauth_client = Client(
+            key, secret, resource_owner_key, resource_owner_secret)
 
         headers = headers or {}
         if data is not None:
@@ -503,15 +509,36 @@ class Base:
             message = None
         raise FriendsError(message or str(error))
 
+    def _calculate_row_cell(self, message_id, column_name):
+        """Find x,y coords in the model based on message_id and column_name."""
+        row_id = _seen_ids.get(message_id)
+        col_idx = SCHEMA.INDICES.get(column_name)
+        if None in (row_id, col_idx):
+            raise FriendsError('Cell could not be found.')
+        return row_id, col_idx
+
     def _fetch_cell(self, message_id, column_name):
         """Find a column value associated with a specific message_id."""
-        row_id = _seen_ids.get(message_id)
-        col_idx = COLUMN_INDICES.get(column_name)
-        if None not in (row_id, col_idx):
-            row = Model.get_row(row_id)
-            return row[col_idx]
-        else:
-            raise FriendsError('Value could not be found.')
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        return Model.get_row(row_id)[col_idx]
+
+    def _set_cell(self, message_id, column_name, value):
+        """Set a column value associated with a specific message_id."""
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        Model.get_row(row_id)[col_idx] = value
+        persist_model()
+
+    def _inc_cell(self, message_id, column_name):
+        """Increment a column value associated with a specific message_id."""
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        Model.get_row(row_id)[col_idx] += 1
+        persist_model()
+
+    def _dec_cell(self, message_id, column_name):
+        """Decrement a column value associated with a specific message_id."""
+        row_id, col_idx = self._calculate_row_cell(message_id, column_name)
+        Model.get_row(row_id)[col_idx] -= 1
+        persist_model()
 
     def _new_book_client(self, source):
         client = EBook.BookClient.new(source)
@@ -559,8 +586,8 @@ class Base:
 
     def _previously_stored_contact(self, source, field, search_term):
         client = self._new_book_client(source)
-        query = EBook.book_query_vcard_field_test(
-            field, EBook.BookQueryTest(0), search_term)
+        query = EBookContacts.BookQuery.vcard_field_test(
+            field, EBookContacts.BookQueryTest.IS, search_term)
         success, result = client.get_contacts_sync(query.to_string(), None)
         if not success:
             raise ContactsError('Search failed on field {}'.format(field))
@@ -583,22 +610,22 @@ class Base:
     def _create_contact(self, user_fullname, user_nickname,
                         social_network_attrs):
         """Build a VCard based on a dict representation of a contact."""
-        vcard = EBook.VCard.new()
+        vcard = EBookContacts.VCard.new()
         info = social_network_attrs
 
         for i in info:
-            attr = EBook.VCardAttribute.new('social-networking-attributes', i)
+            attr = EBookContacts.VCardAttribute.new('social-networking-attributes', i)
             if type(info[i]) == type(dict()):
                 for j in info[i]:
-                    param = EBook.VCardAttributeParam.new(j)
+                    param = EBookContacts.VCardAttributeParam.new(j)
                     param.add_value(info[i][j])
                     attr.add_param(param);
             else:
                 attr.add_value(info[i])
             vcard.add_attribute(attr)
 
-        contact = EBook.Contact.new_from_vcard(
-            vcard.to_string(EBook.VCardFormat(1)))
+        contact = EBookContacts.Contact.new_from_vcard(
+            vcard.to_string(EBookContacts.VCardFormat(1)))
         contact.set_property('full-name', user_fullname)
         if user_nickname is not None:
             contact.set_property('nickname', user_nickname)

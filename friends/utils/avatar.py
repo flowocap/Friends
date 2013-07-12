@@ -21,28 +21,21 @@ __all__ = [
 
 
 import os
-import errno
 import logging
 
-from datetime import date, timedelta
 from gi.repository import Gio, GLib, GdkPixbuf
+from tempfile import gettempdir
 from hashlib import sha1
 
 from friends.utils.http import Downloader
+from friends.errors import ignored
 
 
-CACHE_DIR = os.path.realpath(os.path.join(
-    GLib.get_user_cache_dir(), 'friends', 'avatars'))
-CACHE_AGE = timedelta(weeks=4)
+CACHE_DIR = os.path.join(gettempdir(), 'friends-avatars')
 
 
-try:
+with ignored(FileExistsError):
     os.makedirs(CACHE_DIR)
-except OSError as error:
-    # It raises OSError if the dir already existed, which is fine,
-    # but don't ignore other errors.
-    if error.errno != errno.EEXIST:
-        raise
 
 
 log = logging.getLogger(__name__)
@@ -58,14 +51,11 @@ class Avatar:
         if not url:
             return url
         local_path = Avatar.get_path(url)
-        try:
+        size = 0
+
+        with ignored(FileNotFoundError):
             size = os.stat(local_path).st_size
-        except OSError as error:
-            if error.errno != errno.ENOENT:
-                # Some other error occurred, so propagate it up.
-                raise
-            # Treat a missing file as zero length.
-            size = 0
+
         if size == 0:
             log.debug('Getting: {}'.format(url))
             image_data = Downloader(url).get_bytes()
@@ -84,22 +74,3 @@ class Avatar:
             except GLib.GError:
                 log.error('Failed to scale image: {}'.format(url))
         return local_path
-
-    @staticmethod
-    def expire_old_avatars():
-        """Evict old files from the cache."""
-        log.debug('Checking if anything needs to expire.')
-        limit = date.today() - CACHE_AGE
-        for filename in os.listdir(CACHE_DIR):
-            path = os.path.join(CACHE_DIR, filename)
-            mtime = date.fromtimestamp(os.stat(path).st_mtime)
-            if mtime < limit:
-                # The file's last modification time is earlier than the oldest
-                # time we'll allow in the cache.  However, due to race
-                # conditions, ignore it if the file has already been removed.
-                try:
-                    log.debug('Expiring: {}'.format(path))
-                    os.remove(path)
-                except OSError as error:
-                    if error.errno != errno.ENOENT:
-                        raise

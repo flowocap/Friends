@@ -24,11 +24,8 @@ frontend, which knows to display the new messages there.
 
 
 __all__ = [
+    'Schema',
     'Model',
-    'COLUMN_NAMES',
-    'COLUMN_TYPES',
-    'COLUMN_INDICES',
-    'DEFAULTS',
     'MODEL_DBUS_NAME',
     'persist_model',
     'prune_model',
@@ -41,46 +38,44 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# DO NOT EDIT THIS WITHOUT ADJUSTING service.vala IN LOCKSTEP
-SCHEMA = (
-    ('protocol',       's'), # Same as UOA 'provider_name'
-    ('account_id',     't'), # Same as UOA account id
-    ('message_id',     's'),
-    ('stream',         's'),
-    ('sender',         's'),
-    ('sender_id',      's'),
-    ('sender_nick',    's'),
-    ('from_me',        'b'),
-    ('timestamp',      's'),
-    ('message',        's'),
-    ('icon_uri',       's'),
-    ('url',            's'),
-    ('likes',          't'),
-    ('liked',          'b'),
-    ('link_picture',   's'),
-    ('link_name',      's'),
-    ('link_url',       's'),
-    ('link_desc',      's'),
-    ('link_caption',   's'),
-    ('link_icon',      's'),
-    ('location',       's'),
-    ('latitude',       'd'),
-    ('longitude',      'd'),
-    )
+class Schema:
+    """Represents the DeeModel schema data that we defined in CSV."""
+    DEFAULTS = {
+        'b': False,
+        's': '',
+        'd': 0,
+        't': 0,
+        }
 
+    FILES = [
+        'data/model-schema.csv',
+        '/usr/share/friends/model-schema.csv',
+        ]
 
-# It's useful to have separate lists of the column names and types.
-COLUMN_NAMES, COLUMN_TYPES = zip(*SCHEMA)
-# A reverse mapping from column name to the column index.  This is useful for
-# pulling column values out of a row of data.
-COLUMN_INDICES = {name: i for i, name in enumerate(COLUMN_NAMES)}
-# This defines default values for the different data types
-DEFAULTS = {
-    'b': False,
-    's': '',
-    'd': 0,
-    't': 0,
-    }
+    def __init__(self):
+        """Parse CSV from disk."""
+        self.COLUMNS = []
+        self.NAMES = []
+        self.TYPES = []
+        self.INDICES = {}
+
+        files = self.FILES[:]
+        while files:
+            filename = files.pop()
+            log.debug('Looking for SCHEMA in {}'.format(filename))
+            try:
+                with open(filename) as schema:
+                    for col in schema:
+                        name, variant = col.rstrip().split(',')
+                        self.COLUMNS.append((name, variant))
+                        self.NAMES.append(name)
+                        self.TYPES.append(variant)
+                log.debug(
+                    'Found {} columns for SCHEMA'.format(len(self.COLUMNS)))
+                break
+            except IOError:
+                pass
+        self.INDICES = {name: i for i, name in enumerate(self.NAMES)}
 
 
 MODEL_DBUS_NAME = 'com.canonical.Friends.Streams'

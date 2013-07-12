@@ -1,12 +1,249 @@
-friends (0.2.0-0ubuntu2) UNRELEASED; urgency=low
+friends (0.2.0+13.10.20130708.3-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Fix Instagram's avatar logic.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 221
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 08 Jul 2013 22:06:08 +0000
+
+friends (0.2.0+13.10.20130708.2-0ubuntu1) saucy; urgency=low
+
+  [ Ken VanDine ]
+  * Added missing depends for account-plugin-instagram .
+
+  [ Andrew Starr-Bochicchio ]
+  * Add instagram support (LP: #1167449). (LP: #1167449)
+
+  [ Robert Bruce Park ]
+  * Add instagram support (LP: #1167449). (LP: #1167449)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 219
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 08 Jul 2013 15:23:46 +0000
+
+friends (0.2.0+13.10.20130704-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Basic Sphinx boilerplate.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 216
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 04 Jul 2013 05:02:10 +0000
+
+friends (0.2.0+13.10.20130627-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Handle previously-uncaught exception when json cache contained
+    invalid data. (LP: #1189229). (LP: #1189229)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 214
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 27 Jun 2013 05:02:18 +0000
+
+friends (0.2.0daily13.06.22-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Don't linkify URLs inside the DOCTYPE.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 212
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sat, 22 Jun 2013 05:01:09 +0000
+
+friends (0.2.0daily13.06.21-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Stop calling deprecated GObject.threads_init().
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 210
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 21 Jun 2013 05:01:05 +0000
+
+friends (0.2.0daily13.06.19-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Move avatar cache under /tmp. (LP: #1177945)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 208
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 19 Jun 2013 05:14:13 +0000
+
+friends (0.2.0daily13.06.18-0ubuntu1) saucy; urgency=low
+
+  [ J Phani Mahesh ]
+  * Fix LP:#1185684. (LP: #1185684)
+
+  [ Robert Bruce Park ]
+  * Fix LP:#1185684. (LP: #1185684)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 206
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 18 Jun 2013 05:01:06 +0000
+
+friends (0.2.0daily13.06.07.1-0ubuntu1) saucy; urgency=low
+
+  [ Ken VanDine ]
+  * Updated for libaccounts-glib >= 1.10
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 204
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 07 Jun 2013 11:42:43 +0000
+
+friends (0.2.0daily13.05.07.1-0ubuntu2) saucy; urgency=low
+
+  * Port to EDS 3.8 - the contacts functionality was moved into an
+    EBookContacts library. Add Build-Deps and Deps on gir1.2-ebookcontacts-1.2
+    accordingly. Version the rest.
+
+ -- Iain Lane <iain.lane@canonical.com>  Wed, 29 May 2013 18:31:49 +0100
+
+friends (0.2.0daily13.05.07.1-0ubuntu1) saucy; urgency=low
 
   [ Robert Bruce Park ]
   * Version bump for the next development series.
+  * Fix LP: #1154520
+  * Running «friends-app» from terminal gives a segfault. (LP: #1176991)
+  * friends-dispatcher crashed with TypeError in /usr/lib/python3/dist-
+    packages/friends/main.py: threads_init() takes 0 positional
+    arguments but 1 was given (LP: #1177047)
+  * Friends-dispatcher fails with "TypeError" at launch. (LP: #1176500)
 
-  [ Jonathan Davies ]
-  * Added friends-linkedin.
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 202
 
- -- Jonathan Davies <jonathan.davies@canonical.com>  Thu, 21 Mar 2013 22:52:07 +0000
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 07 May 2013 17:53:19 +0000
+
+friends (0.1.3daily13.04.30ubuntu.unity.next-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 199 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 30 Apr 2013 16:58:05 +0000
+
+friends (0.1.3daily13.04.17.1~13.04-0ubuntu1) raring; urgency=low
+
+  [ Ken VanDine ]
+  * Initiate a refresh after a new account gets created
+
+  [ Robert Bruce Park ]
+  * friends-dispatcher crashed with friends.errors.AuthorizationError in
+    _login_cb(): Timeout was reached (account: 1) (LP: #1159552)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 198
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 17 Apr 2013 20:30:54 +0000
+
+friends (0.1.3daily13.04.17~13.04-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * No ConsumerKey in _get_oauth_headers (LP: #1169018)
+  * doesn't resolve destination of t.co links (LP: #1166080)
+  * limit notifications at statup. (LP: #1079865)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 195
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 17 Apr 2013 05:03:06 +0000
+
+friends (0.1.3daily13.04.16.1~13.04-0ubuntu1) raring; urgency=low
+
+  [ Ken VanDine ]
+  * debian/control
+    - make the service plugins depend on the appropriate account plugins
+
+  [ Robert Bruce Park ]
+  * Sender information empty for retweets (LP: #1168427)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 190
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 16 Apr 2013 15:51:43 +0000
+
+friends (0.1.3daily13.04.10.1-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * notifications contain unparsed html around URLs (LP: #1166053)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 187
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 10 Apr 2013 14:41:52 +0000
+
+friends (0.1.3daily13.04.10-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 185
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 10 Apr 2013 05:01:49 +0000
+
+friends (0.1.3daily13.04.09-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 183
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 09 Apr 2013 05:01:54 +0000
+
+friends (0.1.3daily13.04.08-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 181
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 08 Apr 2013 05:01:47 +0000
+
+friends (0.1.3daily13.04.05-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 179
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 05 Apr 2013 05:01:55 +0000
+
+friends (0.1.3daily13.04.03-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 176
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 03 Apr 2013 05:01:53 +0000
+
+friends (0.1.3daily13.04.01-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * Don't delete stale avatars, just redownload periodically (LP: #1153896)
+  * Quote URLs properly during shortening.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 173
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 01 Apr 2013 05:01:51 +0000
+
+friends (0.1.3daily13.03.28-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * Flickr photos are 404ing (LP: #1159979)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 170
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 28 Mar 2013 05:01:41 +0000
+
+friends (0.1.3daily13.03.22-0ubuntu1) raring; urgency=low
+
+  * Automatic snapshot from revision 168
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 22 Mar 2013 05:02:25 +0000
+
+friends (0.1.3daily13.03.21-0ubuntu1) raring; urgency=low
+
+  [ Robert Bruce Park ]
+  * Fix LP: #1154520
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 166
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 21 Mar 2013 05:02:17 +0000
 
 friends (0.1.3daily13.03.20-0ubuntu1) raring; urgency=low
 

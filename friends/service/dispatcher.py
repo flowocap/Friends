@@ -30,12 +30,12 @@ import dbus.service
 from gi.repository import GLib
 from contextlib import ContextDecorator
 
-from friends.utils.avatar import Avatar
 from friends.utils.account import find_accounts
 from friends.utils.manager import protocol_manager
 from friends.utils.menus import MenuManager
 from friends.utils.model import Model, persist_model
-from friends.shorteners import lookup
+from friends.utils.shorteners import Short
+from friends.errors import ignored
 
 
 log = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ class ManageTimers(ContextDecorator):
     """Exit the dispatcher 30s after the most recent method call returns."""
     timers = set()
     callback = STUB
+    timeout = 30
 
     def __enter__(self):
         self.clear_all_timers()
@@ -60,16 +61,17 @@ class ManageTimers(ContextDecorator):
         self.set_new_timer()
 
     def clear_all_timers(self):
-        log.debug('Clearing {} shutdown timer(s)...'.format(len(self.timers)))
         while self.timers:
-            GLib.source_remove(self.timers.pop())
+            timer_id = self.timers.pop()
+            log.debug('Clearing timer id: {}'.format(timer_id))
+            GLib.source_remove(timer_id)
 
     def set_new_timer(self):
         # Concurrency will cause two methods to exit near each other,
         # causing two timers to be set, so we have to clear them again.
         self.clear_all_timers()
         log.debug('Starting new shutdown timer...')
-        self.timers.add(GLib.timeout_add_seconds(30, self.terminate))
+        self.timers.add(GLib.timeout_add_seconds(self.timeout, self.terminate))
 
     def terminate(self, *ignore):
         """Exit the dispatcher, but only if there are no active subthreads."""
@@ -121,11 +123,8 @@ class Dispatcher(dbus.service.Object):
         # immediately, so there is no delay or blocking during the
         # execution of this method.
         for account in self.accounts.values():
-            try:
+            with ignored(NotImplementedError):
                 account.protocol('receive')
-            except NotImplementedError:
-                # If a protocol doesn't support receive then ignore it.
-                pass
 
     @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE)
@@ -177,12 +176,10 @@ class Dispatcher(dbus.service.Object):
         for account in accounts:
             log.debug('{}: {} {}'.format(account.id, action, arg))
             args = (action, arg) if arg else (action,)
-            try:
+            # Not all accounts are expected to implement every action.
+            with ignored(NotImplementedError):
                 account.protocol(*args, success=success, failure=failure)
                 called = True
-            except NotImplementedError:
-                # Not all accounts are expected to implement every action.
-                pass
         if not called:
             failure('No accounts supporting {} found.'.format(action))
 
@@ -330,10 +327,11 @@ class Dispatcher(dbus.service.Object):
 
     @exit_after_idle
     @dbus.service.method(DBUS_INTERFACE, in_signature='s', out_signature='s')
-    def URLShorten(self, url):
-        """Shorten a URL.
+    def URLShorten(self, message):
+        """Shorten all the URLs in a message.
 
-        Takes a url as a string and returns a shortened url as a string.
+        Takes a message as a string, and returns the message with all
+        it's URLs shortened.
 
         example:
             import dbus
@@ -344,19 +342,7 @@ class Dispatcher(dbus.service.Object):
             short_url = service.URLShorten(url)
         """
         service_name = self.settings.get_string('urlshorter')
-        log.info('Shortening URL {} with {}'.format(url, service_name))
-        if (lookup.is_shortened(url) or
-            not self.settings.get_boolean('shorten-urls')):
-            # It's already shortened, or the preference is not set.
-            return url
-        service = lookup.lookup(service_name)
-        try:
-            return service.shorten(url)
-        except Exception:
-            log.exception('URL shortening class: {}'.format(service))
-            return url
-
-    @exit_after_idle
-    @dbus.service.method(DBUS_INTERFACE)
-    def ExpireAvatars(self):
-        Avatar.expire_old_avatars()
+        log.info('Shortening with {}'.format(service_name))
+        if not self.settings.get_boolean('shorten-urls'):
+            return message
+        return Short(service_name).sub(message)

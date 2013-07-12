@@ -26,7 +26,6 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib
 from urllib.error import HTTPError
 
 from friends.protocols.twitter import RateLimiter, Twitter
@@ -70,15 +69,17 @@ class TestTwitter(unittest.TestCase):
 
     @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='some clever fake data',
                                   TokenSecret='sssssshhh!',
-                                  UserId='rickygervais',
-                                  ScreenName='Ricky Gervais'))
+                                  UserId='1234',
+                                  ScreenName='stephenfry'))
     def test_successful_authentication(self, *mocks):
         self.assertTrue(self.protocol._login())
-        self.assertEqual(self.account.user_name, 'Ricky Gervais')
-        self.assertEqual(self.account.user_id, 'rickygervais')
+        self.assertEqual(self.account.user_name, 'stephenfry')
+        self.assertEqual(self.account.user_id, '1234')
         self.assertEqual(self.account.access_token, 'some clever fake data')
         self.assertEqual(self.account.secret_token, 'sssssshhh!')
 
@@ -136,8 +137,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             ['twitter', 88, '240558470661799936',
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
              '2012-08-28T21:16:23Z', 'just another test',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
+             'https://si0.twimg.com/profile_images/730275945/oauth-dancer.jpg',
              'https://twitter.com/oauth_dancer/status/240558470661799936',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -145,9 +145,10 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
              'with twitter" class at @cal with @othman  '
-             '<a href="http://t.co/bfj7zkDJ">http://t.co/bfj7zkDJ</a>',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/0219effc03a3049a622476e6e001a4014f33dc31',
+             '<a href="http://blogs.ischool.berkeley.edu/i290-abdt-s12/">'
+             'http://blogs.ischool.berkeley.edu/i290-abdt-s12/</a>',
+             'https://si0.twimg.com/profile_images/1270234259/'
+             'raffi-headshot-casual.png',
              'https://twitter.com/raffi/status/240556426106372096',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -155,8 +156,8 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
              'messages', 'Taylor Singletary', '819797', 'episod', False,
              '2012-08-28T19:59:34Z',
              'You\'d be right more often if you thought you were wrong.',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/0c829cb2934ad76489be21ee5e103735d9b7b034',
+             'https://si0.twimg.com/profile_images/2546730059/'
+             'f6a8zq58mg1hn0ha8vie.jpeg',
              'https://twitter.com/episod/status/240539141056638977',
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
@@ -206,8 +207,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             'twitter', 88, '240558470661799936',
             'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', True,
             '2012-08-28T21:16:23Z', 'just another test',
-            GLib.get_user_cache_dir() +
-            '/friends/avatars/ded4ba3c00583ee511f399d0b2537731ca14c39d',
+            'https://si0.twimg.com/profile_images/730275945/oauth-dancer.jpg',
             'https://twitter.com/oauth_dancer/status/240558470661799936',
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
@@ -292,9 +292,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                        'direct_messages/sent.json?count=50')
              ])
 
-    @mock.patch('friends.protocols.twitter.Avatar.get_image',
-                return_value='~/.cache/friends/avatars/hash')
-    def test_private_avatars(self, image_mock):
+    def test_private_avatars(self):
         get_url = self.protocol._get_url = mock.Mock(
             return_value=[
                 dict(
@@ -314,7 +312,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         publish.assert_called_with(
             liked=False, sender='Bob', stream='private',
             url='https://twitter.com/some_guy/status/1452456',
-            icon_uri='~/.cache/friends/avatars/hash',
+            icon_uri='https://example.com/bob.jpg',
             sender_nick='some_guy', sender_id='', from_me=False,
             timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
             message_id='1452456')
@@ -379,7 +377,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
                 'Why yes, I would love to respond to your tweet @pumpichank!'),
             'tweet permalink')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with('tweet', stream='reply_to/1234')
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/update.json',
             dict(status='Why yes, I would love to respond to your '
@@ -433,16 +431,50 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             dict(trim_user='true'))
 
     def test_retweet(self):
-        get_url = self.protocol._get_url = mock.Mock(return_value='tweet')
+        tweet = dict(tweet='twit')
+        get_url = self.protocol._get_url = mock.Mock(return_value=tweet)
         publish = self.protocol._publish_tweet = mock.Mock(
             return_value='tweet permalink')
 
         self.assertEqual(self.protocol.retweet('1234'), 'tweet permalink')
 
-        publish.assert_called_with('tweet')
+        publish.assert_called_with(tweet)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/statuses/retweet/1234.json',
-            dict(trim_user='true'))
+            dict(trim_user='false'))
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-retweet.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_retweet_with_data(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.user_name = 'therealrobru'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(
+            self.protocol.retweet('240558470661799936'),
+            'https://twitter.com/therealrobru/status/324220250889543682')
+        self.assertEqual(1, TestModel.get_n_rows())
+
+        self.maxDiff = None
+        expected_row = [
+            'twitter', 88, '324220250889543682',
+            'messages', 'Robert Bruce', '836242932', 'therealrobru', True,
+            '2013-04-16T17:58:26Z', 'RT @tarek_ziade: Just found a "Notification '
+            'of Inspection" card in the bottom of my bag. looks like they were '
+            'curious about those raspbe ...',
+            'https://si0.twimg.com/profile_images/2631306428/'
+            '2a509db8a05b4310394b832d34a137a4.png',
+            'https://twitter.com/therealrobru/status/324220250889543682',
+            0, False, '', '', '', '', '', '', '', 0.0, 0.0,
+            ]
+        self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
     def test_unfollow(self):
         get_url = self.protocol._get_url = mock.Mock()
@@ -464,18 +496,26 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
 
     def test_like(self):
         get_url = self.protocol._get_url = mock.Mock()
+        inc_cell = self.protocol._inc_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
 
         self.assertEqual(self.protocol.like('1234'), '1234')
 
+        inc_cell.assert_called_once_with('1234', 'likes')
+        set_cell.assert_called_once_with('1234', 'liked', True)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/favorites/create.json',
             dict(id='1234'))
 
     def test_unlike(self):
         get_url = self.protocol._get_url = mock.Mock()
+        dec_cell = self.protocol._dec_cell = mock.Mock()
+        set_cell = self.protocol._set_cell = mock.Mock()
 
         self.assertEqual(self.protocol.unlike('1234'), '1234')
 
+        dec_cell.assert_called_once_with('1234', 'likes')
+        set_cell.assert_called_once_with('1234', 'liked', False)
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/favorites/destroy.json',
             dict(id='1234'))

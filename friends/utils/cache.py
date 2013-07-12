@@ -21,10 +21,11 @@ __all__ = [
 
 import os
 import json
-import errno
 import logging
 
 from gi.repository import GLib
+
+from friends.errors import ignored
 
 
 log = logging.getLogger(__name__)
@@ -59,9 +60,7 @@ class JsonCache(dict):
         try:
             with open(self._path, 'r') as cache:
                 self.update(json.loads(cache.read()))
-        except IOError as error:
-            if error.errno != errno.ENOENT:
-                raise
+        except (FileNotFoundError, ValueError, UnicodeDecodeError):
             # This writes '{}' to self._filename on first run.
             self.write()
 

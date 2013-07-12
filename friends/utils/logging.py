@@ -16,12 +16,13 @@
 """Logging utilities."""
 
 import os
-import errno
 import logging
 import logging.handlers
 import oauthlib.oauth1
 
 from gi.repository import GLib
+
+from friends.errors import ignored
 
 
 # Set a global default of no logging. This is a workaround for a bug
@@ -53,11 +54,8 @@ def initialize(console=False, debug=False, filename=None):
     # Start by ensuring that the directory containing the log file exists.
     if filename is None:
         filename = LOG_FILENAME
-    try:
+    with ignored(FileExistsError):
         os.makedirs(os.path.dirname(filename))
-    except OSError as error:
-        if error.errno != errno.EEXIST:
-            raise
 
     # Install a rotating log file handler.  XXX There should be a
     # configuration file rather than hard-coded values.
@@ -67,15 +65,15 @@ def initialize(console=False, debug=False, filename=None):
     text_formatter = logging.Formatter(LOG_FORMAT, style='{')
     text_handler.setFormatter(text_formatter)
 
-    console_handler = logging.StreamHandler()
-    console_formatter = logging.Formatter(CSL_FORMAT, style='{')
-    console_handler.setFormatter(console_formatter)
-
     log = logging.getLogger()
+    log.addHandler(text_handler)
+
     if debug:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
     if console:
+        console_handler = logging.StreamHandler()
+        console_formatter = logging.Formatter(CSL_FORMAT, style='{')
+        console_handler.setFormatter(console_formatter)
         log.addHandler(console_handler)
-    log.addHandler(text_handler)

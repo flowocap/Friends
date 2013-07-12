@@ -27,12 +27,11 @@ import logging
 
 from urllib.parse import quote
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
 from friends.utils.cache import JsonCache
 from friends.utils.http import BaseRateLimiter, Downloader
 from friends.utils.time import parsetime, iso8601utc
-from friends.errors import FriendsError
+from friends.errors import FriendsError, ignored
 
 
 TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
@@ -61,6 +60,9 @@ class Twitter(Base):
 
     _search = _api_base.format(endpoint='search/tweets')
     _search_result_key = 'statuses'
+
+    _favorite = _api_base.format(endpoint='favorites/create')
+    _del_favorite = _api_base.format(endpoint='favorites/destroy')
 
     _tweet_permalink = 'https://twitter.com/{user_id}/status/{tweet_id}'
 
@@ -117,17 +119,29 @@ class Twitter(Base):
         permalink = self._tweet_permalink.format(
             user_id=screen_name,
             tweet_id=tweet_id)
+
+        message = tweet.get('text', '')
+
+        # Resolve t.co links.
+        entities = tweet.get('entities', {})
+        for url in (entities.get('urls', []) + entities.get('media', [])):
+            begin, end = url.get('indices', (None, None))
+            destination = (url.get('expanded_url') or
+                           url.get('display_url') or
+                           url.get('url'))
+            if None not in (begin, end, destination):
+                message = message[:begin] + destination + message[end:]
+
         self._publish(
             message_id=tweet_id,
-            message=tweet.get('text', ''),
+            message=message,
             timestamp=iso8601utc(parsetime(tweet.get('created_at', ''))),
             stream=stream,
             sender=user.get('name', ''),
             sender_id=str(user.get('id', '')),
             sender_nick=screen_name,
             from_me=(screen_name == self._account.user_name),
-            icon_uri=Avatar.get_image(
-                avatar_url.replace('_normal.', '.')),
+            icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
             )
@@ -248,20 +262,20 @@ class Twitter(Base):
     def send_thread(self, message_id, message):
         """Send a reply message to message_id.
 
-        Note that you have to @mention the message_id owner's screen name in
-        order for Twitter to actually accept this as a reply.  Otherwise it
-        will just be an ordinary tweet.
+        This method takes care to prepend the @mention to the start of
+        your tweet if you forgot it. Without this, Twitter will just
+        consider it a regular message, and it won't be part of any
+        conversation.
         """
-        try:
+        with ignored(FriendsError):
             sender = '@{}'.format(self._fetch_cell(message_id, 'sender_nick'))
             if message.find(sender) < 0:
                 message = sender + ' ' + message
-        except FriendsError:
-            pass
         url = self._api_base.format(endpoint='statuses/update')
         tweet = self._get_url(url, dict(in_reply_to_status_id=message_id,
                                         status=message))
-        return self._publish_tweet(tweet)
+        return self._publish_tweet(
+            tweet, stream='reply_to/{}'.format(message_id))
 
 # https://dev.twitter.com/docs/api/1.1/post/statuses/destroy/%3Aid
     @feature
@@ -278,7 +292,8 @@ class Twitter(Base):
     def retweet(self, message_id):
         """Republish somebody else's tweet with your name on it."""
         url = self._retweet.format(message_id)
-        tweet = self._get_url(url, dict(trim_user='true'))
+        tweet = self._get_url(url, dict(trim_user='false'))
+
         return self._publish_tweet(tweet)
 
 # https://dev.twitter.com/docs/api/1.1/post/friendships/destroy
@@ -301,19 +316,20 @@ class Twitter(Base):
     @feature
     def like(self, message_id):
         """Announce to the world your undying love for a tweet."""
-        url = self._api_base.format(endpoint='favorites/create')
+        url = self._favorite.format(message_id)
         self._get_url(url, dict(id=message_id))
+        self._inc_cell(message_id, 'likes')
+        self._set_cell(message_id, 'liked', True)
         return message_id
-        # I don't think we need to publish this tweet because presumably the
-        # user has clicked the 'favorite' button on the message that's already
-        # in the stream.
 
 # https://dev.twitter.com/docs/api/1.1/post/favorites/destroy
     @feature
     def unlike(self, message_id):
         """Renounce your undying love for a tweet."""
-        url = self._api_base.format(endpoint='favorites/destroy')
+        url = self._del_favorite.format(message_id)
         self._get_url(url, dict(id=message_id))
+        self._dec_cell(message_id, 'likes')
+        self._set_cell(message_id, 'liked', False)
         return message_id
 
 # https://dev.twitter.com/docs/api/1.1/get/search/tweets
@@ -350,7 +366,8 @@ class Twitter(Base):
 # https://dev.twitter.com/docs/api/1.1/get/users/show
     def _showuser(self, uid):
         """Get all the information about a twitter user."""
-        url = self._api_base.format(endpoint="users/show") + "?user_id={}".format(uid)
+        url = self._api_base.format(
+            endpoint='users/show') + '?user_id={}'.format(uid)
         return self._get_url(url)
 
     def _create_contact(self, userdata):

@@ -21,7 +21,6 @@ __all__ = [
     'FakeAccount',
     'FakeSoupMessage',
     'LogMock',
-    'SettingsIterMock',
     'mock',
     ]
 
@@ -37,19 +36,20 @@ from io import StringIO
 from logging.handlers import QueueHandler
 from pkg_resources import resource_listdir, resource_string
 from queue import Empty, Queue
+from unittest import mock
 from urllib.parse import urlsplit
 from gi.repository import Dee
 
+# By default, Schema.FILES will look for the system-installed schema
+# file first, and then failing that will look for the one in the
+# source tree, for performance reasons. During testing though, we want
+# to look at the source tree first, so we reverse the list here.
+from friends.utils.model import Schema
+Schema.FILES = list(reversed(Schema.FILES))
+SCHEMA = Schema()
+
 from friends.utils.base import Base
 from friends.utils.logging import LOG_FORMAT
-from friends.utils.model import COLUMN_TYPES
-
-
-try:
-    # Python 3.3
-    from unittest import mock
-except ImportError:
-    import mock
 
 
 NEWLINE = '\n'
@@ -58,7 +58,7 @@ NEWLINE = '\n'
 # Create a test model that will not interfere with the user's environment.
 # We'll use this object as a mock of the real model.
 TestModel = Dee.SharedModel.new('com.canonical.Friends.TestSharedModel')
-TestModel.set_schema_full(COLUMN_TYPES)
+TestModel.set_schema_full(SCHEMA.TYPES)
 
 
 @mock.patch('friends.utils.http._soup', mock.Mock())
@@ -183,23 +183,6 @@ class FakeSoupMessage:
         self.method = method
         self.url = url
         return self
-
-
-class SettingsIterMock:
-    """Mimic the weird libaccounts AgAccountSettingIter semantics.
-
-    The default Python mapping of this object does not follow standard Python
-    iterator semantics.
-    """
-
-    def __init__(self):
-        self.items = [(True, 'send_enabled', True)]
-
-    def next(self):
-        if self.items:
-            return self.items.pop()
-        else:
-            return (False, None, None)
 
 
 class LogMock:

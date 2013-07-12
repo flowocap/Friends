@@ -22,8 +22,6 @@ __all__ = [
 
 import unittest
 
-from gi.repository import GLib
-
 from friends.errors import AuthorizationError, FriendsError
 from friends.protocols.flickr import Flickr
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
@@ -42,6 +40,7 @@ class TestFlickr(unittest.TestCase):
         self.protocol._get_oauth_headers = lambda *ignore, **kwignore: {}
         self.log_mock = LogMock('friends.utils.base',
                                 'friends.protocols.flickr')
+        TestModel.clear()
 
     def tearDown(self):
         self.log_mock.stop()
@@ -100,6 +99,8 @@ class TestFlickr(unittest.TestCase):
     @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(username='Bob Dobbs',
                                   user_nsid='bob',
@@ -172,18 +173,17 @@ class TestFlickr(unittest.TestCase):
              'raise my voice',
              True,
              '2013-03-12T19:51:42Z',
-             '',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/7b30ff0140dd9b80f2b1782a2802c3ce785fa0ce',
-             'http://www.flickr.com/people/47303164@N00',
+             'Chocolate chai #yegcoffee',
+             'http://farm1.static.flickr.com/93/buddyicons/47303164@N00.jpg',
+             'http://www.flickr.com/photos/47303164@N00/8552892154',
              0,
              False,
-             'http://farm9.static.flickr.com/8378/47303164@N00_a_m.jpg',
+             'http://farm9.static.flickr.com/8378/8552892154_a_m.jpg',
              '',
-             'http://farm9.static.flickr.com/8378/47303164@N00_a_b.jpg',
+             'http://www.flickr.com/photos/47303164@N00/8552892154',
              '',
-             'Chocolate chai #yegcoffee',
-             'http://farm9.static.flickr.com/8378/47303164@N00_a_t.jpg',
+             '',
+             'http://farm9.static.flickr.com/8378/8552892154_a_t.jpg',
              '',
              0.0,
              0.0,
@@ -200,18 +200,17 @@ class TestFlickr(unittest.TestCase):
              'Nelson Webb',
              True,
              '2013-03-12T13:54:10Z',
-             '',
-             GLib.get_user_cache_dir() +
-             '/friends/avatars/cae2939354a33fea5f008df91bb8e25920be5dc3',
-             'http://www.flickr.com/people/27204141@N05',
+             'St. Michael - The Archangel',
+             'http://farm3.static.flickr.com/2047/buddyicons/27204141@N05.jpg',
+             'http://www.flickr.com/photos/27204141@N05/8550829193',
              0,
              False,
-             'http://farm9.static.flickr.com/8246/27204141@N05_e_m.jpg',
+             'http://farm9.static.flickr.com/8246/8550829193_e_m.jpg',
              '',
-             'http://farm9.static.flickr.com/8246/27204141@N05_e_b.jpg',
+             'http://www.flickr.com/photos/27204141@N05/8550829193',
              '',
-             'St. Michael - The Archangel',
-             'http://farm9.static.flickr.com/8246/27204141@N05_e_t.jpg',
+             '',
+             'http://farm9.static.flickr.com/8246/8550829193_e_t.jpg',
              '',
              53.833156,
              -112.330784,

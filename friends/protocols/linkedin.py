@@ -44,7 +44,7 @@ class LinkedIn(Base):
         result = Downloader(url).get_json()
         self._account.user_id = result.get('id')
         self._account.user_full_name = '{firstName} {lastName}'.format(**result)
-        
+
     def _publish_entry(self, entry, stream='messages'):
         """Publish a single update into the Dee.SharedModel."""
         message_id = entry.get('updateKey')
@@ -52,7 +52,7 @@ class LinkedIn(Base):
         if message_id is None:
             # We can't do much with this entry.
             return
-           
+
         content = entry.get('updateContent')
         person = content.get('person')
         name = '{firstName} {lastName}'.format(**person)
@@ -64,9 +64,9 @@ class LinkedIn(Base):
         # We need to divide by 1000 here, as LinkedIn's timestamps have
         # milliseconds.
         iso_time = iso8601utc(int(timestamp/1000))
-        
+
         likes = entry.get('numLikes', 0)
-        
+
         args = dict(
              message_id=message_id,
              stream=stream,
@@ -78,10 +78,10 @@ class LinkedIn(Base):
              link_url=url,
              timestamp=iso_time
              )
-             
+
         self._publish(**args)
 
-    @feature    
+    @feature
     def home(self):
         """Gather and publish public timeline messages."""
         url = self._api_base.format(
@@ -91,30 +91,30 @@ class LinkedIn(Base):
         values = result.get('values')
         for update in values:
             self._publish_entry(update)
-    
+
     @feature
     def receive(self):
         """Gather and publish all incoming messages."""
         self.home()
         return self._get_n_rows()
-        
+
     def _create_contact(self, connection_json):
         """Build a VCard based on a dict representation of a contact."""
         user_id = connection_json.get('id')
-            
+
         user_fullname = '{firstName} {lastName}'.format(**connection_json)
         user_link = connection_json.get('siteStandardProfileRequest').get('url')
-        
+
         attrs = {}
         attrs['linkined-id'] = user_id
         attrs['linkedin-name'] = user_fullname
         attrs['X-URIS'] = user_link
-        
+
         contact = Base._create_contact(
             self, user_fullname, None, attrs)
-        
+
         return contact
-    
+
     @feature
     def contacts(self):
         """Retrieve a list of up to 500 LinkedIn connections."""
@@ -124,15 +124,15 @@ class LinkedIn(Base):
             token=self._get_access_token())
         result = Downloader(url).get_json()
         connections = result.get('values')
-        
+
         for connection in connections:
             if connection.get('id') == 'private':
                 # We cannot access information on profiles that are set to
                 # private.
                 continue
-                
+
             self._create_contact(connection)
-                
+
             if self._previously_stored_contact(
                 source, 'linkedin-id', connection['id']):
                 continue

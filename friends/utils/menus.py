@@ -19,11 +19,13 @@ import logging
 import subprocess
 
 
+from friends.errors import ignored
+
 MessagingMenu = None
-try:
+""" Disable messaging menu integration until we have some sort of handler
+with ignored(ImportError):
     from gi.repository import MessagingMenu
-except ImportError:
-    pass
+"""
 
 
 log = logging.getLogger(__name__)

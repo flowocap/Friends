@@ -26,10 +26,10 @@ import threading
 
 from friends.protocols.flickr import Flickr
 from friends.protocols.twitter import Twitter
-from friends.tests.mocks import FakeAccount, LogMock, TestModel, mock
+from friends.tests.mocks import SCHEMA, FakeAccount, LogMock, TestModel, mock
 from friends.utils.base import Base, feature, linkify_string
 from friends.utils.manager import ProtocolManager
-from friends.utils.model import COLUMN_INDICES, Model
+from friends.utils.model import Model
 
 
 class TestProtocolManager(unittest.TestCase):
@@ -282,7 +282,7 @@ class TestProtocols(unittest.TestCase):
         self.assertEqual(1, TestModel.get_n_rows())
         # The first published message wins.
         row = TestModel.get_row(0)
-        self.assertEqual(row[COLUMN_INDICES['message']], 'hello, @jimmy')
+        self.assertEqual(row[SCHEMA.INDICES['message']], 'hello, @jimmy')
 
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.base._seen_ids', {})
@@ -364,11 +364,60 @@ class TestProtocols(unittest.TestCase):
         # See?  Two rows in the table.
         self.assertEqual(2, TestModel.get_n_rows())
         # The first row is the message from fred.
-        self.assertEqual(TestModel.get_row(0)[COLUMN_INDICES['sender']],
+        self.assertEqual(TestModel.get_row(0)[SCHEMA.INDICES['sender']],
                          'fred')
         # The second row is the message from tedtholomew.
-        self.assertEqual(TestModel.get_row(1)[COLUMN_INDICES['sender']],
+        self.assertEqual(TestModel.get_row(1)[SCHEMA.INDICES['sender']],
                          'tedtholomew')
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_inc_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        base._inc_cell('1234', 'likes')
+        row = TestModel.get_row(0)
+        self.assertEqual(
+            list(row),
+            ['base', 88, '1234', '', '', '', '', False, '', '', '', '', 11,
+             True, '', '', '', '', '', '', '', 0.0, 0.0])
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_dec_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        base._dec_cell('1234', 'likes')
+        row = TestModel.get_row(0)
+        self.assertEqual(
+            list(row),
+            ['base', 88, '1234', '', '', '', '', False, '', '', '', '', 9,
+             True, '', '', '', '', '', '', '', 0.0, 0.0])
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_set_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        base._set_cell('1234', 'likes', 500)
+        base._set_cell('1234', 'liked', False)
+        base._set_cell('1234', 'message_id', '5678')
+        row = TestModel.get_row(0)
+        self.assertEqual(
+            list(row),
+            ['base', 88, '5678', '', '', '', '', False, '', '', '', '', 500,
+             False, '', '', '', '', '', '', '', 0.0, 0.0])
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_fetch_cell(self):
+        base = Base(FakeAccount())
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertTrue(base._publish(message_id='1234', likes=10, liked=True))
+        self.assertEqual(base._fetch_cell('1234', 'likes'), 10)
 
     def test_basic_login(self):
         # Try to log in twice.  The second login attempt returns False because
@@ -446,6 +495,11 @@ class TestProtocols(unittest.TestCase):
             'Like <a href="http://example.com?foo=bar&grill=true">'
             'http://example.com?foo=bar&grill=true</a>?',
             linkify_string('Like http://example.com?foo=bar&grill=true?'))
+        # URLs can contain encoded spaces and parentheses.
+        self.assertEqual(
+            '<a href="http://example.com/foo%20(3).JPG">'
+            'http://example.com/foo%20(3).JPG</a>!',
+            linkify_string('http://example.com/foo%20(3).JPG!'))
         # Multi-line strings are also supported.
         self.assertEqual(
             'Hey, visit us online!\n\n'
@@ -462,8 +516,19 @@ class TestProtocols(unittest.TestCase):
             '<a href="www.example.com">www.example.com</a> is our website',
             linkify_string(
                 '<a href="www.example.com">www.example.com</a> is our website'))
+        self.assertEqual(
+            "<a href='www.example.com'>www.example.com</a> is our website",
+            linkify_string(
+                "<a href='www.example.com'>www.example.com</a> is our website"))
         # This, apparently, is valid HTML.
         self.assertEqual(
             '<a href = "www.example.com">www.example.com</a>',
             linkify_string(
                 '<a href = "www.example.com">www.example.com</a>'))
+        # Pump.io is throwing doctypes at us!
+        self.assertEqual(
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" '
+            '"http://www.w3.org/TR/REC-html40/strict.dtd">',
+            linkify_string(
+                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" '
+                '"http://www.w3.org/TR/REC-html40/strict.dtd">'))

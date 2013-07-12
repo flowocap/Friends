@@ -65,6 +65,8 @@ class TestFourSquare(unittest.TestCase):
     @mock.patch('friends.utils.authentication.Accounts')
     @mock.patch('friends.utils.authentication.Authentication.login',
                 return_value=dict(AccessToken='tokeny goodness'))
+    @mock.patch('friends.utils.authentication.Authentication.__init__',
+                return_value=None)
     @mock.patch('friends.protocols.foursquare.Downloader.get_json',
                 return_value=dict(
                     response=dict(
@@ -81,8 +83,6 @@ class TestFourSquare(unittest.TestCase):
                 FakeSoupMessage('friends.tests.data', 'foursquare-full.dat'))
     @mock.patch('friends.protocols.foursquare.FourSquare._login',
                 return_value=True)
-    @mock.patch('friends.protocols.foursquare.Avatar.get_image',
-                return_value='~/.cache/friends/avatar/hash')
     def test_receive(self, *mocks):
         self.account.access_token = 'tokeny goodness'
         self.assertEqual(0, TestModel.get_n_rows())
@@ -92,8 +92,9 @@ class TestFourSquare(unittest.TestCase):
             'foursquare', 88, '50574c9ce4b0a9a6e84433a0',
             'messages', 'Jimbob Smith', '', '', True, '2012-09-17T19:15:24Z',
             "Working on friends's foursquare plugin.",
-            '~/.cache/friends/avatar/hash', '', 0, False, '', '', '',
-            '', '', '', 'Pop Soda\'s Coffee House & Gallery',
+            'https://irs0.4sqi.net/img/user/100x100/5IEW3VIX55BBEXAO.jpg',
+            '', 0, False, '', '', '', '', '', '',
+            'Pop Soda\'s Coffee House & Gallery',
             49.88873164336725, -97.158043384552,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected)
