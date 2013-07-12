@@ -20,20 +20,21 @@ __all__ = [
     'LinkedIn',
     ]
 
-import time
+
 import logging
 
-from friends.utils.avatar import Avatar
 from friends.utils.base import Base, feature
-from friends.utils.cache import JsonCache
-from friends.utils.http import Downloader, Uploader
-from friends.utils.time import parsetime, iso8601utc
+from friends.utils.http import Downloader
+from friends.utils.time import iso8601utc
 from friends.errors import FriendsError
+
 
 log = logging.getLogger(__name__)
 
+
 class LinkedIn(Base):
-    _api_base = 'https://api.linkedin.com/v1/{endpoint}?format=json&secure-urls=true&oauth2_access_token={token}'
+    _api_base = ('https://api.linkedin.com/v1/{endpoint}?format=json' +
+                 '&secure-urls=true&oauth2_access_token={token}')
 
     def _whoami(self, authdata):
         """Identify the authenticating user."""
@@ -53,14 +54,14 @@ class LinkedIn(Base):
             # We can't do much with this entry.
             return
 
-        content = entry.get('updateContent')
-        person = content.get('person')
+        content = entry.get('updateContent', '')
+        person = content.get('person', {})
         name = '{firstName} {lastName}'.format(**person)
-        person_id = person.get('id')
-        status = person.get('currentStatus')
+        person_id = person.get('id', '')
+        status = person.get('currentStatus', '')
         picture = person.get('pictureUrl', '')
         url = person.get('siteStandardProfileRequest', {}).get('url', '')
-        timestamp = entry.get('timestamp')
+        timestamp = entry.get('timestamp', 0)
         # We need to divide by 1000 here, as LinkedIn's timestamps have
         # milliseconds.
         iso_time = iso8601utc(int(timestamp/1000))
@@ -124,6 +125,7 @@ class LinkedIn(Base):
             token=self._get_access_token())
         result = Downloader(url).get_json()
         connections = result.get('values')
+        source = self._get_eds_source(self._address_book)
 
         for connection in connections:
             if connection.get('id') == 'private':
@@ -131,7 +133,7 @@ class LinkedIn(Base):
                 # private.
                 continue
 
-            self._create_contact(connection)
+            contact = self._create_contact(connection)
 
             if self._previously_stored_contact(
                 source, 'linkedin-id', connection['id']):
@@ -148,10 +150,10 @@ class LinkedIn(Base):
             except FriendsError:
                 continue
 
-            self._push_to_eds(LINKEDIN_ADDRESS_BOOK, eds_connection)
+            self._push_to_eds(self._address_book, eds_connection)
 
         return len(connections)
 
     def delete_contacts(self):
-        source = self._get_eds_source(LINKEDIN_ADDRESS_BOOK)
+        source = self._get_eds_source(self._address_book)
         return self._delete_service_contacts(source)

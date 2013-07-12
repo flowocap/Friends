@@ -130,7 +130,6 @@ def initialize_caches():
 
 def linkify_string(string):
     """Finds all URLs in a string and turns them into HTML links."""
-    log.debug(string)
     return LINKIFY_REGEX(r'<a href="\1">\1</a>', string)
 
 
@@ -202,6 +201,7 @@ class Base:
         self._account = account
         self._Name = self.__class__.__name__
         self._name = self._Name.lower()
+        self._address_book = 'friends-{}-contacts'.format(self._name)
 
     def _whoami(self, result):
         """Use OAuth login results to identify the authenticating user.

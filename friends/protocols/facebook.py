@@ -37,7 +37,6 @@ URL_BASE = 'https://{subdomain}.facebook.com/'
 PERMALINK = URL_BASE.format(subdomain='www') + '{id}'
 API_BASE = URL_BASE.format(subdomain='graph') + '{id}'
 ME_URL = API_BASE.format(id='me')
-FACEBOOK_ADDRESS_BOOK = 'friends-facebook-contacts'
 STORY_PERMALINK = PERMALINK + '/posts/{post_id}'
 
 
@@ -373,9 +372,9 @@ class Facebook(Base):
     def contacts(self):
         contacts = self._fetch_contacts()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
-        source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        source = self._get_eds_source(self._address_book)
         if source is None:
-            source = self._create_eds_source(FACEBOOK_ADDRESS_BOOK)
+            source = self._create_eds_source(self._address_book)
 
         for contact in contacts:
             if self._previously_stored_contact(
@@ -386,12 +385,12 @@ class Facebook(Base):
                     contact['name'], contact['id']))
             full_contact = self._fetch_contact(contact['id'])
             eds_contact = self._create_contact(full_contact)
-            self._push_to_eds(FACEBOOK_ADDRESS_BOOK, eds_contact)
+            self._push_to_eds(self._address_book, eds_contact)
 
         return len(contacts)
 
     def delete_contacts(self):
-        source = self._get_eds_source(FACEBOOK_ADDRESS_BOOK)
+        source = self._get_eds_source(self._address_book)
         return self._delete_service_contacts(source)
 
 

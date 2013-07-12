@@ -34,9 +34,6 @@ from friends.utils.time import parsetime, iso8601utc
 from friends.errors import FriendsError, ignored
 
 
-TWITTER_ADDRESS_BOOK = 'friends-twitter-contacts'
-
-
 log = logging.getLogger(__name__)
 
 
@@ -397,9 +394,9 @@ class Twitter(Base):
     def contacts(self):
         contacts = self._getfriendsids()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
-        source = self._get_eds_source(TWITTER_ADDRESS_BOOK)
+        source = self._get_eds_source(self._address_book)
         if source is None:
-            source = self._create_eds_source(TWITTER_ADDRESS_BOOK)
+            source = self._create_eds_source(self._address_book)
 
         for contact in contacts:
             twitterid = str(contact)
@@ -410,11 +407,11 @@ class Twitter(Base):
                 eds_contact = self._create_contact(full_contact)
             except FriendsError:
                 continue
-            self._push_to_eds(TWITTER_ADDRESS_BOOK, eds_contact)
+            self._push_to_eds(self._address_book, eds_contact)
         return len(contacts)
 
     def delete_contacts(self):
-        source = self._get_eds_source(TWITTER_ADDRESS_BOOK)
+        source = self._get_eds_source(self._address_book)
         return self._delete_service_contacts(source)
 
 
