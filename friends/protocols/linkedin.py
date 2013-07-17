@@ -44,7 +44,7 @@ class LinkedIn(Base):
             token=self._get_access_token())
         result = Downloader(url).get_json()
         self._account.user_id = result.get('id')
-        self._account.user_full_name = '{firstName} {lastName}'.format(**result)
+        self._account.user_name = '{firstName} {lastName}'.format(**result)
 
     def _publish_entry(self, entry, stream='messages'):
         """Publish a single update into the Dee.SharedModel."""
@@ -92,12 +92,12 @@ class LinkedIn(Base):
         values = result.get('values')
         for update in values:
             self._publish_entry(update)
+        return self._get_n_rows()
 
     @feature
     def receive(self):
         """Gather and publish all incoming messages."""
-        self.home()
-        return self._get_n_rows()
+        return self.home()
 
     def _create_contact(self, connection_json):
         """Build a VCard based on a dict representation of a contact."""
