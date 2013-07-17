@@ -101,20 +101,17 @@ class LinkedIn(Base):
 
     def _create_contact(self, connection_json):
         """Build a VCard based on a dict representation of a contact."""
-        user_id = connection_json.get('id')
+        user_id = connection_json.get('id', '')
 
         user_fullname = '{firstName} {lastName}'.format(**connection_json)
-        user_link = connection_json.get('siteStandardProfileRequest').get('url')
+        user_link = connection_json.get(
+            'siteStandardProfileRequest', {}).get('url', '')
 
-        attrs = {}
-        attrs['linkined-id'] = user_id
-        attrs['linkedin-name'] = user_fullname
-        attrs['X-URIS'] = user_link
+        attrs = { 'linkedin-id':   user_id,
+                  'linkedin-name': user_fullname,
+                  'X-URIS':        user_link }
 
-        contact = Base._create_contact(
-            self, user_fullname, None, attrs)
-
-        return contact
+        return super()._create_contact(user_fullname, None, attrs)
 
     @feature
     def contacts(self):
@@ -124,36 +121,18 @@ class LinkedIn(Base):
             endpoint='people/~/connections',
             token=self._get_access_token())
         result = Downloader(url).get_json()
-        connections = result.get('values')
-        source = self._get_eds_source(self._address_book)
+        connections = result.get('values', [])
+        source = self._get_eds_source()
 
         for connection in connections:
-            if connection.get('id') == 'private':
-                # We cannot access information on profiles that are set to
-                # private.
-                continue
-
-            contact = self._create_contact(connection)
-
-            if self._previously_stored_contact(
-                source, 'linkedin-id', connection['id']):
-                continue
-
-            log.debug(
-                'Fetch full contact info for {} and id {}'.format(
-                    contact['name'], contact['id']))
-
-            full_connection_details = self._fetch_contact(connection['id'])
-
-            try:
-                eds_connection = self._create_contact(full_connection_details)
-            except FriendsError:
-                continue
-
-            self._push_to_eds(self._address_book, eds_connection)
+            connection_id = connection.get('id')
+            if connection_id != 'private':
+                if not self._previously_stored_contact(
+                        source, 'linkedin-id', connection_id):
+                    self._push_to_eds(self._create_contact(connection))
 
         return len(connections)
 
     def delete_contacts(self):
-        source = self._get_eds_source(self._address_book)
+        source = self._get_eds_source()
         return self._delete_service_contacts(source)

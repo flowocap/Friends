@@ -531,8 +531,9 @@ class TestFacebook(unittest.TestCase):
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
+        self.protocol._address_book = 'test-address-book'
         # Implicitely fail test if the following raises any exceptions
-        self.protocol._push_to_eds('test-address-book', eds_contact)
+        self.protocol._push_to_eds(eds_contact)
 
     @mock.patch('friends.utils.base.Base._get_eds_source',
                 return_value=None)
@@ -544,10 +545,10 @@ class TestFacebook(unittest.TestCase):
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
+        self.protocol._address_book = 'test-address-book'
         self.assertRaises(
             ContactsError,
             self.protocol._push_to_eds,
-            'test-address-book',
             eds_contact,
             )
 
@@ -557,7 +558,7 @@ class TestFacebook(unittest.TestCase):
         regmock = self.protocol._source_registry = mock.Mock()
         regmock.ref_source = lambda x: x
 
-        result = self.protocol._create_eds_source('facebook-test-address')
+        result = self.protocol._create_eds_source()
         self.assertEqual(result, 'test-source-uid')
 
     @mock.patch('gi.repository.EBook.BookClient.new',
@@ -577,13 +578,6 @@ class TestFacebook(unittest.TestCase):
         reg_mock = self.protocol._source_registry = mock.Mock()
         reg_mock.list_sources.return_value = [FakeSource()]
         reg_mock.ref_source = lambda x: x
-        result = self.protocol._get_eds_source('test-facebook-contacts')
+        self.protocol._address_book = 'test-facebook-contacts'
+        result = self.protocol._get_eds_source()
         self.assertEqual(result, 1345245)
-
-    @mock.patch('friends.utils.base.Base._get_eds_source_registry',
-                mock.Mock())
-    @mock.patch('friends.utils.base.Base._source_registry',
-                mock.Mock(**{'list_sources.return_value': []}))
-    def test_unsuccessful_get_eds_source(self, *mocks):
-        result = self.protocol._get_eds_source('test-incorrect-contacts')
-        self.assertIsNone(result)

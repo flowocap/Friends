@@ -363,18 +363,13 @@ class Facebook(Base):
         if gender is not None:
             attrs['X-GENDER'] = gender
 
-        contact = Base._create_contact(
-            self, user_fullname, user_nickname, attrs)
-
-        return contact
+        return super()._create_contact(user_fullname, user_nickname, attrs)
 
     @feature
     def contacts(self):
         contacts = self._fetch_contacts()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
-        source = self._get_eds_source(self._address_book)
-        if source is None:
-            source = self._create_eds_source(self._address_book)
+        source = self._get_eds_source()
 
         for contact in contacts:
             if self._previously_stored_contact(
@@ -385,12 +380,12 @@ class Facebook(Base):
                     contact['name'], contact['id']))
             full_contact = self._fetch_contact(contact['id'])
             eds_contact = self._create_contact(full_contact)
-            self._push_to_eds(self._address_book, eds_contact)
+            self._push_to_eds(eds_contact)
 
         return len(contacts)
 
     def delete_contacts(self):
-        source = self._get_eds_source(self._address_book)
+        source = self._get_eds_source()
         return self._delete_service_contacts(source)
 
 
