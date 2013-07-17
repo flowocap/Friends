@@ -89,8 +89,7 @@ class LinkedIn(Base):
             endpoint='people/~/network/updates',
             token=self._get_access_token()) + '&type=STAT'
         result = Downloader(url).get_json()
-        values = result.get('values')
-        for update in values:
+        for update in result.get('values', []):
             self._publish_entry(update)
         return self._get_n_rows()
 
