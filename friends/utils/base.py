@@ -201,6 +201,7 @@ class Base:
         self._account = account
         self._Name = self.__class__.__name__
         self._name = self._Name.lower()
+        self._address_book = 'friends-{}-contacts'.format(self._name)
 
     def _whoami(self, result):
         """Use OAuth login results to identify the authenticating user.
@@ -347,7 +348,7 @@ class Base:
                 account_id=self._account.id
                 )
             )
-# linkify the message
+        # linkify the message
         orig_message = kwargs.get('message', '')
         kwargs['message'] = linkify_string(orig_message)
         args = []
@@ -544,12 +545,12 @@ class Base:
         client.open_sync(False, None)
         return client
 
-    def _push_to_eds(self, online_service, contact):
-        source_match = self._get_eds_source(online_service)
+    def _push_to_eds(self, contact):
+        source_match = self._get_eds_source()
         if source_match is None:
             raise ContactsError(
                 '{} does not have an address book.'.format(
-                    online_service))
+                    self._address_book))
         client = self._new_book_client(source_match)
         success = client.add_contact_sync(contact, None)
         if not success:
@@ -559,10 +560,10 @@ class Base:
         if self._source_registry is None:
             self._source_registry = EDataServer.SourceRegistry.new_sync(None)
 
-    def _create_eds_source(self, online_service):
+    def _create_eds_source(self):
         self._get_eds_source_registry()
         source = EDataServer.Source.new(None, None)
-        source.set_display_name(online_service)
+        source.set_display_name(self._address_book)
         source.set_parent('local-stub')
         extension = source.get_extension(
             EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
@@ -576,12 +577,14 @@ class Base:
             time.sleep(2)
             return self._source_registry.ref_source(source.get_uid())
 
-    def _get_eds_source(self, online_service):
+    def _get_eds_source(self):
         self._get_eds_source_registry()
         for previous_source in self._source_registry.list_sources(None):
-            if previous_source.get_display_name() == online_service:
+            if previous_source.get_display_name() == self._address_book:
                 return self._source_registry.ref_source(
                     previous_source.get_uid())
+        # if we got this far, then the source doesn't exist; create it
+        return self._create_eds_source()
 
     def _previously_stored_contact(self, source, field, search_term):
         client = self._new_book_client(source)
@@ -612,15 +615,16 @@ class Base:
         vcard = EBookContacts.VCard.new()
         info = social_network_attrs
 
-        for i in info:
-            attr = EBookContacts.VCardAttribute.new('social-networking-attributes', i)
-            if type(info[i]) == type(dict()):
-                for j in info[i]:
-                    param = EBookContacts.VCardAttributeParam.new(j)
-                    param.add_value(info[i][j])
+        for key, val in info.items():
+            attr = EBookContacts.VCardAttribute.new(
+                'social-networking-attributes', key)
+            if isinstance(val, dict):
+                for subkey, subval in val.items():
+                    param = EBookContacts.VCardAttributeParam.new(subkey)
+                    param.add_value(subval)
                     attr.add_param(param);
             else:
-                attr.add_value(info[i])
+                attr.add_value(val)
             vcard.add_attribute(attr)
 
         contact = EBookContacts.Contact.new_from_vcard(
