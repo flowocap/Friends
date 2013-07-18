@@ -1,3 +1,16 @@
+friends (0.2.0+13.10.20130718-0ubuntu1) saucy; urgency=low
+
+  [ Jonathan Davies ]
+  * Add LinkedIn support.
+
+  [ Robert Bruce Park ]
+  * Add LinkedIn support.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 223
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 18 Jul 2013 07:12:41 +0000
+
 friends (0.2.0+13.10.20130708.3-0ubuntu1) saucy; urgency=low
 
   [ Robert Bruce Park ]
