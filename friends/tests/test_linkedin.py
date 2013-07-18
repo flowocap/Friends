@@ -96,3 +96,87 @@ class TestLinkedIn(unittest.TestCase):
              'https://www.linkedin.com/profile/view?id=7375&authType=name'
              '&authToken=-LNy&trk=api*a26127*s26893*',
              1, False, '', '', '', '', '', '', '', 0.0, 0.0])
+
+    @mock.patch('friends.utils.base.Base._create_contact')
+    def test_create_contact(self, base_mock):
+        self.protocol._create_contact(
+            dict(id='jb89', firstName='Joe', lastName='Blow'))
+        base_mock.assert_called_once_with(
+            'Joe Blow', None,
+            {'X-URIS': '', 'linkedin-id': 'jb89', 'linkedin-name': 'Joe Blow'})
+
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'linkedin_contacts.json'))
+    @mock.patch('friends.protocols.linkedin.LinkedIn._login',
+                return_value=True)
+    def test_contacts(self, *mocks):
+        push = self.protocol._push_to_eds = mock.Mock()
+        prev = self.protocol._previously_stored_contact = mock.Mock(return_value=False)
+        token = self.protocol._get_access_token = mock.Mock(return_value='foo')
+        self.protocol._create_contact = lambda arg:arg
+        self.assertEqual(self.protocol.contacts(), 4)
+        self.assertEqual(
+            push.mock_calls,
+            [mock.call(
+                {'siteStandardProfileRequest':
+                 {'url': 'https://www.linkedin.com'},
+                 'pictureUrl': 'http://m.c.lnkd.licdn.com',
+                 'apiStandardProfileRequest':
+                 {'url': 'http://api.linkedin.com',
+                  'headers': {'_total': 1, 'values':
+                              [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
+                 'industry': 'Computer Network Security',
+                 'lastName': 'A',
+                 'firstName': 'H',
+                 'headline': 'Unix Administrator at NVIDIA',
+                 'location': {'name': 'Pune Area, India',
+                              'country': {'code': 'in'}},
+                 'id': 'IFDI'}),
+
+             mock.call(
+                 {'siteStandardProfileRequest':
+                  {'url': 'https://www.linkedin.com'},
+                  'pictureUrl': 'http://m.c.lnkd.licdn.com',
+                  'apiStandardProfileRequest':
+                  {'url': 'http://api.linkedin.com',
+                   'headers': {'_total': 1, 'values':
+                               [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
+                  'industry': 'Food Production',
+                  'lastName': 'A',
+                  'firstName': 'C',
+                  'headline': 'Recent Graduate, Simon Fraser University',
+                  'location': {'name': 'Vancouver, Canada Area',
+                               'country': {'code': 'ca'}},
+                  'id': 'AefF'}),
+
+             mock.call(
+                 {'siteStandardProfileRequest':
+                  {'url': 'https://www.linkedin.com'},
+                  'pictureUrl': 'http://m.c.lnkd.licdn.com',
+                  'apiStandardProfileRequest':
+                  {'url': 'http://api.linkedin.com',
+                   'headers': {'_total': 1, 'values':
+                               [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
+                  'industry': 'Computer Software',
+                  'lastName': 'A',
+                  'firstName': 'R',
+                  'headline': 'Technical Lead at Canonical Ltd.',
+                  'location': {'name': 'Auckland, New Zealand',
+                               'country': {'code': 'nz'}},
+                  'id': 'DFdV'}),
+
+             mock.call(
+                 {'siteStandardProfileRequest':
+                  {'url': 'https://www.linkedin.com'},
+                  'pictureUrl': 'http://m.c.lnkd.licdn.com',
+                  'apiStandardProfileRequest':
+                  {'url': 'http://api.linkedin.com',
+                   'headers': {'_total': 1, 'values':
+                               [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
+                  'industry': 'Photography',
+                  'lastName': 'Z',
+                  'firstName': 'A',
+                  'headline': 'Sales manager at McBain Camera',
+                  'location': {'name': 'Edmonton, Canada Area',
+                               'country': {'code': 'ca'}},
+                  'id': 'xkBU'})])
