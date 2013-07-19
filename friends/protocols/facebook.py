@@ -369,11 +369,9 @@ class Facebook(Base):
     def contacts(self):
         contacts = self._fetch_contacts()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
-        source = self._get_eds_source()
 
         for contact in contacts:
-            if self._previously_stored_contact(
-                    source, 'facebook-id', contact['id']):
+            if self._previously_stored_contact(contact['id']):
                 continue
             log.debug(
                 'Fetch full contact info for {} and id {}'.format(
@@ -383,10 +381,6 @@ class Facebook(Base):
             self._push_to_eds(eds_contact)
 
         return len(contacts)
-
-    def delete_contacts(self):
-        source = self._get_eds_source()
-        return self._delete_service_contacts(source)
 
 
 class PostIdCache(JsonCache):

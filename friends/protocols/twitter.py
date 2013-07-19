@@ -391,11 +391,10 @@ class Twitter(Base):
     def contacts(self):
         contacts = self._getfriendsids()
         log.debug('Size of the contacts returned {}'.format(len(contacts)))
-        source = self._get_eds_source()
 
         for contact in contacts:
             twitterid = str(contact)
-            if self._previously_stored_contact(source, 'twitter-id', twitterid):
+            if self._previously_stored_contact(twitterid):
                 continue
             full_contact = self._showuser(twitterid)
             try:
@@ -404,10 +403,6 @@ class Twitter(Base):
                 continue
             self._push_to_eds(eds_contact)
         return len(contacts)
-
-    def delete_contacts(self):
-        source = self._get_eds_source()
-        return self._delete_service_contacts(source)
 
 
 class TweetIdCache(JsonCache):

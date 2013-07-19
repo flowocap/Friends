@@ -121,17 +121,11 @@ class LinkedIn(Base):
             token=self._get_access_token())
         result = Downloader(url).get_json()
         connections = result.get('values', [])
-        source = self._get_eds_source()
 
         for connection in connections:
             connection_id = connection.get('id')
             if connection_id != 'private':
-                if not self._previously_stored_contact(
-                        source, 'linkedin-id', connection_id):
+                if not self._previously_stored_contact(connection_id):
                     self._push_to_eds(self._create_contact(connection))
 
         return len(connections)
-
-    def delete_contacts(self):
-        source = self._get_eds_source()
-        return self._delete_service_contacts(source)
