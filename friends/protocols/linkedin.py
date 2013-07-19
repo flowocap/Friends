@@ -31,6 +31,11 @@ from friends.utils.time import iso8601utc
 log = logging.getLogger(__name__)
 
 
+def make_fullname(firstName=None, lastName=None, **ignored):
+    """Converts dict(firstName='Bob', lastName='Loblaw') into 'Bob Loblaw'."""
+    return ' '.join(name for name in (firstName, lastName) if name)
+
+
 class LinkedIn(Base):
     _api_base = ('https://api.linkedin.com/v1/{endpoint}?format=json' +
                  '&secure-urls=true&oauth2_access_token={token}')
@@ -43,7 +48,7 @@ class LinkedIn(Base):
             token=self._get_access_token())
         result = Downloader(url).get_json()
         self._account.user_id = result.get('id')
-        self._account.user_name = '{firstName} {lastName}'.format(**result)
+        self._account.user_name = make_fullname(**result)
 
     def _publish_entry(self, entry, stream='messages'):
         """Publish a single update into the Dee.SharedModel."""
@@ -51,7 +56,7 @@ class LinkedIn(Base):
 
         content = entry.get('updateContent', {})
         person = content.get('person', {})
-        name = '{firstName} {lastName}'.format(**person)
+        name = make_fullname(**person)
         person_id = person.get('id', '')
         status = person.get('currentStatus')
         picture = person.get('pictureUrl', '')
@@ -97,20 +102,6 @@ class LinkedIn(Base):
         """Gather and publish all incoming messages."""
         return self.home()
 
-    def _create_contact(self, connection_json):
-        """Build a VCard based on a dict representation of a contact."""
-        user_id = connection_json.get('id', '')
-
-        user_fullname = '{firstName} {lastName}'.format(**connection_json)
-        user_link = connection_json.get(
-            'siteStandardProfileRequest', {}).get('url', '')
-
-        attrs = { 'linkedin-id':   user_id,
-                  'linkedin-name': user_fullname,
-                  'X-URIS':        user_link }
-
-        return super()._create_contact(attrs)
-
     @feature
     def contacts(self):
         """Retrieve a list of up to 500 LinkedIn connections."""
@@ -122,9 +113,13 @@ class LinkedIn(Base):
         connections = result.get('values', [])
 
         for connection in connections:
-            connection_id = connection.get('id')
+            connection_id = connection.get('id', 'private')
             if connection_id != 'private':
                 if not self._previously_stored_contact(connection_id):
-                    self._push_to_eds(self._create_contact(connection))
+                    self._push_to_eds(self._create_contact(
+                        { 'linkedin-id': connection_id,
+                          'linkedin-name': make_fullname(**connection),
+                          'X-URIS': connection.get(
+                              'siteStandardProfileRequest', {}).get('url', '') }))
 
         return len(connections)
