@@ -583,9 +583,9 @@ class Base:
                 'Id field is missing in {} address book.'.format(self._Name))
         return len(result) > 0
 
-    def _create_contact(self, user_fullname, user_nickname, info):
+    def _create_contact(self, info):
         """Build a VCard based on a dict representation of a contact."""
-        vcard = EBookContacts.VCard.new()
+        contact = EBookContacts.Contact.new()
 
         for key, val in info.items():
             attr = EBookContacts.VCardAttribute.new(
@@ -597,11 +597,12 @@ class Base:
                     attr.add_param(param);
             else:
                 attr.add_value(val)
-            vcard.add_attribute(attr)
+            contact.add_attribute(attr)
 
-        contact = EBookContacts.Contact.new_from_vcard(
-            vcard.to_string(EBookContacts.VCardFormat(1)))
+        user_fullname = info.get('{}-name'.format(self._name))
         contact.set_property('full-name', user_fullname)
+
+        user_nickname = info.get('{}-nick'.format(self._name))
         if user_nickname is not None:
             contact.set_property('nickname', user_nickname)
 

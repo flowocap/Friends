@@ -379,13 +379,14 @@ class Twitter(Base):
         attrs = {}
         attrs['twitter-id'] = str(userdata['id'])
         attrs['twitter-name'] = user_fullname
+        attrs['twitter-nick'] = user_nickname
         attrs['X-URIS'] = 'https://twitter.com/{}'.format(user_nickname)
         attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
             'remote-full-name': user_fullname,
             'twitter-id': str(userdata['id']),
             }
 
-        return super()._create_contact(user_fullname, user_nickname, attrs)
+        return super()._create_contact(attrs)
 
     @feature
     def contacts(self):

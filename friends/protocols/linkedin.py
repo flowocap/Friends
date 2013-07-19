@@ -26,7 +26,6 @@ import logging
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader
 from friends.utils.time import iso8601utc
-from friends.errors import FriendsError
 
 
 log = logging.getLogger(__name__)
@@ -110,7 +109,7 @@ class LinkedIn(Base):
                   'linkedin-name': user_fullname,
                   'X-URIS':        user_link }
 
-        return super()._create_contact(user_fullname, None, attrs)
+        return super()._create_contact(attrs)
 
     @feature
     def contacts(self):

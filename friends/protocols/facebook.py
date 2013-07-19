@@ -329,41 +329,36 @@ class Facebook(Base):
     def _fetch_contacts(self):
         """Retrieve a list of up to 1,000 Facebook friends."""
         limit = 1000
-        access_token = self._get_access_token()
-        url = ME_URL + '/friends'
-        params = dict(
-            access_token=access_token,
+        return self._follow_pagination(
+            url=ME_URL + '/friends',
+            params=dict(access_token=self._get_access_token(), limit=limit),
             limit=limit)
-        return self._follow_pagination(url, params, limit)
 
     def _fetch_contact(self, contact_id):
         """Fetch the full, individual contact info."""
-        access_token = self._get_access_token()
-        url = API_BASE.format(id=contact_id)
-        params = dict(access_token=access_token)
-        return Downloader(url, params).get_json()
+        return Downloader(
+            url=API_BASE.format(id=contact_id),
+            params=dict(access_token=self._get_access_token())
+        ).get_json()
 
     def _create_contact(self, contact_json):
         """Build a VCard based on a dict representation of a contact."""
 
-        user_id = contact_json.get('id')
-        user_fullname = contact_json.get('name')
-        user_nickname = contact_json.get('username')
-        user_link = contact_json.get('link')
-        gender = contact_json.get('gender')
+        attrs = {'facebook-id':   contact_json.get('id'),
+                 'facebook-name': contact_json.get('name'),
+                 'facebook-nick': contact_json.get('username'),
+                 'X-URIS':        contact_json.get('link')}
 
-        attrs = {}
-        attrs['facebook-id'] = user_id
-        attrs['facebook-name'] = user_fullname
-        attrs['X-URIS'] = user_link
-        attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
-            'jabber':'-{}@chat.facebook.com'.format(user_id),
-            'remote-full-name':user_fullname,
-            'facebook-id': user_id}
+        gender = contact_json.get('gender')
         if gender is not None:
             attrs['X-GENDER'] = gender
 
-        return super()._create_contact(user_fullname, user_nickname, attrs)
+        attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
+            'jabber':'-{}@chat.facebook.com'.format(attrs['facebook-id']),
+            'remote-full-name': attrs['facebook-name'],
+            'facebook-id': attrs['facebook-id']}
+
+        return super()._create_contact(attrs)
 
     @feature
     def contacts(self):
