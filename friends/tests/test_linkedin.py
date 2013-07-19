@@ -102,7 +102,6 @@ class TestLinkedIn(unittest.TestCase):
         self.protocol._create_contact(
             dict(id='jb89', firstName='Joe', lastName='Blow'))
         base_mock.assert_called_once_with(
-            'Joe Blow', None,
             {'X-URIS': '', 'linkedin-id': 'jb89', 'linkedin-name': 'Joe Blow'})
 
     @mock.patch('friends.utils.http.Soup.Message',
