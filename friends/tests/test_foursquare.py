@@ -48,7 +48,8 @@ class TestFourSquare(unittest.TestCase):
 
     def test_features(self):
         # The set of public features.
-        self.assertEqual(FourSquare.get_features(), ['receive'])
+        self.assertEqual(FourSquare.get_features(),
+                         ['delete_contacts', 'receive'])
 
     @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')

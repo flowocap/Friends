@@ -566,13 +566,12 @@ class Base:
             self._eds_source_registry.commit_source_sync(self._eds_source, None)
 
         if self._eds_source is not None:
-            self._book_client = EBook.BookClient.new(self._eds_source)
-            self._book_client.open_sync(False, None)
+            self._book_client = EBook.BookClient.connect_sync(self._eds_source, None)
 
     def _push_to_eds(self, contact):
         self._prepare_eds_connections()
         if not self._book_client.add_contact_sync(contact, None):
-            raise ContactsError('Failed to save contact {!r}', contact)
+            raise ContactsError('Failed to save contact {!r}'.format(contact))
 
     def _previously_stored_contact(self, search_term):
         self._prepare_eds_connections()

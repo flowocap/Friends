@@ -26,13 +26,13 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib
+from gi.repository import GLib, EDataServer
 from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
 from friends.tests.mocks import TestModel, mock
-from friends.tests.mocks import EDSBookClientMock, EDSSource, EDSRegistry
+from friends.tests.mocks import EDSBookClientMock, EDSRegistry
 from friends.errors import ContactsError, FriendsError, AuthorizationError
 from friends.utils.cache import JsonCache
 
@@ -57,8 +57,9 @@ class TestFacebook(unittest.TestCase):
     def test_features(self):
         # The set of public features.
         self.assertEqual(Facebook.get_features(),
-            ['contacts', 'delete', 'home', 'like', 'receive', 'search', 'send',
-             'send_thread', 'unlike', 'upload', 'wall'])
+                         ['contacts', 'delete', 'delete_contacts', 'home',
+                          'like', 'receive', 'search', 'send', 'send_thread',
+                          'unlike', 'upload', 'wall'])
 
     @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')
@@ -521,7 +522,7 @@ class TestFacebook(unittest.TestCase):
         # Finally test to ensure all key value pairs were tested
         self.assertTrue(test_jabber and test_remote_name and test_facebook_id)
 
-    @mock.patch('friends.utils.base.Base._get_eds_source',
+    @mock.patch('friends.utils.base.Base._prepare_eds_connections',
                 return_value=True)
     @mock.patch('gi.repository.EBook.BookClient.new',
                 return_value=EDSBookClientMock())
@@ -532,12 +533,12 @@ class TestFacebook(unittest.TestCase):
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
         self.protocol._address_book = 'test-address-book'
+        client = self.protocol._book_client = mock.Mock()
+        client.add_contact_sync.return_value = True
         # Implicitely fail test if the following raises any exceptions
         self.protocol._push_to_eds(eds_contact)
 
-    @mock.patch('friends.utils.base.Base._get_eds_source',
-                return_value=None)
-    @mock.patch('friends.utils.base.Base._create_eds_source',
+    @mock.patch('friends.utils.base.Base._prepare_eds_connections',
                 return_value=None)
     def test_unsuccessfull_push_to_eds(self, *mocks):
         bare_contact = {'name': 'Lucy Baron',
@@ -546,38 +547,86 @@ class TestFacebook(unittest.TestCase):
                         'link': 'http:www.facebook.com/lucy.baron5'}
         eds_contact = self.protocol._create_contact(bare_contact)
         self.protocol._address_book = 'test-address-book'
+        client = self.protocol._book_client = mock.Mock()
+        client.add_contact_sync.return_value = False
         self.assertRaises(
             ContactsError,
             self.protocol._push_to_eds,
             eds_contact,
             )
 
-    @mock.patch('gi.repository.EDataServer.Source.new',
-                return_value=EDSSource('foo', 'bar'))
-    def test_create_eds_source(self, *mocks):
-        regmock = self.protocol._source_registry = mock.Mock()
-        regmock.ref_source = lambda x: x
-
-        result = self.protocol._create_eds_source()
-        self.assertEqual(result, 'test-source-uid')
-
-    @mock.patch('gi.repository.EBook.BookClient.new',
+    @mock.patch('gi.repository.EBook.BookClient.connect_sync',
                 return_value=EDSBookClientMock())
     def test_successful_previously_stored_contact(self, *mocks):
-        result = self.protocol._previously_stored_contact(
-            True, 'facebook-id', '11111')
+        result = self.protocol._previously_stored_contact('11111')
         self.assertEqual(result, True)
 
-    def test_successful_get_eds_source(self, *mocks):
-        class FakeSource:
-            def get_display_name(self):
-                return 'test-facebook-contacts'
-            def get_uid(self):
-                return 1345245
+    def test_first_run_prepare_eds_connections(self):
+        self.protocol._name = 'testsuite'
+        self.assertIsNone(self.protocol._address_book_name)
+        self.assertIsNone(self.protocol._eds_source_registry)
+        self.assertIsNone(self.protocol._eds_source)
+        self.assertIsNone(self.protocol._book_client)
+        self.protocol._prepare_eds_connections()
+        self.assertEqual(self.protocol._address_book_name,
+                         'friends-testsuite-contacts')
+        self.assertEqual(self.protocol._eds_source.get_display_name(),
+                         'friends-testsuite-contacts')
+        self.assertEqual(self.protocol._eds_source.get_uid(),
+                         'friends-testsuite-contacts')
+        self.protocol.delete_contacts()
 
-        reg_mock = self.protocol._source_registry = mock.Mock()
-        reg_mock.list_sources.return_value = [FakeSource()]
-        reg_mock.ref_source = lambda x: x
-        self.protocol._address_book = 'test-facebook-contacts'
-        result = self.protocol._get_eds_source()
-        self.assertEqual(result, 1345245)
+    @mock.patch('gi.repository.EDataServer.SourceRegistry')
+    @mock.patch('gi.repository.EDataServer.Source')
+    @mock.patch('gi.repository.EBook.BookClient')
+    def test_mocked_prepare_eds_connections(self, client, source, registry):
+        self.protocol._name = 'testsuite'
+        self.assertIsNone(self.protocol._address_book_name)
+        self.protocol._prepare_eds_connections()
+        self.protocol._prepare_eds_connections() # Second time harmlessly ignored
+        self.assertEqual(self.protocol._address_book_name,
+                         'friends-testsuite-contacts')
+        registry.new_sync.assert_called_once_with(None)
+        self.assertEqual(self.protocol._eds_source_registry,
+                         registry.new_sync())
+        registry.new_sync().ref_source.assert_called_once_with(
+            'friends-testsuite-contacts')
+        self.assertEqual(self.protocol._eds_source,
+                         registry.new_sync().ref_source())
+        client.connect_sync.assert_called_once_with(
+            registry.new_sync().ref_source(), None)
+        self.assertEqual(self.protocol._book_client,
+                         client.connect_sync())
+
+    @mock.patch('gi.repository.EDataServer.SourceRegistry')
+    @mock.patch('gi.repository.EDataServer.Source')
+    @mock.patch('gi.repository.EBook.BookClient')
+    def test_create_new_eds_book(self, client, source, registry):
+        self.protocol._name = 'testsuite'
+        self.assertIsNone(self.protocol._address_book_name)
+        registry.new_sync().ref_source.return_value = None
+        registry.reset_mock()
+        self.protocol._prepare_eds_connections()
+        self.protocol._prepare_eds_connections() # Second time harmlessly ignored
+        self.assertEqual(self.protocol._address_book_name,
+                         'friends-testsuite-contacts')
+        registry.new_sync.assert_called_once_with(None)
+        self.assertEqual(self.protocol._eds_source_registry,
+                         registry.new_sync())
+        registry.new_sync().ref_source.assert_called_once_with(
+            'friends-testsuite-contacts')
+        source.new_with_uid.assert_called_once_with(
+            'friends-testsuite-contacts', None)
+        self.assertEqual(self.protocol._eds_source,
+                         source.new_with_uid())
+        source.new_with_uid().set_display_name.assert_called_once_with(
+            'friends-testsuite-contacts')
+        source.new_with_uid().set_parent.assert_called_once_with('local-stub')
+        source.new_with_uid().get_extension.assert_called_once_with(
+            EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
+        registry.new_sync().commit_source_sync.assert_called_once_with(
+            source.new_with_uid(), None)
+        client.connect_sync.assert_called_once_with(
+            source.new_with_uid(), None)
+        self.assertEqual(self.protocol._book_client,
+                         client.connect_sync())

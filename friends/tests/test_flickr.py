@@ -49,7 +49,8 @@ class TestFlickr(unittest.TestCase):
 
     def test_features(self):
         # The set of public features.
-        self.assertEqual(Flickr.get_features(), ['receive', 'upload'])
+        self.assertEqual(Flickr.get_features(),
+                         ['delete_contacts', 'receive', 'upload'])
 
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'flickr-nophotos.dat'))

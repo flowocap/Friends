@@ -440,7 +440,8 @@ class TestProtocols(unittest.TestCase):
     # with-statement in Base._login().
 
     def test_features(self):
-        self.assertEqual(MyProtocol.get_features(), ['feature_1', 'feature_2'])
+        self.assertEqual(MyProtocol.get_features(),
+                         ['delete_contacts', 'feature_1', 'feature_2'])
 
     def test_linkify_string(self):
         # String with no URL is unchanged.
