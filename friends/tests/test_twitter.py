@@ -697,3 +697,34 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         # sleep 100 seconds between each call.
         self.protocol.home()
         sleep.assert_called_with(100.0)
+
+    def test_contacts(self):
+        get = self.protocol._get_url = mock.Mock(
+            return_value=dict(ids=[1,2],name='Bob',screen_name='bobby'))
+        prev = self.protocol._previously_stored_contact = mock.Mock(return_value = False)
+        push = self.protocol._push_to_eds = mock.Mock()
+        self.protocol.contacts()
+        self.assertEqual(
+            get.call_args_list,
+            [mock.call('https://api.twitter.com/1.1/friends/ids.json'),
+             mock.call(url='https://api.twitter.com/1.1/users/show.json?user_id=1'),
+             mock.call(url='https://api.twitter.com/1.1/users/show.json?user_id=2')])
+        self.assertEqual(
+            prev.call_args_list,
+            [mock.call('1'), mock.call('2')])
+        self.assertEqual(
+            push.call_args_list,
+            [mock.call({'twitter-id': '1',
+                        'X-FOLKS-WEB-SERVICES-IDS': {
+                            'twitter-id': '1',
+                            'remote-full-name': 'Bob'},
+                        'X-URIS': 'https://twitter.com/bobby',
+                        'twitter-name': 'Bob',
+                        'twitter-nick': 'bobby'}),
+             mock.call({'twitter-id': '2',
+                        'X-FOLKS-WEB-SERVICES-IDS': {
+                            'twitter-id': '2',
+                            'remote-full-name': 'Bob'},
+                        'X-URIS': 'https://twitter.com/bobby',
+                        'twitter-name': 'Bob',
+                        'twitter-nick': 'bobby'})])
