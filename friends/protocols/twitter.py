@@ -347,62 +347,33 @@ class Twitter(Base):
             self._publish_tweet(tweet, stream='search/{}'.format(query))
         return self._get_n_rows()
 
-# https://dev.twitter.com/docs/api/1.1/get/friends/ids
-    def _getfriendsids(self):
-        """Get a list of the twitter id's of our twitter friends."""
-        url = self._api_base.format(endpoint="friends/ids")
-        response = self._get_url(url)
-
-        try:
-            # Twitter
-            return response["ids"]
-        except TypeError:
-            # Identica
-            return response
-
-# https://dev.twitter.com/docs/api/1.1/get/users/show
-    def _showuser(self, uid):
-        """Get all the information about a twitter user."""
-        url = self._api_base.format(
-            endpoint='users/show') + '?user_id={}'.format(uid)
-        return self._get_url(url)
-
-    def _create_contact(self, userdata):
-        """Build a VCard based on a dict representation of a contact."""
-
-        if userdata.get('error'):
-            raise FriendsError(userdata)
-
-        user_fullname = userdata['name']
-        user_nickname = userdata['screen_name']
-
-        attrs = {}
-        attrs['twitter-id'] = str(userdata['id'])
-        attrs['twitter-name'] = user_fullname
-        attrs['twitter-nick'] = user_nickname
-        attrs['X-URIS'] = 'https://twitter.com/{}'.format(user_nickname)
-        attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
-            'remote-full-name': user_fullname,
-            'twitter-id': str(userdata['id']),
-            }
-
-        return super()._create_contact(attrs)
-
     @feature
     def contacts(self):
-        contacts = self._getfriendsids()
-        log.debug('Size of the contacts returned {}'.format(len(contacts)))
+        # https://dev.twitter.com/docs/api/1.1/get/friends/ids
+        contacts = self._get_url(self._api_base.format(endpoint='friends/ids'))
+        # Twitter uses a dict with 'ids' key, Identica returns the ids directly.
+        with ignored(TypeError):
+            contacts = contacts['ids']
 
-        for contact in contacts:
-            twitterid = str(contact)
-            if self._previously_stored_contact(twitterid):
-                continue
-            full_contact = self._showuser(twitterid)
-            try:
-                eds_contact = self._create_contact(full_contact)
-            except FriendsError:
-                continue
-            self._push_to_eds(eds_contact)
+        log.debug('Found {} contacts'.format(len(contacts)))
+
+        for contact_id in contacts:
+            contact_id = str(contact_id)
+            if not self._previously_stored_contact(contact_id):
+                # https://dev.twitter.com/docs/api/1.1/get/users/show
+                full_contact = self._get_url(url=self._api_base.format(
+                    endpoint='users/show') + '?user_id=' + contact_id)
+                user_fullname = full_contact.get('name')
+                user_nickname = full_contact.get('screen_name')
+                self._push_to_eds(self._create_contact({
+                    'twitter-id': contact_id,
+                    'twitter-name': user_fullname,
+                    'twitter-nick': user_nickname,
+                    'X-URIS': 'https://twitter.com/{}'.format(user_nickname),
+                    'X-FOLKS-WEB-SERVICES-IDS': {
+                        'remote-full-name': user_fullname,
+                        'twitter-id': contact_id,
+                    }}))
         return len(contacts)
 
 
