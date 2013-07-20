@@ -701,9 +701,9 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
     def test_contacts(self):
         get = self.protocol._get_url = mock.Mock(
             return_value=dict(ids=[1,2],name='Bob',screen_name='bobby'))
-        prev = self.protocol._previously_stored_contact = mock.Mock(return_value = False)
+        prev = self.protocol._previously_stored_contact = mock.Mock(return_value=False)
         push = self.protocol._push_to_eds = mock.Mock()
-        self.protocol.contacts()
+        self.assertEqual(self.protocol.contacts(), 2)
         self.assertEqual(
             get.call_args_list,
             [mock.call('https://api.twitter.com/1.1/friends/ids.json'),

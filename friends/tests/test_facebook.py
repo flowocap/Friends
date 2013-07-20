@@ -475,6 +475,53 @@ class TestFacebook(unittest.TestCase):
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
 
+    @mock.patch('friends.protocols.facebook.Downloader')
+    def test_contacts(self, downloader):
+        downloader().get_json.return_value = dict(
+            name='Joe Blow', username='jblow', link='example.com', gender='male')
+        downloader.reset_mock()
+        self.protocol._get_access_token = mock.Mock(return_value='broken')
+        follow = self.protocol._follow_pagination = mock.Mock(
+            return_value=[dict(id='contact1'), dict(id='contact2')])
+        prev = self.protocol._previously_stored_contact = mock.Mock(return_value=False)
+        push = self.protocol._push_to_eds = mock.Mock()
+        self.assertEqual(self.protocol.contacts(), 2)
+        follow.assert_called_once_with(
+            params={'access_token': 'broken', 'limit': 1000},
+            url='https://graph.facebook.com/me/friends',
+            limit=1000)
+        self.assertEqual(
+            prev.call_args_list,
+            [mock.call('contact1'), mock.call('contact2')])
+        self.assertEqual(
+            downloader.call_args_list,
+            [mock.call(url='https://graph.facebook.com/contact1',
+                       params={'access_token': 'broken'}),
+             mock.call(url='https://graph.facebook.com/contact2',
+                       params={'access_token': 'broken'})])
+        self.assertEqual(
+            push.call_args_list,
+            [mock.call({
+                'X-FOLKS-WEB-SERVICES-IDS': {
+                    'jabber': '-contact1@chat.facebook.com',
+                    'facebook-id': 'contact1',
+                    'remote-full-name': 'Joe Blow'},
+                'X-GENDER': 'male',
+                'facebook-name': 'Joe Blow',
+                'facebook-id': 'contact1',
+                'X-URIS': 'example.com',
+                'facebook-nick': 'jblow'}),
+             mock.call({
+                 'X-FOLKS-WEB-SERVICES-IDS': {
+                     'jabber': '-contact2@chat.facebook.com',
+                     'facebook-id': 'contact2',
+                     'remote-full-name': 'Joe Blow'},
+                 'X-GENDER': 'male',
+                 'facebook-name': 'Joe Blow',
+                 'facebook-id': 'contact2',
+                 'X-URIS': 'example.com',
+                 'facebook-nick': 'jblow'})])
+
     def test_create_contact(self, *mocks):
         # Receive the users friends.
         bare_contact = {
