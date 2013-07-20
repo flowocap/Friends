@@ -326,54 +326,32 @@ class Facebook(Base):
         else:
             raise FriendsError(str(response))
 
-    def _fetch_contacts(self):
-        """Retrieve a list of up to 1,000 Facebook friends."""
-        limit = 1000
-        return self._follow_pagination(
-            url=ME_URL + '/friends',
-            params=dict(access_token=self._get_access_token(), limit=limit),
-            limit=limit)
-
-    def _fetch_contact(self, contact_id):
-        """Fetch the full, individual contact info."""
-        return Downloader(
-            url=API_BASE.format(id=contact_id),
-            params=dict(access_token=self._get_access_token())
-        ).get_json()
-
-    def _create_contact(self, contact_json):
-        """Build a VCard based on a dict representation of a contact."""
-
-        attrs = {'facebook-id':   contact_json.get('id'),
-                 'facebook-name': contact_json.get('name'),
-                 'facebook-nick': contact_json.get('username'),
-                 'X-URIS':        contact_json.get('link')}
-
-        gender = contact_json.get('gender')
-        if gender is not None:
-            attrs['X-GENDER'] = gender
-
-        attrs['X-FOLKS-WEB-SERVICES-IDS'] = {
-            'jabber':'-{}@chat.facebook.com'.format(attrs['facebook-id']),
-            'remote-full-name': attrs['facebook-name'],
-            'facebook-id': attrs['facebook-id']}
-
-        return super()._create_contact(attrs)
-
     @feature
     def contacts(self):
-        contacts = self._fetch_contacts()
-        log.debug('Size of the contacts returned {}'.format(len(contacts)))
+        contacts = self._follow_pagination(
+            url=ME_URL + '/friends',
+            params=dict(access_token=self._get_access_token(), limit=1000),
+            limit=1000)
+        log.debug('Found {} contacts'.format(len(contacts)))
 
         for contact in contacts:
-            if self._previously_stored_contact(contact['id']):
+            contact_id = contact.get('id')
+            if contact_id is None or self._previously_stored_contact(contact_id):
                 continue
-            log.debug(
-                'Fetch full contact info for {} and id {}'.format(
-                    contact['name'], contact['id']))
-            full_contact = self._fetch_contact(contact['id'])
-            eds_contact = self._create_contact(full_contact)
-            self._push_to_eds(eds_contact)
+            full_contact = Downloader(
+                url=API_BASE.format(id=contact_id),
+                params=dict(access_token=self._get_access_token())).get_json()
+            self._push_to_eds(self._create_contact({
+            'facebook-id':   contact_id,
+            'facebook-name': full_contact.get('name'),
+            'facebook-nick': full_contact.get('username'),
+            'X-URIS':        full_contact.get('link'),
+            'X-GENDER':      full_contact.get('gender'),
+            'X-FOLKS-WEB-SERVICES-IDS': {
+                'jabber': '-{}@chat.facebook.com'.format(contact_id),
+                'remote-full-name': full_contact.get('name'),
+                'facebook-id': contact_id,
+            }}))
 
         return len(contacts)
 

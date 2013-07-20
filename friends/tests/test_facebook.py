@@ -475,23 +475,19 @@ class TestFacebook(unittest.TestCase):
             params=dict(access_token='face'))
         unpublish.assert_called_once_with('post_id')
 
-    @mock.patch('friends.utils.http.Soup.Message',
-                FakeSoupMessage('friends.tests.data', 'facebook-contacts.dat'))
-    @mock.patch('friends.protocols.facebook.Facebook._login',
-                return_value=True)
-    def test_fetch_contacts(self, *mocks):
-        # Receive the users friends.
-        results = self.protocol._fetch_contacts()
-        self.assertEqual(len(results), 8)
-        self.assertEqual(results[7]['name'], 'John Smith')
-        self.assertEqual(results[7]['id'], '444444')
-
     def test_create_contact(self, *mocks):
         # Receive the users friends.
-        bare_contact = {'name': 'Lucy Baron',
-                        'id': '555555555',
-                        'username': 'lucy.baron5',
-                        'link': 'http:www.facebook.com/lucy.baron5'}
+        bare_contact = {
+            'facebook-id':   '555555555',
+            'facebook-name': 'Lucy Baron',
+            'facebook-nick': 'lucy.baron5',
+            'X-URIS':        'http:www.facebook.com/lucy.baron5',
+            'X-GENDER':      'female',
+            'X-FOLKS-WEB-SERVICES-IDS': {
+                'jabber': '-555555555@chat.facebook.com',
+                'remote-full-name': 'Lucy Baron',
+                'facebook-id': '555555555',
+            }}
         eds_contact = self.protocol._create_contact(bare_contact)
         facebook_id_attr = eds_contact.get_attribute('facebook-id')
         self.assertEqual(facebook_id_attr.get_value(), '555555555')

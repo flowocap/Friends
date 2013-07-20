@@ -587,31 +587,33 @@ class Base:
         """Build a VCard based on a dict representation of a contact."""
         contact = EBookContacts.Contact.new()
 
-        for key, val in info.items():
+        for key, value in info.items():
             attr = EBookContacts.VCardAttribute.new(
                 'social-networking-attributes', key)
-            if hasattr(val, 'items'):
-                for subkey, subval in val.items():
-                    param = EBookContacts.VCardAttributeParam.new(subkey)
-                    param.add_value(subval)
-                    attr.add_param(param);
+            if hasattr(value, 'items'):
+                for subkey, subval in value.items():
+                    if subval is not None:
+                        param = EBookContacts.VCardAttributeParam.new(subkey)
+                        param.add_value(subval)
+                        attr.add_param(param);
+            elif value is not None:
+                attr.add_value(value)
             else:
-                attr.add_value(val)
+                continue
             contact.add_attribute(attr)
 
-        user_fullname = info.get('{}-name'.format(self._name))
-        contact.set_property('full-name', user_fullname)
-
-        user_nickname = info.get('{}-nick'.format(self._name))
-        if user_nickname is not None:
-            contact.set_property('nickname', user_nickname)
-
-        log.debug('Creating new contact for {}'.format(user_fullname))
+        properties = (('full-name', '{}-name'),
+                      ('nickname', '{}-nick'))
+        for prop, key in properties:
+            value = info.get(key.format(self._name))
+            if value is not None:
+                contact.set_property(prop, value)
+                log.debug('New contact got {}: {}'.format(prop, value))
         return contact
 
     @feature
     def delete_contacts(self):
-        """Removed all synced contacts from this social network."""
+        """Remove all synced contacts from this social network."""
         self._prepare_eds_connections(allow_creation=False)
         with ignored(GLib.GError, AttributeError):
             return self._eds_source.remove_sync(None)
