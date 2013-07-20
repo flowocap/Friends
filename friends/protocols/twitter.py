@@ -61,7 +61,8 @@ class Twitter(Base):
     _favorite = _api_base.format(endpoint='favorites/create')
     _del_favorite = _api_base.format(endpoint='favorites/destroy')
 
-    _tweet_permalink = 'https://twitter.com/{user_id}/status/{tweet_id}'
+    _user_home = 'https://twitter.com/{user_id}'
+    _tweet_permalink = _user_home + '/status/{tweet_id}'
 
     def __init__(self, account):
         super().__init__(account)
@@ -366,13 +367,13 @@ class Twitter(Base):
                 user_fullname = full_contact.get('name')
                 user_nickname = full_contact.get('screen_name')
                 self._push_to_eds({
-                    'twitter-id': contact_id,
-                    'twitter-name': user_fullname,
-                    'twitter-nick': user_nickname,
-                    'X-URIS': 'https://twitter.com/{}'.format(user_nickname),
+                    '{}-id'.format(self._name): contact_id,
+                    '{}-name'.format(self._name): user_fullname,
+                    '{}-nick'.format(self._name): user_nickname,
+                    'X-URIS': self._user_home.format(user_id=user_nickname),
                     'X-FOLKS-WEB-SERVICES-IDS': {
                         'remote-full-name': user_fullname,
-                        'twitter-id': contact_id,
+                        '{}-id'.format(self._name): contact_id,
                     }})
         return len(contacts)
 

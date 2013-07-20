@@ -263,17 +263,17 @@ class TestIdentica(unittest.TestCase):
             [mock.call('1'), mock.call('2')])
         self.assertEqual(
             push.call_args_list,
-            [mock.call({'twitter-id': '1',
+            [mock.call({'identica-id': '1',
                         'X-FOLKS-WEB-SERVICES-IDS': {
-                            'twitter-id': '1',
+                            'identica-id': '1',
                             'remote-full-name': 'Bob'},
-                        'X-URIS': 'https://twitter.com/bobby',
-                        'twitter-name': 'Bob',
-                        'twitter-nick': 'bobby'}),
-             mock.call({'twitter-id': '2',
+                        'X-URIS': 'https://identi.ca/bobby',
+                        'identica-name': 'Bob',
+                        'identica-nick': 'bobby'}),
+             mock.call({'identica-id': '2',
                         'X-FOLKS-WEB-SERVICES-IDS': {
-                            'twitter-id': '2',
+                            'identica-id': '2',
                             'remote-full-name': 'Bob'},
-                        'X-URIS': 'https://twitter.com/bobby',
-                        'twitter-name': 'Bob',
-                        'twitter-nick': 'bobby'})])
+                        'X-URIS': 'https://identi.ca/bobby',
+                        'identica-name': 'Bob',
+                        'identica-nick': 'bobby'})])

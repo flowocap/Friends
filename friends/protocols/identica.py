@@ -39,6 +39,7 @@ class Identica(Twitter):
     _favorite = _api_base.format(endpoint='favorites/create/{}')
     _del_favorite = _api_base.format(endpoint='favorites/destroy/{}')
 
+    _user_home = 'https://identi.ca/{user_id}'
     _tweet_permalink = 'http://identi.ca/notice/{tweet_id}'
 
     def _whoami(self, authdata):
