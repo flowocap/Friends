@@ -123,18 +123,30 @@ class TestLinkedIn(unittest.TestCase):
         self.assertEqual(
             push.mock_calls,
             [mock.call(
-                {'linkedin-name': 'H A',
-                 'X-URIS': 'https://www.linkedin.com',
+                {'X-URIS': 'https://www.linkedin.com',
+                 'X-FOLKS-WEB-SERVICES-IDS': {
+                     'linkedin-id': 'IFDI',
+                     'remote-full-name': 'H A'},
+                 'linkedin-name': 'H A',
                  'linkedin-id': 'IFDI'}),
              mock.call(
-                 {'linkedin-name': 'C A',
-                  'X-URIS': 'https://www.linkedin.com',
+                 {'X-URIS': 'https://www.linkedin.com',
+                  'X-FOLKS-WEB-SERVICES-IDS': {
+                      'linkedin-id': 'AefF',
+                      'remote-full-name': 'C A'},
+                  'linkedin-name': 'C A',
                   'linkedin-id': 'AefF'}),
              mock.call(
-                 {'linkedin-name': 'R A',
-                  'X-URIS': 'https://www.linkedin.com',
+                 {'X-URIS': 'https://www.linkedin.com',
+                  'X-FOLKS-WEB-SERVICES-IDS': {
+                      'linkedin-id': 'DFdV',
+                      'remote-full-name': 'R A'},
+                  'linkedin-name': 'R A',
                   'linkedin-id': 'DFdV'}),
              mock.call(
-                 {'linkedin-name': 'A Z',
-                  'X-URIS': 'https://www.linkedin.com',
+                 {'X-URIS': 'https://www.linkedin.com',
+                  'X-FOLKS-WEB-SERVICES-IDS': {
+                      'linkedin-id': 'xkBU',
+                      'remote-full-name': 'A Z'},
+                  'linkedin-name': 'A Z',
                   'linkedin-id': 'xkBU'})])

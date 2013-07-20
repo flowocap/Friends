@@ -106,20 +106,24 @@ class LinkedIn(Base):
     def contacts(self):
         """Retrieve a list of up to 500 LinkedIn connections."""
         # http://developer.linkedin.com/documents/connections-api
-        url = self._api_base.format(
-            endpoint='people/~/connections',
-            token=self._get_access_token())
-        result = Downloader(url).get_json()
-        connections = result.get('values', [])
+        connections = Downloader(
+            url=self._api_base.format(
+                endpoint='people/~/connections',
+                token=self._get_access_token())
+        ).get_json().get('values', [])
 
         for connection in connections:
             connection_id = connection.get('id', 'private')
-            if connection_id != 'private':
-                if not self._previously_stored_contact(connection_id):
-                    self._push_to_eds(self._create_contact(
-                        { 'linkedin-id': connection_id,
-                          'linkedin-name': make_fullname(**connection),
-                          'X-URIS': connection.get(
-                              'siteStandardProfileRequest', {}).get('url', '') }))
+            fullname = make_fullname(**connection)
+            if connection_id != 'private' and not self._previously_stored_contact(connection_id):
+                self._push_to_eds(self._create_contact({
+                    'linkedin-id': connection_id,
+                    'linkedin-name': fullname,
+                    'X-URIS': connection.get(
+                        'siteStandardProfileRequest', {}).get('url'),
+                    'X-FOLKS-WEB-SERVICES-IDS': {
+                        'remote-full-name': fullname,
+                        'linkedin-id': connection_id,
+                    }}))
 
         return len(connections)
