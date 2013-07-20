@@ -341,17 +341,17 @@ class Facebook(Base):
             full_contact = Downloader(
                 url=API_BASE.format(id=contact_id),
                 params=dict(access_token=self._get_access_token())).get_json()
-            self._push_to_eds(self._create_contact({
-            'facebook-id':   contact_id,
-            'facebook-name': full_contact.get('name'),
-            'facebook-nick': full_contact.get('username'),
-            'X-URIS':        full_contact.get('link'),
-            'X-GENDER':      full_contact.get('gender'),
-            'X-FOLKS-WEB-SERVICES-IDS': {
-                'jabber': '-{}@chat.facebook.com'.format(contact_id),
-                'remote-full-name': full_contact.get('name'),
-                'facebook-id': contact_id,
-            }}))
+            self._push_to_eds({
+                'facebook-id':   contact_id,
+                'facebook-name': full_contact.get('name'),
+                'facebook-nick': full_contact.get('username'),
+                'X-URIS':        full_contact.get('link'),
+                'X-GENDER':      full_contact.get('gender'),
+                'X-FOLKS-WEB-SERVICES-IDS': {
+                    'jabber': '-{}@chat.facebook.com'.format(contact_id),
+                    'remote-full-name': full_contact.get('name'),
+                    'facebook-id': contact_id,
+                }})
 
         return len(contacts)
 

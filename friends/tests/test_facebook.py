@@ -527,12 +527,11 @@ class TestFacebook(unittest.TestCase):
                         'id': '555555555',
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
-        eds_contact = self.protocol._create_contact(bare_contact)
         self.protocol._address_book = 'test-address-book'
         client = self.protocol._book_client = mock.Mock()
         client.add_contact_sync.return_value = True
         # Implicitely fail test if the following raises any exceptions
-        self.protocol._push_to_eds(eds_contact)
+        self.protocol._push_to_eds(bare_contact)
 
     @mock.patch('friends.utils.base.Base._prepare_eds_connections',
                 return_value=None)
@@ -541,14 +540,13 @@ class TestFacebook(unittest.TestCase):
                         'id': '555555555',
                         'username': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
-        eds_contact = self.protocol._create_contact(bare_contact)
         self.protocol._address_book = 'test-address-book'
         client = self.protocol._book_client = mock.Mock()
         client.add_contact_sync.return_value = False
         self.assertRaises(
             ContactsError,
             self.protocol._push_to_eds,
-            eds_contact,
+            bare_contact,
             )
 
     @mock.patch('gi.repository.EBook.BookClient.connect_sync',

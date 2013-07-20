@@ -365,7 +365,7 @@ class Twitter(Base):
                     endpoint='users/show') + '?user_id=' + contact_id)
                 user_fullname = full_contact.get('name')
                 user_nickname = full_contact.get('screen_name')
-                self._push_to_eds(self._create_contact({
+                self._push_to_eds({
                     'twitter-id': contact_id,
                     'twitter-name': user_fullname,
                     'twitter-nick': user_nickname,
@@ -373,7 +373,7 @@ class Twitter(Base):
                     'X-FOLKS-WEB-SERVICES-IDS': {
                         'remote-full-name': user_fullname,
                         'twitter-id': contact_id,
-                    }}))
+                    }})
         return len(contacts)
 
 

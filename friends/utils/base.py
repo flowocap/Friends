@@ -570,6 +570,7 @@ class Base:
 
     def _push_to_eds(self, contact):
         self._prepare_eds_connections()
+        contact = self._create_contact(contact)
         if not self._book_client.add_contact_sync(contact, None):
             raise ContactsError('Failed to save contact {!r}'.format(contact))
 
