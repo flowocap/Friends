@@ -552,56 +552,6 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         get_url.assert_called_with(
             'https://api.twitter.com/1.1/search/tweets.json?q=hello')
 
-    def test_getfriendsids(self):
-        get_url = self.protocol._get_url = mock.Mock(
-            return_value={"ids":[1,2,3]})
-        ids = self.protocol._getfriendsids()
-
-        get_url.assert_called_with(
-            'https://api.twitter.com/1.1/friends/ids.json'
-            )
-        self.assertEqual(ids, [1,2,3])
-
-    def test_showuser(self):
-        get_url = self.protocol._get_url = mock.Mock(
-            return_value={"name":"Alice"})
-        userdata = self.protocol._showuser(1)
-
-        get_url.assert_called_with(
-            'https://api.twitter.com/1.1/users/show.json?user_id=1'
-            )
-        self.assertEqual(userdata, {"name":"Alice"})
-
-    def test_create_contact(self, *mocks):
-        # Receive the users friends.
-        bare_contact = {'name': 'Alice Bob',
-                        'screen_name': 'alice_bob',
-                        'id': 13579}
-
-        eds_contact = self.protocol._create_contact(bare_contact)
-        twitter_id_attr = eds_contact.get_attribute('twitter-id')
-        self.assertEqual(twitter_id_attr.get_value(), '13579')
-        twitter_name_attr = eds_contact.get_attribute('twitter-name')
-        self.assertEqual(twitter_name_attr.get_value(), 'Alice Bob')
-        web_service_addrs = eds_contact.get_attribute('X-FOLKS-WEB-SERVICES-IDS')
-        params= web_service_addrs.get_params()
-        self.assertEqual(len(params), 2)
-
-        test_remote_name = False
-        test_twitter_id = False
-
-        for p in params:
-            if p.get_name() == 'remote-full-name':
-                self.assertEqual(len(p.get_values()), 1)
-                self.assertEqual(p.get_values()[0], 'Alice Bob')
-                test_remote_name = True
-            if p.get_name() == 'twitter-id':
-                self.assertEqual(len(p.get_values()), 1)
-                self.assertEqual(p.get_values()[0], '13579')
-                test_twitter_id = True
-
-        self.assertTrue(test_remote_name and test_twitter_id)
-
     @mock.patch('friends.protocols.twitter.time.sleep')
     def test_rate_limiter_first_time(self, sleep):
         # The first time we see a URL, there is no rate limiting.
@@ -747,3 +697,34 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         # sleep 100 seconds between each call.
         self.protocol.home()
         sleep.assert_called_with(100.0)
+
+    def test_contacts(self):
+        get = self.protocol._get_url = mock.Mock(
+            return_value=dict(ids=[1,2],name='Bob',screen_name='bobby'))
+        prev = self.protocol._previously_stored_contact = mock.Mock(return_value=False)
+        push = self.protocol._push_to_eds = mock.Mock()
+        self.assertEqual(self.protocol.contacts(), 2)
+        self.assertEqual(
+            get.call_args_list,
+            [mock.call('https://api.twitter.com/1.1/friends/ids.json'),
+             mock.call(url='https://api.twitter.com/1.1/users/show.json?user_id=1'),
+             mock.call(url='https://api.twitter.com/1.1/users/show.json?user_id=2')])
+        self.assertEqual(
+            prev.call_args_list,
+            [mock.call('1'), mock.call('2')])
+        self.assertEqual(
+            push.call_args_list,
+            [mock.call({'twitter-id': '1',
+                        'X-FOLKS-WEB-SERVICES-IDS': {
+                            'twitter-id': '1',
+                            'remote-full-name': 'Bob'},
+                        'X-URIS': 'https://twitter.com/bobby',
+                        'twitter-name': 'Bob',
+                        'twitter-nick': 'bobby'}),
+             mock.call({'twitter-id': '2',
+                        'X-FOLKS-WEB-SERVICES-IDS': {
+                            'twitter-id': '2',
+                            'remote-full-name': 'Bob'},
+                        'X-URIS': 'https://twitter.com/bobby',
+                        'twitter-name': 'Bob',
+                        'twitter-nick': 'bobby'})])

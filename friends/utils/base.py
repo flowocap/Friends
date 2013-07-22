@@ -33,7 +33,7 @@ from oauthlib.oauth1 import Client
 
 from gi.repository import GLib, GObject, EDataServer, EBook, EBookContacts
 
-from friends.errors import FriendsError, ContactsError
+from friends.errors import FriendsError, ContactsError, ignored
 from friends.utils.authentication import Authentication
 from friends.utils.model import Schema, Model, persist_model
 from friends.utils.notify import notify
@@ -186,8 +186,11 @@ class Base:
     The code in this class has been tested against Facebook, Twitter,
     Flickr, Identica, and Foursquare, and works well with all of them.
     """
-    # Used for EDS stuff.
-    _source_registry = None
+    # Lazily populated when needed for contact syncing.
+    _book_client = None
+    _address_book_name = None
+    _eds_source_registry = None
+    _eds_source = None
 
     # This number serves a guideline (not a hard limit) for the protocol
     # subclasses to download in each refresh.
@@ -201,7 +204,6 @@ class Base:
         self._account = account
         self._Name = self.__class__.__name__
         self._name = self._Name.lower()
-        self._address_book = 'friends-{}-contacts'.format(self._name)
 
     def _whoami(self, result):
         """Use OAuth login results to identify the authenticating user.
@@ -540,101 +542,82 @@ class Base:
         Model.get_row(row_id)[col_idx] -= 1
         persist_model()
 
-    def _new_book_client(self, source):
-        client = EBook.BookClient.new(source)
-        client.open_sync(False, None)
-        return client
+    def _prepare_eds_connections(self, allow_creation=True):
+        """Lazily establish a connection to EDS."""
+        if None not in (self._address_book_name, self._eds_source_registry,
+                        self._eds_source, self._book_client):
+            return
+
+        self._address_book_name = 'friends-{}-contacts'.format(self._name)
+        self._eds_source_registry = EDataServer.SourceRegistry.new_sync(None)
+
+        self._eds_source = self._eds_source_registry.ref_source(
+            self._address_book_name)
+
+        # First run? Might need to create the EDS source!
+        if allow_creation and self._eds_source is None:
+            self._eds_source = EDataServer.Source.new_with_uid(
+                self._address_book_name, None)
+            self._eds_source.set_display_name(self._address_book_name)
+            self._eds_source.set_parent('local-stub')
+            self._eds_source.get_extension(
+                EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK
+            ).set_backend_name('local')
+            self._eds_source_registry.commit_source_sync(self._eds_source, None)
+
+        if self._eds_source is not None:
+            self._book_client = EBook.BookClient.connect_sync(self._eds_source, None)
 
     def _push_to_eds(self, contact):
-        source_match = self._get_eds_source()
-        if source_match is None:
-            raise ContactsError(
-                '{} does not have an address book.'.format(
-                    self._address_book))
-        client = self._new_book_client(source_match)
-        success = client.add_contact_sync(contact, None)
-        if not success:
-            raise ContactsError('Failed to save contact {!r}', contact)
+        self._prepare_eds_connections()
+        contact = self._create_contact(contact)
+        if not self._book_client.add_contact_sync(contact, None):
+            raise ContactsError('Failed to save contact {!r}'.format(contact))
 
-    def _get_eds_source_registry(self):
-        if self._source_registry is None:
-            self._source_registry = EDataServer.SourceRegistry.new_sync(None)
-
-    def _create_eds_source(self):
-        self._get_eds_source_registry()
-        source = EDataServer.Source.new(None, None)
-        source.set_display_name(self._address_book)
-        source.set_parent('local-stub')
-        extension = source.get_extension(
-            EDataServer.SOURCE_EXTENSION_ADDRESS_BOOK)
-        extension.set_backend_name('local')
-        if self._source_registry.commit_source_sync(source, None):
-            # https://bugzilla.gnome.org/show_bug.cgi?id=685986
-            # Potential race condition - need to sleep for a
-            # couple of cycles to ensure the registry will return
-            # a valid source object after commiting. Evolution fix
-            # on the way but for now we need this.
-            time.sleep(2)
-            return self._source_registry.ref_source(source.get_uid())
-
-    def _get_eds_source(self):
-        self._get_eds_source_registry()
-        for previous_source in self._source_registry.list_sources(None):
-            if previous_source.get_display_name() == self._address_book:
-                return self._source_registry.ref_source(
-                    previous_source.get_uid())
-        # if we got this far, then the source doesn't exist; create it
-        return self._create_eds_source()
-
-    def _previously_stored_contact(self, source, field, search_term):
-        client = self._new_book_client(source)
+    def _previously_stored_contact(self, search_term):
+        self._prepare_eds_connections()
         query = EBookContacts.BookQuery.vcard_field_test(
-            field, EBookContacts.BookQueryTest.IS, search_term)
-        success, result = client.get_contacts_sync(query.to_string(), None)
+            '{}-id'.format(self._name), EBookContacts.BookQueryTest.IS, search_term)
+        success, result = self._book_client.get_contacts_sync(query.to_string(), None)
         if not success:
-            raise ContactsError('Search failed on field {}'.format(field))
+            raise ContactsError(
+                'Id field is missing in {} address book.'.format(self._Name))
         return len(result) > 0
 
-    def _delete_service_contacts(self, source):
-        client = self._new_book_client(source)
-        query = EBook.book_query_any_field_contains('')
-        success, results = client.get_contacts_sync(query.to_string(), None)
-        if not success:
-            raise ContactsError('Search for delete all contacts failed')
-        log.debug('Found {} contacts to delete'.format(len(results)))
-        for contact in results:
-            log.debug(
-                'Deleting contact {}'.format(
-                    contact.get_property('full-name')))
-            client.remove_contact_sync(contact, None)
-        return True
-
-    def _create_contact(self, user_fullname, user_nickname,
-                        social_network_attrs):
+    def _create_contact(self, info):
         """Build a VCard based on a dict representation of a contact."""
-        vcard = EBookContacts.VCard.new()
-        info = social_network_attrs
+        contact = EBookContacts.Contact.new()
 
-        for key, val in info.items():
+        for key, value in info.items():
             attr = EBookContacts.VCardAttribute.new(
                 'social-networking-attributes', key)
-            if isinstance(val, dict):
-                for subkey, subval in val.items():
-                    param = EBookContacts.VCardAttributeParam.new(subkey)
-                    param.add_value(subval)
-                    attr.add_param(param);
+            if hasattr(value, 'items'):
+                for subkey, subval in value.items():
+                    if subval is not None:
+                        param = EBookContacts.VCardAttributeParam.new(subkey)
+                        param.add_value(subval)
+                        attr.add_param(param);
+            elif value is not None:
+                attr.add_value(value)
             else:
-                attr.add_value(val)
-            vcard.add_attribute(attr)
+                continue
+            contact.add_attribute(attr)
 
-        contact = EBookContacts.Contact.new_from_vcard(
-            vcard.to_string(EBookContacts.VCardFormat(1)))
-        contact.set_property('full-name', user_fullname)
-        if user_nickname is not None:
-            contact.set_property('nickname', user_nickname)
-
-        log.debug('Creating new contact for {}'.format(user_fullname))
+        properties = (('full-name', '{}-name'),
+                      ('nickname', '{}-nick'))
+        for prop, key in properties:
+            value = info.get(key.format(self._name))
+            if value is not None:
+                contact.set_property(prop, value)
+                log.debug('New contact got {}: {}'.format(prop, value))
         return contact
+
+    @feature
+    def delete_contacts(self):
+        """Remove all synced contacts from this social network."""
+        self._prepare_eds_connections(allow_creation=False)
+        with ignored(GLib.GError, AttributeError):
+            return self._eds_source.remove_sync(None)
 
     @classmethod
     def get_features(cls):

@@ -54,7 +54,8 @@ class TestInstagram(unittest.TestCase):
     def test_features(self):
         # The set of public features.
         self.assertEqual(Instagram.get_features(),
-            ['home', 'like', 'receive', 'send_thread', 'unlike'])
+                         ['delete_contacts', 'home', 'like', 'receive',
+                          'send_thread', 'unlike'])
 
     @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')

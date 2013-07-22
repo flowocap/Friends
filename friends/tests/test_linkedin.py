@@ -23,7 +23,7 @@ __all__ = [
 
 import unittest
 
-from friends.protocols.linkedin import LinkedIn
+from friends.protocols.linkedin import LinkedIn, make_fullname
 from friends.tests.mocks import FakeAccount, FakeSoupMessage, LogMock
 from friends.tests.mocks import TestModel, mock
 from friends.errors import AuthorizationError
@@ -45,6 +45,19 @@ class TestLinkedIn(unittest.TestCase):
         # Ensure that any log entries we haven't tested just get consumed so
         # as to isolate out test logger from other tests.
         self.log_mock.stop()
+
+    def test_name_logic(self):
+        self.assertEqual('', make_fullname())
+        self.assertEqual('', make_fullname(irrelevant_key='foo'))
+        self.assertEqual('Bob', make_fullname(**dict(firstName='Bob')))
+        self.assertEqual('LastOnly', make_fullname(**dict(lastName='LastOnly')))
+        self.assertEqual(
+            'Bob Loblaw',
+            make_fullname(**dict(firstName='Bob', lastName='Loblaw')))
+        self.assertEqual(
+            'Bob Loblaw',
+            make_fullname(**dict(firstName='Bob', lastName='Loblaw',
+                                 extra='ignored')))
 
     @mock.patch('friends.utils.authentication.manager')
     @mock.patch('friends.utils.authentication.Accounts')
@@ -97,14 +110,6 @@ class TestLinkedIn(unittest.TestCase):
              '&authToken=-LNy&trk=api*a26127*s26893*',
              1, False, '', '', '', '', '', '', '', 0.0, 0.0])
 
-    @mock.patch('friends.utils.base.Base._create_contact')
-    def test_create_contact(self, base_mock):
-        self.protocol._create_contact(
-            dict(id='jb89', firstName='Joe', lastName='Blow'))
-        base_mock.assert_called_once_with(
-            'Joe Blow', None,
-            {'X-URIS': '', 'linkedin-id': 'jb89', 'linkedin-name': 'Joe Blow'})
-
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'linkedin_contacts.json'))
     @mock.patch('friends.protocols.linkedin.LinkedIn._login',
@@ -118,65 +123,30 @@ class TestLinkedIn(unittest.TestCase):
         self.assertEqual(
             push.mock_calls,
             [mock.call(
-                {'siteStandardProfileRequest':
-                 {'url': 'https://www.linkedin.com'},
-                 'pictureUrl': 'http://m.c.lnkd.licdn.com',
-                 'apiStandardProfileRequest':
-                 {'url': 'http://api.linkedin.com',
-                  'headers': {'_total': 1, 'values':
-                              [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
-                 'industry': 'Computer Network Security',
-                 'lastName': 'A',
-                 'firstName': 'H',
-                 'headline': 'Unix Administrator at NVIDIA',
-                 'location': {'name': 'Pune Area, India',
-                              'country': {'code': 'in'}},
-                 'id': 'IFDI'}),
-
+                {'X-URIS': 'https://www.linkedin.com',
+                 'X-FOLKS-WEB-SERVICES-IDS': {
+                     'linkedin-id': 'IFDI',
+                     'remote-full-name': 'H A'},
+                 'linkedin-name': 'H A',
+                 'linkedin-id': 'IFDI'}),
              mock.call(
-                 {'siteStandardProfileRequest':
-                  {'url': 'https://www.linkedin.com'},
-                  'pictureUrl': 'http://m.c.lnkd.licdn.com',
-                  'apiStandardProfileRequest':
-                  {'url': 'http://api.linkedin.com',
-                   'headers': {'_total': 1, 'values':
-                               [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
-                  'industry': 'Food Production',
-                  'lastName': 'A',
-                  'firstName': 'C',
-                  'headline': 'Recent Graduate, Simon Fraser University',
-                  'location': {'name': 'Vancouver, Canada Area',
-                               'country': {'code': 'ca'}},
-                  'id': 'AefF'}),
-
+                 {'X-URIS': 'https://www.linkedin.com',
+                  'X-FOLKS-WEB-SERVICES-IDS': {
+                      'linkedin-id': 'AefF',
+                      'remote-full-name': 'C A'},
+                  'linkedin-name': 'C A',
+                  'linkedin-id': 'AefF'}),
              mock.call(
-                 {'siteStandardProfileRequest':
-                  {'url': 'https://www.linkedin.com'},
-                  'pictureUrl': 'http://m.c.lnkd.licdn.com',
-                  'apiStandardProfileRequest':
-                  {'url': 'http://api.linkedin.com',
-                   'headers': {'_total': 1, 'values':
-                               [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
-                  'industry': 'Computer Software',
-                  'lastName': 'A',
-                  'firstName': 'R',
-                  'headline': 'Technical Lead at Canonical Ltd.',
-                  'location': {'name': 'Auckland, New Zealand',
-                               'country': {'code': 'nz'}},
-                  'id': 'DFdV'}),
-
+                 {'X-URIS': 'https://www.linkedin.com',
+                  'X-FOLKS-WEB-SERVICES-IDS': {
+                      'linkedin-id': 'DFdV',
+                      'remote-full-name': 'R A'},
+                  'linkedin-name': 'R A',
+                  'linkedin-id': 'DFdV'}),
              mock.call(
-                 {'siteStandardProfileRequest':
-                  {'url': 'https://www.linkedin.com'},
-                  'pictureUrl': 'http://m.c.lnkd.licdn.com',
-                  'apiStandardProfileRequest':
-                  {'url': 'http://api.linkedin.com',
-                   'headers': {'_total': 1, 'values':
-                               [{'value': 'name:', 'name': 'x-li-auth-token'}]}},
-                  'industry': 'Photography',
-                  'lastName': 'Z',
-                  'firstName': 'A',
-                  'headline': 'Sales manager at McBain Camera',
-                  'location': {'name': 'Edmonton, Canada Area',
-                               'country': {'code': 'ca'}},
-                  'id': 'xkBU'})])
+                 {'X-URIS': 'https://www.linkedin.com',
+                  'X-FOLKS-WEB-SERVICES-IDS': {
+                      'linkedin-id': 'xkBU',
+                      'remote-full-name': 'A Z'},
+                  'linkedin-name': 'A Z',
+                  'linkedin-id': 'xkBU'})])

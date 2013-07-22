@@ -184,23 +184,26 @@ class TestDispatcher(unittest.TestCase):
 
     def test_get_features(self):
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('facebook')),
-                         ['contacts', 'delete', 'home', 'like', 'receive',
-                          'search', 'send', 'send_thread', 'unlike', 'upload',
-                          'wall'])
+                         ['contacts', 'delete', 'delete_contacts',
+                          'home', 'like', 'receive', 'search', 'send',
+                          'send_thread', 'unlike', 'upload', 'wall'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('twitter')),
-                         ['contacts', 'delete', 'follow', 'home', 'like',
-                          'list', 'lists', 'mentions', 'private', 'receive',
-                          'retweet', 'search', 'send', 'send_private',
-                          'send_thread', 'tag', 'unfollow', 'unlike', 'user'])
-        self.assertEqual(json.loads(self.dispatcher.GetFeatures('identica')),
-                         ['contacts', 'delete', 'follow', 'home', 'like', 
+                         ['contacts', 'delete', 'delete_contacts',
+                          'follow', 'home', 'like', 'list', 'lists',
                           'mentions', 'private', 'receive', 'retweet',
-                          'search', 'send', 'send_private', 'send_thread',
+                          'search', 'send', 'send_private',
+                          'send_thread', 'tag', 'unfollow', 'unlike',
+                          'user'])
+        self.assertEqual(json.loads(self.dispatcher.GetFeatures('identica')),
+                         ['contacts', 'delete', 'delete_contacts',
+                          'follow', 'home', 'like', 'mentions',
+                          'private', 'receive', 'retweet', 'search',
+                          'send', 'send_private', 'send_thread',
                           'unfollow', 'unlike', 'user'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('flickr')),
-                         ['receive', 'upload'])
+                         ['delete_contacts', 'receive', 'upload'])
         self.assertEqual(json.loads(self.dispatcher.GetFeatures('foursquare')),
-                         ['receive'])
+                         ['delete_contacts', 'receive'])
 
     @mock.patch('friends.service.dispatcher.logging')
     def test_urlshorten_already_shortened(self, logging_mock):

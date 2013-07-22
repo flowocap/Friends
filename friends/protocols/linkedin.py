@@ -26,10 +26,14 @@ import logging
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader
 from friends.utils.time import iso8601utc
-from friends.errors import FriendsError
 
 
 log = logging.getLogger(__name__)
+
+
+def make_fullname(firstName=None, lastName=None, **ignored):
+    """Converts dict(firstName='Bob', lastName='Loblaw') into 'Bob Loblaw'."""
+    return ' '.join(name for name in (firstName, lastName) if name)
 
 
 class LinkedIn(Base):
@@ -44,7 +48,7 @@ class LinkedIn(Base):
             token=self._get_access_token())
         result = Downloader(url).get_json()
         self._account.user_id = result.get('id')
-        self._account.user_name = '{firstName} {lastName}'.format(**result)
+        self._account.user_name = make_fullname(**result)
 
     def _publish_entry(self, entry, stream='messages'):
         """Publish a single update into the Dee.SharedModel."""
@@ -52,7 +56,7 @@ class LinkedIn(Base):
 
         content = entry.get('updateContent', {})
         person = content.get('person', {})
-        name = '{firstName} {lastName}'.format(**person)
+        name = make_fullname(**person)
         person_id = person.get('id', '')
         status = person.get('currentStatus')
         picture = person.get('pictureUrl', '')
@@ -98,40 +102,28 @@ class LinkedIn(Base):
         """Gather and publish all incoming messages."""
         return self.home()
 
-    def _create_contact(self, connection_json):
-        """Build a VCard based on a dict representation of a contact."""
-        user_id = connection_json.get('id', '')
-
-        user_fullname = '{firstName} {lastName}'.format(**connection_json)
-        user_link = connection_json.get(
-            'siteStandardProfileRequest', {}).get('url', '')
-
-        attrs = { 'linkedin-id':   user_id,
-                  'linkedin-name': user_fullname,
-                  'X-URIS':        user_link }
-
-        return super()._create_contact(user_fullname, None, attrs)
-
     @feature
     def contacts(self):
         """Retrieve a list of up to 500 LinkedIn connections."""
         # http://developer.linkedin.com/documents/connections-api
-        url = self._api_base.format(
-            endpoint='people/~/connections',
-            token=self._get_access_token())
-        result = Downloader(url).get_json()
-        connections = result.get('values', [])
-        source = self._get_eds_source()
+        connections = Downloader(
+            url=self._api_base.format(
+                endpoint='people/~/connections',
+                token=self._get_access_token())
+        ).get_json().get('values', [])
 
         for connection in connections:
-            connection_id = connection.get('id')
-            if connection_id != 'private':
-                if not self._previously_stored_contact(
-                        source, 'linkedin-id', connection_id):
-                    self._push_to_eds(self._create_contact(connection))
+            connection_id = connection.get('id', 'private')
+            fullname = make_fullname(**connection)
+            if connection_id != 'private' and not self._previously_stored_contact(connection_id):
+                self._push_to_eds({
+                    'linkedin-id': connection_id,
+                    'linkedin-name': fullname,
+                    'X-URIS': connection.get(
+                        'siteStandardProfileRequest', {}).get('url'),
+                    'X-FOLKS-WEB-SERVICES-IDS': {
+                        'remote-full-name': fullname,
+                        'linkedin-id': connection_id,
+                    }})
 
         return len(connections)
-
-    def delete_contacts(self):
-        source = self._get_eds_source()
-        return self._delete_service_contacts(source)
