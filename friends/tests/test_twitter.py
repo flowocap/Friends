@@ -714,17 +714,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             [mock.call('1'), mock.call('2')])
         self.assertEqual(
             push.call_args_list,
-            [mock.call({'twitter-id': '1',
-                        'X-FOLKS-WEB-SERVICES-IDS': {
-                            'twitter-id': '1',
-                            'remote-full-name': 'Bob'},
-                        'X-URIS': 'https://twitter.com/bobby',
-                        'twitter-name': 'Bob',
-                        'twitter-nick': 'bobby'}),
-             mock.call({'twitter-id': '2',
-                        'X-FOLKS-WEB-SERVICES-IDS': {
-                            'twitter-id': '2',
-                            'remote-full-name': 'Bob'},
-                        'X-URIS': 'https://twitter.com/bobby',
-                        'twitter-name': 'Bob',
-                        'twitter-nick': 'bobby'})])
+            [mock.call(link='https://twitter.com/bobby', uid='1',
+                       name='Bob', nick='bobby'),
+             mock.call(link='https://twitter.com/bobby', uid='2',
+                       name='Bob', nick='bobby')])

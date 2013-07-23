@@ -26,7 +26,7 @@ import tempfile
 import unittest
 import shutil
 
-from gi.repository import GLib, EDataServer
+from gi.repository import GLib, EDataServer, EBookContacts
 from pkg_resources import resource_filename
 
 from friends.protocols.facebook import Facebook
@@ -501,69 +501,61 @@ class TestFacebook(unittest.TestCase):
                        params={'access_token': 'broken'})])
         self.assertEqual(
             push.call_args_list,
-            [mock.call({
-                'X-FOLKS-WEB-SERVICES-IDS': {
-                    'jabber': '-contact1@chat.facebook.com',
-                    'facebook-id': 'contact1',
-                    'remote-full-name': 'Joe Blow'},
-                'X-GENDER': 'male',
-                'facebook-name': 'Joe Blow',
-                'facebook-id': 'contact1',
-                'X-URIS': 'example.com',
-                'facebook-nick': 'jblow'}),
-             mock.call({
-                 'X-FOLKS-WEB-SERVICES-IDS': {
-                     'jabber': '-contact2@chat.facebook.com',
-                     'facebook-id': 'contact2',
-                     'remote-full-name': 'Joe Blow'},
-                 'X-GENDER': 'male',
-                 'facebook-name': 'Joe Blow',
-                 'facebook-id': 'contact2',
-                 'X-URIS': 'example.com',
-                 'facebook-nick': 'jblow'})])
+            [mock.call(gender='male', jabber='-contact1@chat.facebook.com',
+                       nick='jblow', link='example.com', name='Joe Blow',
+                       uid='contact1'),
+             mock.call(gender='male', jabber='-contact2@chat.facebook.com',
+                       nick='jblow', link='example.com', name='Joe Blow',
+                       uid='contact2')])
 
     def test_create_contact(self, *mocks):
         # Receive the users friends.
-        bare_contact = {
-            'facebook-id':   '555555555',
-            'facebook-name': 'Lucy Baron',
-            'facebook-nick': 'lucy.baron5',
-            'X-URIS':        'http:www.facebook.com/lucy.baron5',
-            'X-GENDER':      'female',
-            'X-FOLKS-WEB-SERVICES-IDS': {
-                'jabber': '-555555555@chat.facebook.com',
-                'remote-full-name': 'Lucy Baron',
-                'facebook-id': '555555555',
-            }}
-        eds_contact = self.protocol._create_contact(bare_contact)
+        eds_contact = self.protocol._create_contact(
+            uid='555555555',
+            name='Lucy Baron',
+            nick='lucy.baron5',
+            gender='female',
+            link='http:www.facebook.com/lucy.baron5',
+            jabber='-555555555@chat.facebook.com')
         facebook_id_attr = eds_contact.get_attribute('facebook-id')
         self.assertEqual(facebook_id_attr.get_value(), '555555555')
-        facebook_name_attr = eds_contact.get_attribute('facebook-name')
-        self.assertEqual(facebook_name_attr.get_value(), 'Lucy Baron')
         web_service_addrs = eds_contact.get_attribute('X-FOLKS-WEB-SERVICES-IDS')
         params= web_service_addrs.get_params()
+        self.assertEqual(len(params), 5)
 
-        self.assertEqual(len(params), 3)
-
-        test_jabber = False
-        test_remote_name = False
-        test_facebook_id = False
-
-        for p in params:
-            if p.get_name() == 'jabber':
-                self.assertEqual(len(p.get_values()), 1)
-                self.assertEqual(p.get_values()[0], '-555555555@chat.facebook.com')
-                test_jabber = True
-            if p.get_name() == 'remote-full-name':
-                self.assertEqual(len(p.get_values()), 1)
-                self.assertEqual(p.get_values()[0], 'Lucy Baron')
-                test_remote_name = True
-            if p.get_name() == 'facebook-id':
-                self.assertEqual(len(p.get_values()), 1)
-                self.assertEqual(p.get_values()[0], '555555555')
-                test_facebook_id = True
-        # Finally test to ensure all key value pairs were tested
-        self.assertTrue(test_jabber and test_remote_name and test_facebook_id)
+        # Can't compare the vcard string directly because it is sorted randomly...
+        vcard = eds_contact.to_string(
+            EBookContacts.VCardFormat(1)).replace('\r\n ', '')
+        self.assertIn(
+            'social-networking-attributes.X-URIS:http:www.facebook.com/lucy.baron5',
+            vcard)
+        self.assertIn(
+            'social-networking-attributes.X-GENDER:female',
+            vcard)
+        self.assertIn(
+            'social-networking-attributes.facebook-id:555555555',
+            vcard)
+        self.assertIn(
+            'FN:Lucy Baron',
+            vcard)
+        self.assertIn(
+            'NICKNAME:lucy.baron5',
+            vcard)
+        self.assertIn(
+            'social-networking-attributes.X-FOLKS-WEB-SERVICES-IDS;',
+            vcard)
+        self.assertIn(
+            'remote-full-name="Lucy Baron"',
+            vcard)
+        self.assertIn(
+            'facebook-id=555555555',
+            vcard)
+        self.assertIn(
+            'jabber="-555555555@chat.facebook.com"',
+            vcard)
+        self.assertIn(
+            'facebook-nick="lucy.baron5"',
+            vcard)
 
     @mock.patch('friends.utils.base.Base._prepare_eds_connections',
                 return_value=True)
@@ -571,21 +563,21 @@ class TestFacebook(unittest.TestCase):
                 return_value=EDSBookClientMock())
     def test_successfull_push_to_eds(self, *mocks):
         bare_contact = {'name': 'Lucy Baron',
-                        'id': '555555555',
-                        'username': 'lucy.baron5',
+                        'uid': '555555555',
+                        'nick': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         self.protocol._address_book = 'test-address-book'
         client = self.protocol._book_client = mock.Mock()
         client.add_contact_sync.return_value = True
         # Implicitely fail test if the following raises any exceptions
-        self.protocol._push_to_eds(bare_contact)
+        self.protocol._push_to_eds(**bare_contact)
 
     @mock.patch('friends.utils.base.Base._prepare_eds_connections',
                 return_value=None)
     def test_unsuccessfull_push_to_eds(self, *mocks):
         bare_contact = {'name': 'Lucy Baron',
-                        'id': '555555555',
-                        'username': 'lucy.baron5',
+                        'uid': '555555555',
+                        'nick': 'lucy.baron5',
                         'link': 'http:www.facebook.com/lucy.baron5'}
         self.protocol._address_book = 'test-address-book'
         client = self.protocol._book_client = mock.Mock()
@@ -593,7 +585,7 @@ class TestFacebook(unittest.TestCase):
         self.assertRaises(
             ContactsError,
             self.protocol._push_to_eds,
-            bare_contact,
+            **bare_contact
             )
 
     @mock.patch('gi.repository.EBook.BookClient.connect_sync',

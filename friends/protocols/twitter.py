@@ -364,17 +364,12 @@ class Twitter(Base):
                 # https://dev.twitter.com/docs/api/1.1/get/users/show
                 full_contact = self._get_url(url=self._api_base.format(
                     endpoint='users/show') + '?user_id=' + contact_id)
-                user_fullname = full_contact.get('name')
-                user_nickname = full_contact.get('screen_name')
-                self._push_to_eds({
-                    '{}-id'.format(self._name): contact_id,
-                    '{}-name'.format(self._name): user_fullname,
-                    '{}-nick'.format(self._name): user_nickname,
-                    'X-URIS': self._user_home.format(user_id=user_nickname),
-                    'X-FOLKS-WEB-SERVICES-IDS': {
-                        'remote-full-name': user_fullname,
-                        '{}-id'.format(self._name): contact_id,
-                    }})
+                user_nickname = full_contact.get('screen_name', '')
+                self._push_to_eds(
+                    uid=contact_id,
+                    name=full_contact.get('name'),
+                    nick=user_nickname,
+                    link=self._user_home.format(user_id=user_nickname))
         return len(contacts)
 
 
