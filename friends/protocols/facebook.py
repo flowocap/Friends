@@ -64,15 +64,17 @@ class Facebook(Base):
             # We can't do much with this entry.
             return
 
-        place = entry.get('place', {})
-        location = place.get('location', {})
+        place = entry.get('place') or {}
+        location = place.get('location') or {}
+
+        link_pic = entry.get('picture', '').replace('_s.jpg', '_o.jpg')
 
         args = dict(
             message_id=message_id,
-            stream=stream,
+            stream='images' if link_pic.endswith('_o.jpg') else stream,
             message=entry.get('message', '') or entry.get('story', ''),
             icon_uri=entry.get('icon', ''),
-            link_picture=entry.get('picture', ''),
+            link_picture=link_pic,
             link_name=entry.get('name', ''),
             link_url=entry.get('link', ''),
             link_desc=entry.get('description', ''),
