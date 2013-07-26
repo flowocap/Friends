@@ -328,30 +328,26 @@ class Facebook(Base):
 
     @feature
     def contacts(self):
+        access_token=self._get_access_token()
         contacts = self._follow_pagination(
             url=ME_URL + '/friends',
-            params=dict(access_token=self._get_access_token(), limit=1000),
+            params=dict(access_token=access_token, limit=1000),
             limit=1000)
         log.debug('Found {} contacts'.format(len(contacts)))
 
         for contact in contacts:
             contact_id = contact.get('id')
-            if contact_id is None or self._previously_stored_contact(contact_id):
-                continue
-            full_contact = Downloader(
-                url=API_BASE.format(id=contact_id),
-                params=dict(access_token=self._get_access_token())).get_json()
-            self._push_to_eds({
-                'facebook-id':   contact_id,
-                'facebook-name': full_contact.get('name'),
-                'facebook-nick': full_contact.get('username'),
-                'X-URIS':        full_contact.get('link'),
-                'X-GENDER':      full_contact.get('gender'),
-                'X-FOLKS-WEB-SERVICES-IDS': {
-                    'jabber': '-{}@chat.facebook.com'.format(contact_id),
-                    'remote-full-name': full_contact.get('name'),
-                    'facebook-id': contact_id,
-                }})
+            if not self._previously_stored_contact(contact_id):
+                full_contact = Downloader(
+                    url=API_BASE.format(id=contact_id),
+                    params=dict(access_token=access_token)).get_json()
+                self._push_to_eds(
+                    uid=contact_id,
+                    name=full_contact.get('name'),
+                    nick=full_contact.get('username'),
+                    link=full_contact.get('link'),
+                    gender=full_contact.get('gender'),
+                    jabber='-{}@chat.facebook.com'.format(contact_id))
 
         return len(contacts)
 

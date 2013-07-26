@@ -113,17 +113,13 @@ class LinkedIn(Base):
         ).get_json().get('values', [])
 
         for connection in connections:
-            connection_id = connection.get('id', 'private')
+            uid = connection.get('id', 'private')
             fullname = make_fullname(**connection)
-            if connection_id != 'private' and not self._previously_stored_contact(connection_id):
-                self._push_to_eds({
-                    'linkedin-id': connection_id,
-                    'linkedin-name': fullname,
-                    'X-URIS': connection.get(
-                        'siteStandardProfileRequest', {}).get('url'),
-                    'X-FOLKS-WEB-SERVICES-IDS': {
-                        'remote-full-name': fullname,
-                        'linkedin-id': connection_id,
-                    }})
+            if uid != 'private' and not self._previously_stored_contact(uid):
+                self._push_to_eds(
+                    uid=uid,
+                    name=fullname,
+                    link=connection.get(
+                        'siteStandardProfileRequest', {}).get('url'))
 
         return len(connections)

@@ -568,48 +568,58 @@ class Base:
         if self._eds_source is not None:
             self._book_client = EBook.BookClient.connect_sync(self._eds_source, None)
 
-    def _push_to_eds(self, contact):
+    def _push_to_eds(self, **contact_details):
         self._prepare_eds_connections()
-        contact = self._create_contact(contact)
+        contact = self._create_contact(**contact_details)
         if not self._book_client.add_contact_sync(contact, None):
             raise ContactsError('Failed to save contact {!r}'.format(contact))
 
     def _previously_stored_contact(self, search_term):
         self._prepare_eds_connections()
         query = EBookContacts.BookQuery.vcard_field_test(
-            '{}-id'.format(self._name), EBookContacts.BookQueryTest.IS, search_term)
+            self._name + '-id', EBookContacts.BookQueryTest.IS, search_term)
         success, result = self._book_client.get_contacts_sync(query.to_string(), None)
         if not success:
             raise ContactsError(
                 'Id field is missing in {} address book.'.format(self._Name))
         return len(result) > 0
 
-    def _create_contact(self, info):
+    def _create_contact(self, uid, name, nick=None, link=None, gender=None, **folks):
         """Build a VCard based on a dict representation of a contact."""
         contact = EBookContacts.Contact.new()
 
-        for key, value in info.items():
+        folks.update({
+            'remote-full-name': name,
+            self._name + '-id': uid,
+            self._name + '-name': name,
+            self._name + '-nick': nick,
+        })
+
+        def add_attr(key, value=None, **params):
             attr = EBookContacts.VCardAttribute.new(
                 'social-networking-attributes', key)
-            if hasattr(value, 'items'):
-                for subkey, subval in value.items():
+            if value is not None:
+                attr.add_value(value)
+            elif params:
+                for subkey, subval in params.items():
                     if subval is not None:
                         param = EBookContacts.VCardAttributeParam.new(subkey)
                         param.add_value(subval)
                         attr.add_param(param);
-            elif value is not None:
-                attr.add_value(value)
             else:
-                continue
+                return
             contact.add_attribute(attr)
 
-        properties = (('full-name', '{}-name'),
-                      ('nickname', '{}-nick'))
-        for prop, key in properties:
-            value = info.get(key.format(self._name))
-            if value is not None:
-                contact.set_property(prop, value)
-                log.debug('New contact got {}: {}'.format(prop, value))
+        add_attr(self._name + '-id', uid)
+        add_attr('X-GENDER', gender)
+        add_attr('X-URIS', link)
+        add_attr('X-FOLKS-WEB-SERVICES-IDS', **folks)
+
+        contact.set_property('full-name', name)
+        if nick:
+            contact.set_property('nickname', nick)
+        # X-TREME debugging!
+        # print(contact.to_string(EBookContacts.VCardFormat(1)))
         return contact
 
     @feature
