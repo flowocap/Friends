@@ -333,7 +333,7 @@ class EDSSource:
         pass
 
     def get_uid(self):
-        return 'test-source-uid'
+        return self.name
 
     def get_extension(self, extension_name):
         return EDSExtension()
@@ -360,5 +360,5 @@ class EDSRegistry:
 
     def ref_source(self, src_uid):
         s1 = EDSSource(None, None)
-        s1.set_display_name('test-facebook-contacts')
+        s1.set_display_name('friends-testsuite-contacts')
         return s1
