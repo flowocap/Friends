@@ -590,11 +590,17 @@ class TestFacebook(unittest.TestCase):
 
     @mock.patch('gi.repository.EBook.BookClient.connect_sync',
                 return_value=EDSBookClientMock())
+    @mock.patch('gi.repository.EDataServer.SourceRegistry.new_sync',
+                return_value=EDSRegistry())
     def test_successful_previously_stored_contact(self, *mocks):
         result = self.protocol._previously_stored_contact('11111')
         self.assertEqual(result, True)
 
-    def test_first_run_prepare_eds_connections(self):
+    @mock.patch('gi.repository.EBook.BookClient.connect_sync',
+                return_value=EDSBookClientMock())
+    @mock.patch('gi.repository.EDataServer.SourceRegistry.new_sync',
+                return_value=EDSRegistry())
+    def test_first_run_prepare_eds_connections(self, *mocks):
         self.protocol._name = 'testsuite'
         self.assertIsNone(self.protocol._address_book_name)
         self.assertIsNone(self.protocol._eds_source_registry)
