@@ -182,7 +182,7 @@ public class Master : Object
     {
         try {
             dispatcher = Bus.get_proxy.end(res);
-            Timeout.add_seconds (120, fetch_contacts);
+            // Timeout.add_seconds (120, fetch_contacts); // LP#1214639
             var ret = on_refresh ();
         } catch (IOError e) {
             warning (e.message);
@@ -203,6 +203,9 @@ public class Master : Object
         return false;
     }
 
+    /* Temporarily disabled as requested by Bill Filler, LP#1214639
+     * Most likely we'll need a gsetting to turn this off or on,
+     * but just disable it for now.
     bool fetch_contacts ()
     {
         debug ("Fetching contacts...");
@@ -216,6 +219,7 @@ public class Master : Object
         }
         return false;
     }
+    */
 }
 
 void on_bus_aquired (DBusConnection conn) {
