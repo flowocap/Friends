@@ -65,6 +65,8 @@ TestModel.set_schema_full(SCHEMA.TYPES)
 @mock.patch('friends.utils.base.Model', TestModel)
 @mock.patch('friends.utils.base.Base._get_access_token',
             mock.Mock(return_value='Access Tolkien'))
+@mock.patch('friends.utils.base.Base._get_oauth_headers',
+            mock.Mock(return_value={}))
 def populate_fake_data():
     """Dump a mixture of random data from our testsuite into TestModel.
 
