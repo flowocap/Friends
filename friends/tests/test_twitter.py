@@ -83,7 +83,6 @@ class TestTwitter(unittest.TestCase):
         self.assertEqual(self.account.access_token, 'some clever fake data')
         self.assertEqual(self.account.secret_token, 'sssssshhh!')
 
-    @unittest.skip("FIXME: this is totally broken :-(")
     @mock.patch('friends.protocols.twitter.Downloader')
     @mock.patch('oauthlib.oauth1.rfc5849.generate_nonce',
                 lambda: 'once upon a nonce')
@@ -105,7 +104,7 @@ oauth_version="1.0", \
 oauth_signature_method="HMAC-SHA1", \
 oauth_consumer_key="consume", \
 oauth_token="omega", \
-oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
+oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
 
         self.protocol._rate_limiter = 'limits'
         class fake:
