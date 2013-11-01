@@ -161,7 +161,7 @@ public class Master : Object
                     debug ("NOT LEADER");
             });
 
-            Timeout.add_seconds (300, () => {
+            Timeout.add_seconds (interval * 60, () => {
                 shared_model.flush_revision_queue();
                 debug ("Storing model with %u rows", model.get_n_rows());
                 resources.store ((Dee.SequenceModel)model, "com.canonical.Friends.Streams");
