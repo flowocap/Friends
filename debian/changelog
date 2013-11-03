@@ -1,3 +1,15 @@
+friends (0.2.0+14.04.20131103-0ubuntu1) trusty; urgency=low
+
+  [ Robert Bruce Park ]
+  * Save battery life by decreasing default polling frequency. (LP:
+    #1238083)
+  * Fix & re-enable failing twitter test. (LP: #1223430)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 236
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sun, 03 Nov 2013 00:41:35 +0000
+
 friends (0.2.0+13.10.20130926-0ubuntu1) saucy; urgency=low
 
   [ Robert Bruce Park ]
