@@ -126,6 +126,9 @@ public class Master : Object
             model.set_schema_full (SCHEMA);
         }
 
+        var settings = new Settings ("com.canonical.friends");
+        settings.bind("interval", this, "interval", 0);
+
         if (model is Dee.Model)
         {
             debug ("Model with %u rows", model.get_n_rows());
@@ -161,16 +164,13 @@ public class Master : Object
                     debug ("NOT LEADER");
             });
 
-            Timeout.add_seconds (300, () => {
+            Timeout.add_seconds (interval * 60, () => {
                 shared_model.flush_revision_queue();
                 debug ("Storing model with %u rows", model.get_n_rows());
                 resources.store ((Dee.SequenceModel)model, "com.canonical.Friends.Streams");
                 return true;
             });
         }
-
-        var settings = new Settings ("com.canonical.friends");
-        settings.bind("interval", this, "interval", 0);
 
         Bus.get_proxy.begin<Dispatcher>(BusType.SESSION,
             "com.canonical.Friends.Dispatcher",
