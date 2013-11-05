@@ -2,9 +2,9 @@
   <schema id="com.canonical.friends" path="/com/canonical/friends/">
 
     <key name="interval" type="i">
-      <default>60</default>
+      <default>15</default>
       <summary>Refresh interval in minutes.</summary>
-      <range min="15" max="600"/>
+      <range min="5" max="30"/>
       <description>
         The number of minutes friends-service will wait in between
         attempts at downloading new messages.
