@@ -89,7 +89,7 @@ class Facebook(Base):
         args['likes'] = likes
 
         # Fix for LP:1185684 - JPM
-        post_id = message_id.split('_')[1]
+        post_id = message_id.split('_')[1] if '_' in message_id else message_id
 
         from_record = entry.get('from')
         if from_record is not None:
