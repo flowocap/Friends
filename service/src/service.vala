@@ -126,6 +126,9 @@ public class Master : Object
             model.set_schema_full (SCHEMA);
         }
 
+        var settings = new Settings ("com.canonical.friends");
+        settings.bind("interval", this, "interval", 0);
+
         if (model is Dee.Model)
         {
             debug ("Model with %u rows", model.get_n_rows());
@@ -168,9 +171,6 @@ public class Master : Object
                 return true;
             });
         }
-
-        var settings = new Settings ("com.canonical.friends");
-        settings.bind("interval", this, "interval", 0);
 
         Bus.get_proxy.begin<Dispatcher>(BusType.SESSION,
             "com.canonical.Friends.Dispatcher",
