@@ -1,3 +1,14 @@
+friends (0.2.0+14.04.20131105-0ubuntu1) trusty; urgency=low
+
+  [ Timo Jyrinki ]
+  * Revert bzr235 "Save battery life by decreasing default polling
+    frequency." that causes a problem on mako.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 238
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 05 Nov 2013 13:54:30 +0000
+
 friends (0.2.0+14.04.20131103-0ubuntu1) trusty; urgency=low
 
   [ Robert Bruce Park ]
