@@ -1,3 +1,22 @@
+friends (0.2.0+14.04.20131108.1-0ubuntu1) trusty; urgency=low
+
+  [ Ken VanDine ]
+  * Undo revert for the default polling frequency and ensure interval is
+    set before using it in the timeout. (LP: #1238083, #1248143)
+
+  [ Colin Watson ]
+  * Declare all binary packages Multi-Arch: foreign, since they expose
+    no architecture-dependent interfaces.
+
+  [ Robert Bruce Park ]
+  * More robust handling of Facebook msgids. (LP: #1248302). (LP:
+    #1248302)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 242
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 08 Nov 2013 17:13:24 +0000
+
 friends (0.2.0+14.04.20131105-0ubuntu1) trusty; urgency=low
 
   [ Timo Jyrinki ]
