@@ -120,6 +120,9 @@ class Twitter(Base):
 
         message = tweet.get('text', '')
 
+        #TODO support more than one picture
+        picture = "" 
+
         # Resolve t.co links.
         entities = tweet.get('entities', {})
         for url in (entities.get('urls', []) + entities.get('media', [])):
@@ -127,6 +130,7 @@ class Twitter(Base):
             destination = (url.get('expanded_url') or
                            url.get('display_url') or
                            url.get('url'))
+            picture = url.get('media_url')
             if None not in (begin, end, destination):
                 message = message[:begin] + destination + message[end:]
 
@@ -141,7 +145,8 @@ class Twitter(Base):
             from_me=(screen_name == self._account.user_name),
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
-            url=permalink,
+            link_picture=picture,
+            url=permalink
             )
         return permalink
 
