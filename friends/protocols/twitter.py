@@ -146,7 +146,7 @@ class Twitter(Base):
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             link_picture=picture,
-            url=permalink
+            url=permalink,
             )
         return permalink
 
