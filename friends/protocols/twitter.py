@@ -120,7 +120,6 @@ class Twitter(Base):
 
         message = tweet.get('text', '')
 
-        picture = "" 
         args = {}
         
         args['message_id'] = tweet_id
@@ -139,8 +138,10 @@ class Twitter(Base):
         entities = tweet.get('entities', {})
         for url in (entities.get('urls', []) + entities.get('media', [])):
             begin, end = url.get('indices', (None, None))
+
+            #TODO there seem to be no concept of display and expanded url in Friends
             destination = (url.get('expanded_url') or
-                           url.get('display_url') or
+                           url.get('display_url') or 
                            url.get('url'))
 
             if 'media_url' in url:
