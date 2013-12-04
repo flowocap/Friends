@@ -124,7 +124,6 @@ class Twitter(Base):
         args = {}
         
         args['message_id'] = tweet_id
-        args['message'] = message
         args['timestamp'] = iso8601utc(parsetime(tweet.get('created_at', '')))
         args['stream'] = stream
         args['sender'] = user.get('name', '')
@@ -149,6 +148,8 @@ class Twitter(Base):
 
             if None not in (begin, end, destination):
                 message = message[:begin] + destination + message[end:]
+        
+        args['message'] = message
 
         self._publish(**args)
         return permalink
