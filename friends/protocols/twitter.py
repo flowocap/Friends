@@ -120,34 +120,37 @@ class Twitter(Base):
 
         message = tweet.get('text', '')
 
-        #TODO support more than one picture
         picture = "" 
+        args = {}
+        
+        args['message_id'] = tweet_id
+        args['message'] = message
+        args['timestamp'] = iso8601utc(parsetime(tweet.get('created_at', '')))
+        args['stream'] = stream
+        args['sender'] = user.get('name', '')
+        args['sender_id'] = str(user.get('id', ''))
+        args['sender_nick'] = screen_name
+        args['from_me'] = (screen_name == self._account.user_name)
+        args['icon_uri'] = avatar_url.replace('_normal.', '.')
+        args['liked'] = tweet.get('favorited', False)
+        args['url'] = permalink
 
         # Resolve t.co links.
+        #TODO support more than one media file
         entities = tweet.get('entities', {})
         for url in (entities.get('urls', []) + entities.get('media', [])):
             begin, end = url.get('indices', (None, None))
             destination = (url.get('expanded_url') or
                            url.get('display_url') or
                            url.get('url'))
-            picture = url.get('media_url')
+
+            if 'media_url' in url:
+                args['link_picture'] =  url.get('media_url')
+
             if None not in (begin, end, destination):
                 message = message[:begin] + destination + message[end:]
 
-        self._publish(
-            message_id=tweet_id,
-            message=message,
-            timestamp=iso8601utc(parsetime(tweet.get('created_at', ''))),
-            stream=stream,
-            sender=user.get('name', ''),
-            sender_id=str(user.get('id', '')),
-            sender_nick=screen_name,
-            from_me=(screen_name == self._account.user_name),
-            icon_uri=avatar_url.replace('_normal.', '.'),
-            liked=tweet.get('favorited', False),
-            link_picture=picture,
-            url=permalink,
-            )
+        self._publish(**args)
         return permalink
 
     def _append_since(self, url, stream='messages'):
