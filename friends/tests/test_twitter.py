@@ -147,7 +147,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
              'with twitter" class at @cal with @othman '
              '<a href="http://twitter.com/yunorno/status/114080493036773378/photo/1">'
-             'http://twitter.com/yunorno/status/114080493036773378/photo/1</a>', 
+             'pic.twitter.com/rJC5Pxsu</a>', 
              'https://si0.twimg.com/profile_images/1270234259/'
              'raffi-headshot-casual.png',
              'https://twitter.com/raffi/status/240556426106372096',

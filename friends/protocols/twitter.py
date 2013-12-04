@@ -139,7 +139,6 @@ class Twitter(Base):
         for url in (entities.get('urls', []) + entities.get('media', [])):
             begin, end = url.get('indices', (None, None))
 
-            #TODO there seem to be no concept of display and expanded url in Friends
             destination = (url.get('expanded_url') or
                            url.get('display_url') or 
                            url.get('url'))
@@ -147,8 +146,14 @@ class Twitter(Base):
             if 'media_url' in url:
                 args['link_picture'] =  url.get('media_url')
 
+            # Friends has no notion of display URLs, so this is handled at the protocol level
+            display_url = url.get('display_url', '')
+
             if None not in (begin, end, destination):
-                message = message[:begin] + destination + message[end:]
+                if display_url is not '':
+                        message = message[:begin] + "<a href=\"" + destination + "\">" + display_url + "</a>"
+                else:
+                        message = message[:begin] + destination + message[end:]
         
         args['message'] = message
 
