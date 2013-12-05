@@ -133,6 +133,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
         self.assertEqual(3, TestModel.get_n_rows())
 
         # This test data was ripped directly from Twitter's API docs.
+        
         expected = [
             ['twitter', 88, '240558470661799936',
              'messages', 'OAuth Dancer', '119476949', 'oauth_dancer', False,
@@ -144,13 +145,13 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             ['twitter', 88, '240556426106372096',
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
-             'with twitter" class at @cal with @othman  '
-             '<a href="http://blogs.ischool.berkeley.edu/i290-abdt-s12/">'
-             'http://blogs.ischool.berkeley.edu/i290-abdt-s12/</a>',
+             'with twitter" class at @cal with @othman '
+             '<a href="http://twitter.com/yunorno/status/114080493036773378/photo/1">'
+             'pic.twitter.com/rJC5Pxsu</a>', 
              'https://si0.twimg.com/profile_images/1270234259/'
              'raffi-headshot-casual.png',
              'https://twitter.com/raffi/status/240556426106372096',
-             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
+             0, False, 'http://p.twimg.com/AZVLmp-CIAAbkyy.jpg', '', '', '', '', '', '', 0.0, 0.0,
              ],
             ['twitter', 88, '240539141056638977',
              'messages', 'Taylor Singletary', '819797', 'episod', False,
@@ -313,6 +314,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             liked=False, sender='Bob', stream='private',
             url='https://twitter.com/some_guy/status/1452456',
             icon_uri='https://example.com/bob.jpg',
+            link_picture='',
             sender_nick='some_guy', sender_id='', from_me=False,
             timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
             message_id='1452456')

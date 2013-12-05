@@ -100,17 +100,18 @@
         "id_str": "240556426106372096",
         "in_reply_to_user_id_str": null,
         "entities": {
-          "urls": [
-            {
-              "expanded_url": "http://blogs.ischool.berkeley.edu/i290-abdt-s12/",
-              "url": "http://t.co/bfj7zkDJ",
-              "indices": [
-                79,
-                99
-              ],
-              "display_url": "blogs.ischool.berkeley.edu/i290-abdt-s12/"
-            }
-          ],
+          "media":[{"type":"photo",
+                "sizes":{
+                        "thumb":{"h":150, "resize":"crop", "w":150},
+                        "large":{"h":238, "resize":"fit", "w":226},
+                        "medium":{"h":238, "resize":"fit", "w":226},
+                        "small":{"h":238, "resize":"fit", "w":226}},
+                 "indices":[78,98], "url":"http://t.co/rJC5Pxsu",
+                 "media_url":"http://p.twimg.com/AZVLmp-CIAAbkyy.jpg",
+                 "display_url":"pic.twitter.com\/rJC5Pxsu",
+                 "id":114080493040967680, "id_str":"114080493040967680",
+                 "expanded_url": "http://twitter.com/yunorno/status/114080493036773378/photo/1",
+                 "media_url_https":"https://p.twimg.com/AZVLmp-CIAAbkyy.jpg"}],
           "hashtags": [
 
           ],
@@ -137,7 +138,7 @@
             }
           ]
         },
-        "text": "lecturing at the \"analyzing big data with twitter\" class at @cal with @othman  http://t.co/bfj7zkDJ",
+        "text": "lecturing at the \"analyzing big data with twitter\" class at @cal with @othman http://t.co/rJC5Pxsu",
         "contributors": null,
         "id": 240556426106372096,
         "retweet_count": 3,
