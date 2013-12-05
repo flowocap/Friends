@@ -119,19 +119,7 @@ class Twitter(Base):
             tweet_id=tweet_id)
 
         message = tweet.get('text', '')
-
-        args = {}
-        
-        args['message_id'] = tweet_id
-        args['timestamp'] = iso8601utc(parsetime(tweet.get('created_at', '')))
-        args['stream'] = stream
-        args['sender'] = user.get('name', '')
-        args['sender_id'] = str(user.get('id', ''))
-        args['sender_nick'] = screen_name
-        args['from_me'] = (screen_name == self._account.user_name)
-        args['icon_uri'] = avatar_url.replace('_normal.', '.')
-        args['liked'] = tweet.get('favorited', False)
-        args['url'] = permalink
+        picture = ''
 
         # Resolve t.co links.
         #TODO support more than one media file
@@ -144,7 +132,7 @@ class Twitter(Base):
                            url.get('url'))
 
             if 'media_url' in url:
-                args['link_picture'] =  url.get('media_url')
+                picture =  url.get('media_url')
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
             display_url = url.get('display_url', '')
@@ -154,10 +142,20 @@ class Twitter(Base):
                         message = message[:begin] + "<a href=\"" + destination + "\">" + display_url + "</a>"
                 else:
                         message = message[:begin] + destination + message[end:]
-        
-        args['message'] = message
 
-        self._publish(**args)
+        self._publish(message_id = tweet_id,
+                      timestamp = iso8601utc(parsetime(tweet.get('created_at', ''))),
+                      stream = stream,
+                      sender = user.get('name', ''),
+                      sender_id = str(user.get('id', '')),
+                      sender_nick = screen_name,
+                      from_me = (screen_name == self._account.user_name),
+                      icon_uri = avatar_url.replace('_normal.', '.'),
+                      liked = tweet.get('favorited', False),
+                      url = permalink,
+                      link_picture = picture,
+                      message = message)
+                                       
         return permalink
 
     def _append_since(self, url, stream='messages'):

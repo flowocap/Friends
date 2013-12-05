@@ -314,6 +314,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             liked=False, sender='Bob', stream='private',
             url='https://twitter.com/some_guy/status/1452456',
             icon_uri='https://example.com/bob.jpg',
+            link_picture='',
             sender_nick='some_guy', sender_id='', from_me=False,
             timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
             message_id='1452456')
