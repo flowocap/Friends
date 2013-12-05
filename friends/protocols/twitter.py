@@ -139,7 +139,7 @@ class Twitter(Base):
 
             if None not in (begin, end, destination):
                 if display_url is not '':
-                        message = message[:begin] + "<a href=\"" + destination + "\">" + display_url + "</a>"
+                        message = message[:begin] + "<a href=\"" + destination + "\">" + display_url + "</a>" + message[end:]
                 else:
                         message = message[:begin] + destination + message[end:]
 
