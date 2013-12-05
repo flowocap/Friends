@@ -119,29 +119,29 @@ class Twitter(Base):
             tweet_id=tweet_id)
 
         message = tweet.get('text', '')
-        picture = ''
+        picture_url = ''
 
         # Resolve t.co links.
         #TODO support more than one media file
         entities = tweet.get('entities', {})
         for url in (entities.get('urls', []) + entities.get('media', [])):
             begin, end = url.get('indices', (None, None))
-
-            destination = (url.get('expanded_url') or
-                           url.get('display_url') or 
-                           url.get('url'))
-
-            if 'media_url' in url:
-                picture =  url.get('media_url')
+            
+            expanded_url = url.get('expanded_url', '')
+            display_url = url.get('display_url', '')
+            other_url = url.get('url', '')
+            picture_url = url.get('media_url', '')
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
-            display_url = url.get('display_url', '')
-
-            if None not in (begin, end, destination):
-                if display_url is not '':
-                        message = message[:begin] + "<a href=\"" + destination + "\">" + display_url + "</a>" + message[end:]
-                else:
-                        message = message[:begin] + destination + message[end:]
+            if None not in (begin, end):
+                message = ''.join([
+					message[:begin],
+                    '<a href="',
+                    (expanded_url or display_url or other_url),
+                    '">',
+                    (display_url or expanded_url or other_url),
+                    '</a>',
+                    message[end:]])
 
         self._publish(
             message_id=tweet_id,
@@ -155,7 +155,7 @@ class Twitter(Base):
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
-            link_picture=picture
+            link_picture=picture_url,
             )
                                        
         return permalink
