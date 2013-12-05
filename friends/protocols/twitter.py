@@ -152,10 +152,10 @@ class Twitter(Base):
         entities = tweet.get('entities', {})
         message = tweet.get('text', '')
                                         
-        if "retweeted_status" in entities:
-            shared_status = entities.get('retweeted_status')
+        if "retweeted_status" in tweet:
+            shared_status = tweet.get('retweeted_status')
             message = self._resolve_tco(shared_status.get('text',''), entities)
-            other_user = tweet.get('user', {})
+            other_user = shared_status.get('user', {})
             
             #Friends has no native support for retweets so we just encode it in the message
             message = "RT @" + other_user.get('screen_name', '')  + ": " + message
