@@ -92,6 +92,36 @@ class Twitter(Base):
             rate_limiter=self._rate_limiter).get_json()
         self._is_error(response)
         return response
+        
+    def _resolve_tco(message, entities)
+        #TODO support more than one url and/or media file
+        for url in (entities.get('urls', []) + entities.get('media', [])):
+            begin, end = url.get('indices', (None, None))
+            
+            expanded_url = url.get('expanded_url', '')
+            display_url = url.get('display_url', '')
+            other_url = url.get('url', '')
+
+            # Friends has no notion of display URLs, so this is handled at the protocol level
+            if None not in (begin, end):
+                message = ''.join([
+                    message[:begin],
+                    '<a href="',
+                    (expanded_url or display_url or other_url),
+                    '">',
+                    (display_url or expanded_url or other_url),
+                    '</a>',
+                    message[end:]])
+                    
+        return message
+        
+    def _get_picture_url(entites)
+        picture_url = ''
+    
+        for media in entities.get('media', []))
+            picture_url = media.get('media_url')
+            
+        return picture_url
 
     def _publish_tweet(self, tweet, stream='messages'):
         """Publish a single tweet into the Dee.SharedModel."""
@@ -117,32 +147,22 @@ class Twitter(Base):
         permalink = self._tweet_permalink.format(
             user_id=screen_name,
             tweet_id=tweet_id)
-
-        message = tweet.get('text', '')
-        picture_url = ''
-
-        # Resolve t.co links.
-        #TODO support more than one media file
+        
         entities = tweet.get('entities', {})
-        for url in (entities.get('urls', []) + entities.get('media', [])):
-            begin, end = url.get('indices', (None, None))
+        picture_url = _get_picture_url(entities)
+        message = tweet.get('text', '')
+                                        
+        if "shared_status" in entities:
+            shared_status = entities.get('shared_status')
+            message = _resolve_tco(shared_status.get('text','')
+        else:
+            entities = tweet.get('entities', {})
+            message = _resolve_tco(message, entities)
+            picture_url = get_picture_url(entities)
             
-            expanded_url = url.get('expanded_url', '')
-            display_url = url.get('display_url', '')
-            other_url = url.get('url', '')
-            picture_url = url.get('media_url', '')
-
-            # Friends has no notion of display URLs, so this is handled at the protocol level
-            if None not in (begin, end):
-                message = ''.join([
-                    message[:begin],
-                    '<a href="',
-                    (expanded_url or display_url or other_url),
-                    '">',
-                    (display_url or expanded_url or other_url),
-                    '</a>',
-                    message[end:]])
-
+            #Friends has no native support for retweets so we just encode it in the message
+            message = "RT " + tweet.get('user', {}) + " " + message
+       
         self._publish(
             message_id=tweet_id,
             message=message,
@@ -155,7 +175,7 @@ class Twitter(Base):
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
-            link_picture=picture_url,
+            link_picture=_get_picture_url(entities),
             )
         return permalink
 
