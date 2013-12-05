@@ -135,7 +135,7 @@ class Twitter(Base):
             # Friends has no notion of display URLs, so this is handled at the protocol level
             if None not in (begin, end):
                 message = ''.join([
-					message[:begin],
+                    message[:begin],
                     '<a href="',
                     (expanded_url or display_url or other_url),
                     '">',
