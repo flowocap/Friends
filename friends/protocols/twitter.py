@@ -157,7 +157,6 @@ class Twitter(Base):
             url=permalink,
             link_picture=picture_url,
             )
-                                       
         return permalink
 
     def _append_since(self, url, stream='messages'):
