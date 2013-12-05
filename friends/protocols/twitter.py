@@ -93,7 +93,7 @@ class Twitter(Base):
         self._is_error(response)
         return response
         
-    def _resolve_tco(message, entities)
+    def _resolve_tco(self, message, entities):
         #TODO support more than one url and/or media file
         for url in (entities.get('urls', []) + entities.get('media', [])):
             begin, end = url.get('indices', (None, None))
@@ -115,10 +115,11 @@ class Twitter(Base):
                     
         return message
         
-    def _get_picture_url(entites)
+    def _get_picture_url(self, entities):
         picture_url = ''
     
-        for media in entities.get('media', []))
+        # Currently only one picture_url is supported by Friends
+        for media in entities.get('media', []):
             picture_url = media.get('media_url')
             
         return picture_url
@@ -149,19 +150,18 @@ class Twitter(Base):
             tweet_id=tweet_id)
         
         entities = tweet.get('entities', {})
-        picture_url = _get_picture_url(entities)
         message = tweet.get('text', '')
                                         
-        if "shared_status" in entities:
-            shared_status = entities.get('shared_status')
-            message = _resolve_tco(shared_status.get('text','')
-        else:
-            entities = tweet.get('entities', {})
-            message = _resolve_tco(message, entities)
-            picture_url = get_picture_url(entities)
+        if "retweeted_status" in entities:
+            shared_status = entities.get('retweeted_status')
+            message = self._resolve_tco(shared_status.get('text',''), entities)
+            other_user = tweet.get('user', {})
             
             #Friends has no native support for retweets so we just encode it in the message
-            message = "RT " + tweet.get('user', {}) + " " + message
+            message = "RT @" + other_user.get('screen_name', '')  + ": " + message
+        else:
+            entities = tweet.get('entities', {})
+            message = self._resolve_tco(message, entities)
        
         self._publish(
             message_id=tweet_id,
@@ -175,7 +175,7 @@ class Twitter(Base):
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
-            link_picture=_get_picture_url(entities),
+            link_picture=self._get_picture_url(entities),
             )
         return permalink
 
