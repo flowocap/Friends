@@ -143,18 +143,19 @@ class Twitter(Base):
                 else:
                         message = message[:begin] + destination + message[end:]
 
-        self._publish(message_id = tweet_id,
-                      timestamp = iso8601utc(parsetime(tweet.get('created_at', ''))),
-                      stream = stream,
-                      sender = user.get('name', ''),
-                      sender_id = str(user.get('id', '')),
-                      sender_nick = screen_name,
-                      from_me = (screen_name == self._account.user_name),
-                      icon_uri = avatar_url.replace('_normal.', '.'),
-                      liked = tweet.get('favorited', False),
-                      url = permalink,
-                      link_picture = picture,
-                      message = message)
+        self._publish(
+            message_id = tweet_id,
+            message = message,
+            timestamp = iso8601utc(parsetime(tweet.get('created_at', ''))),
+            stream = stream,
+            sender = user.get('name', ''),
+            sender_id = str(user.get('id', '')),
+            sender_nick = screen_name,
+            from_me = (screen_name == self._account.user_name),
+            icon_uri = avatar_url.replace('_normal.', '.'),
+            liked = tweet.get('favorited', False),
+            url = permalink,
+            link_picture = picture)
                                        
         return permalink
 
