@@ -148,7 +148,7 @@ class Twitter(Base):
         permalink = self._tweet_permalink.format(
             user_id=screen_name,
             tweet_id=tweet_id)
-        
+            
         entities = tweet.get('entities', {})
         message = tweet.get('text', '')
                                         
