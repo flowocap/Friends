@@ -120,7 +120,7 @@ class Twitter(Base):
             
         entities = tweet.get('retweeted_status', {}).get('entities', '') or tweet.get('entities', {})
         message = tweet.get('retweeted_status', {}).get('text', '') or tweet.get('text', '')
-        picture = ''
+        picture_url = ''
         
         #Resolve t.co
         #TODO support more than one url and/or media file
@@ -132,7 +132,7 @@ class Twitter(Base):
             other_url = url.get('url', '')
             
             if 'media_url' in url:
-                picture = url.get('media_url')
+                picture_url = url.get('media_url')
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
             if None not in (begin, end):
@@ -144,7 +144,7 @@ class Twitter(Base):
                     (display_url or expanded_url or other_url),
                     '</a>',
                     message[end:]])
-                                       
+
         #Friends has no native support for retweets so we just encode it in the message 
         if "retweeted_status" in tweet:
             other_user = tweet.get('retweeted_status').get('user', {})
@@ -162,7 +162,7 @@ class Twitter(Base):
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
-            link_picture=picture,
+            link_picture=picture_url,
             )
         return permalink
 
