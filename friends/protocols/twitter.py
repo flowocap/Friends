@@ -92,37 +92,6 @@ class Twitter(Base):
             rate_limiter=self._rate_limiter).get_json()
         self._is_error(response)
         return response
-        
-    def _resolve_tco(self, message, entities):
-        #TODO support more than one url and/or media file
-        for url in (entities.get('urls', []) + entities.get('media', [])):
-            begin, end = url.get('indices', (None, None))
-            
-            expanded_url = url.get('expanded_url', '')
-            display_url = url.get('display_url', '')
-            other_url = url.get('url', '')
-
-            # Friends has no notion of display URLs, so this is handled at the protocol level
-            if None not in (begin, end):
-                message = ''.join([
-                    message[:begin],
-                    '<a href="',
-                    (expanded_url or display_url or other_url),
-                    '">',
-                    (display_url or expanded_url or other_url),
-                    '</a>',
-                    message[end:]])
-                    
-        return message
-        
-    def _get_picture_url(self, entities):
-        picture_url = ''
-    
-        # Currently only one picture_url is supported by Friends
-        for media in entities.get('media', []):
-            picture_url = media.get('media_url')
-            
-        return picture_url
 
     def _publish_tweet(self, tweet, stream='messages'):
         """Publish a single tweet into the Dee.SharedModel."""
@@ -149,20 +118,38 @@ class Twitter(Base):
             user_id=screen_name,
             tweet_id=tweet_id)
             
-        entities = tweet.get('entities', {})
-        message = tweet.get('text', '')
-                                        
-        if "retweeted_status" in tweet:
-            shared_status = tweet.get('retweeted_status')
-            message = self._resolve_tco(shared_status.get('text',''), entities)
-            other_user = shared_status.get('user', {})
+        entities = tweet.get('retweeted_status', {}).get('entities', '') or tweet.get('entities', {})
+        message = tweet.get('retweeted_status', {}).get('text', '') or tweet.get('text', '')
+        picture = ''
+        
+        #Resolve t.co
+        #TODO support more than one url and/or media file
+        for url in (entities.get('urls', []) + entities.get('media', [])):
+            begin, end = url.get('indices', (None, None))
             
-            #Friends has no native support for retweets so we just encode it in the message
+            expanded_url = url.get('expanded_url', '')
+            display_url = url.get('display_url', '')
+            other_url = url.get('url', '')
+            
+            if 'media_url' in url:
+                picture = url.get('media_url')
+
+            # Friends has no notion of display URLs, so this is handled at the protocol level
+            if None not in (begin, end):
+                message = ''.join([
+                    message[:begin],
+                    '<a href="',
+                    (expanded_url or display_url or other_url),
+                    '">',
+                    (display_url or expanded_url or other_url),
+                    '</a>',
+                    message[end:]])
+                                       
+        #Friends has no native support for retweets so we just encode it in the message 
+        if "retweeted_status" in tweet:
+            other_user = tweet.get('retweeted_status').get('user', {})
             message = "RT @" + other_user.get('screen_name', '')  + ": " + message
-        else:
-            entities = tweet.get('entities', {})
-            message = self._resolve_tco(message, entities)
-       
+    
         self._publish(
             message_id=tweet_id,
             message=message,
@@ -175,7 +162,7 @@ class Twitter(Base):
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
-            link_picture=self._get_picture_url(entities),
+            link_picture=picture,
             )
         return permalink
 
