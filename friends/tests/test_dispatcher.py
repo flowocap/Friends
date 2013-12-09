@@ -36,6 +36,8 @@ DBusGMainLoop(set_as_default=True)
 
 @mock.patch('friends.service.dispatcher.GLib.timeout_add_seconds',
             mock.Mock(return_value=42))
+@mock.patch('friends.service.dispatcher.GLib.source_remove',
+            mock.Mock(return_value=True))
 class TestDispatcher(unittest.TestCase):
     """Test the dispatcher's ability to dispatch."""
 
@@ -229,6 +231,7 @@ class TestDispatcher(unittest.TestCase):
 
     @mock.patch('friends.service.dispatcher.GLib')
     def test_manage_timers_clear(self, glib):
+        glib.source_remove.reset_mock()
         manager = ManageTimers()
         manager.timers = {1}
         manager.__enter__()
