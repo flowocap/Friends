@@ -118,30 +118,40 @@ class Twitter(Base):
             user_id=screen_name,
             tweet_id=tweet_id)
 
-        message = tweet.get('text', '')
+        # If this is an RT, we are more interested in the original tweet
+        retweet = tweet.get('retweeted_status', {})
+
+        entities = retweet.get('entities', {}) or tweet.get('entities', {})
+        message = retweet.get('text', '') or tweet.get('text', '')
         picture_url = ''
 
-        # Resolve t.co links.
-        #TODO support more than one media file
-        entities = tweet.get('entities', {})
+        #Resolve t.co
+        #TODO support more than one url and/or media file
         for url in (entities.get('urls', []) + entities.get('media', [])):
             begin, end = url.get('indices', (None, None))
-            
+
             expanded_url = url.get('expanded_url', '')
             display_url = url.get('display_url', '')
             other_url = url.get('url', '')
-            picture_url = url.get('media_url', '')
+
+            picture_url = url.get('media_url', picture_url)
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
             if None not in (begin, end):
                 message = ''.join([
                     message[:begin],
                     '<a href="',
-                    (expanded_url or display_url or other_url),
+                    (expanded_url or other_url),
                     '">',
-                    (display_url or expanded_url or other_url),
+                    (display_url or other_url),
                     '</a>',
                     message[end:]])
+
+        if retweet:
+            message = 'RT @{}: {}'.format(
+                retweet.get('user', {}).get('screen_name', ''),
+                message
+            )
 
         self._publish(
             message_id=tweet_id,

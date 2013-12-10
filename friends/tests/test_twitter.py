@@ -470,7 +470,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             'messages', 'Robert Bruce', '836242932', 'therealrobru', True,
             '2013-04-16T17:58:26Z', 'RT @tarek_ziade: Just found a "Notification '
             'of Inspection" card in the bottom of my bag. looks like they were '
-            'curious about those raspbe ...',
+            'curious about those raspberry-pi :O',
             'https://si0.twimg.com/profile_images/2631306428/'
             '2a509db8a05b4310394b832d34a137a4.png',
             'https://twitter.com/therealrobru/status/324220250889543682',
