@@ -1,3 +1,16 @@
+friends (0.2.0+14.04.20131211-0ubuntu1) trusty; urgency=low
+
+  [ Robert Bruce Park ]
+  * Ensure writable $HOME during testing.
+  * Display Twitter images correctly (thanks to Kai Mast)
+  * Fix warnings in test suite.
+  * Stop truncating retweets, thanks to Kai Mast.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 247
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 11 Dec 2013 19:48:54 +0000
+
 friends (0.2.0+14.04.20131108.1-0ubuntu1) trusty; urgency=low
 
   [ Ken VanDine ]
