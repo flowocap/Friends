@@ -493,18 +493,26 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
         self.account.auth.parameters = dict(
             ConsumerKey='key',
             ConsumerSecret='secret')
+            
         self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(
+            self.protocol.send('some message'),
+            'https://twitter.com/Independent/status/426318539796930560')
         self.assertEqual(1, TestModel.get_n_rows())
 
         self.maxDiff = None
         expected_row = [
             'twitter', 88, '426318539796930560',
-            'messages', 'Robert Bruce', '836242932', 'Independent', True,
-            'An old people\'s home has recreated famous movie scenes for a wonderful calendar',
-            'https://si0.twimg.com/profile_images/2631306428/'
-            '2a509db8a05b4310394b832d34a137a4.png',
+            'messages',  'The Independent', '16973333', 'Independent', True,
+            '2014-01-23T11:40:35Z',
+            'An old people\'s home has recreated famous movie scenes for a wonderful calendar '
+            '<a href="http://ind.pn/1g3wX9q">ind.pn/1g3wX9q</a> '
+            '<a href="http://twitter.com/Independent/status/426318539796930560/photo/1">pic.twitter.com/JxQTPG7WLL</a>',
+            'https://pbs.twimg.com/profile_images/378800000706113664/d1a957578723e496c025be1e2577d06d.jpeg',
             'https://twitter.com/Independent/status/426318539796930560',
-            0, False, '', '', '', '', '', '', '', 0.0, 0.0,
+            0, False, 
+            'http://pbs.twimg.com/media/BeqWc_-CIAAhmdc.jpg',
+			'', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
