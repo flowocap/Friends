@@ -145,7 +145,8 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             ['twitter', 88, '240556426106372096',
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
-             'with twitter" class at @cal with @othman '
+             'with twitter" class at <a href="http://twitter.com/Cal">@Cal</a>'
+             ' with <a href="http://twitter.com/othman">@othman</a> '
              '<a href="http://twitter.com/yunorno/status/114080493036773378/photo/1">'
              'pic.twitter.com/rJC5Pxsu</a>', 
              'https://si0.twimg.com/profile_images/1270234259/'
@@ -468,7 +469,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
         expected_row = [
             'twitter', 88, '324220250889543682',
             'messages', 'Robert Bruce', '836242932', 'therealrobru', True,
-            '2013-04-16T17:58:26Z', 'RT @tarek_ziade: Just found a "Notification '
+            '2013-04-16T17:58:26Z', 'RT <a href="http://twitter.com/tarek_ziade">@tarek_ziade</a>: Just found a "Notification '
             'of Inspection" card in the bottom of my bag. looks like they were '
             'curious about those raspberry-pi :O',
             'https://si0.twimg.com/profile_images/2631306428/'
@@ -477,6 +478,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
+
         
     @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',

@@ -127,37 +127,55 @@ class Twitter(Base):
 
         #Resolve t.co
         #TODO support more than one url and/or media file
-        urls_sorted = []
+        urls_sorted = {}
+        offset = 0
 
-        for url in (entities.get('urls', []) + entities.get('media', [])):
+        for url in (entities.get('urls', []) + entities.get('media', []) + entities.get('user_mentions', [])):
             begin, end = url.get('indices', (None, None))
 			
             #Drop invalid entities (just to be safe)
             if None not in (begin, end):	
-                urls[begin] = url
+                urls_sorted[begin] = url
         
-        for url in urls_sorted:
+        for key, url in iter(urls_sorted.items()):
             begin, end = url.get('indices', (None, None))
 
-            expanded_url = url.get('expanded_url', '')
-            display_url = url.get('display_url', '')
-            other_url = url.get('url', '')
+            expanded_url = url.get('expanded_url')
+            display_url = url.get('display_url')
+            other_url = url.get('url')
+            
+            mention_name = url.get('screen_name')
 
             picture_url = url.get('media_url', picture_url)
+            
+            content = None
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
-            message = ''.join([
-                message[:begin],
-                '<a href="',
-                (expanded_url or other_url),
-                '">',
-                (display_url or other_url),
-                '</a>',
-                message[end:]])
+            if (other_url or expanded_url):
+                content = ''.join([
+                    '<a href="',
+                    (expanded_url or other_url),
+                    '">',
+                    (display_url or other_url),
+                    '</a>'])
+
+            # Linkify a mention until they are supported natively in friends
+            if mention_name:
+                content = self._linkify_mention(mention_name)
+
+            if content:
+                message = ''.join([
+                    message[:(begin+offset)],
+                    content,
+                    message[(end+offset):]])
+                
+                #Update offset because length of the string may have changed    
+                offset += len(content) - (end - begin)
+                
 
         if retweet:
-            message = 'RT @{}: {}'.format(
-                retweet.get('user', {}).get('screen_name', ''),
+            message = 'RT {}: {}'.format(
+                self._linkify_mention(retweet.get('user', {}).get('screen_name', '')),
                 message
             )
 
@@ -176,6 +194,14 @@ class Twitter(Base):
             link_picture=picture_url,
             )
         return permalink
+        
+    def _linkify_mention(self, mention_name):
+        return ''.join([
+                    '<a href="http://twitter.com/',
+                    mention_name,
+                    '">@',
+                    mention_name,
+                    '</a>'])
 
     def _append_since(self, url, stream='messages'):
         since = self._tweet_ids.get(stream)
