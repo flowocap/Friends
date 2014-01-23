@@ -516,6 +516,40 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
+	@mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-hashtags.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_multiple_links(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.user_name = 'Independent'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+            
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(
+            self.protocol.send('some message'),
+            'https://twitter.com/Kai_Mast/status/424185261375766530')
+        self.assertEqual(1, TestModel.get_n_rows())
+
+        self.maxDiff = None
+        expected_row = [
+            'twitter', 88, '426318539796930560',
+            'messages',  'Kai Mast', '16973333', 'Kai_Mast', True,
+            '2014-01-23T11:40:35Z',
+            'A service that filters food pictures from Instagram. #MillionDollarIdea',
+            'https://pbs.twimg.com/profile_images/378800000706113664/d1a957578723e496c025be1e2577d06d.jpeg',
+            'https://twitter.com/Kai_Mast/status/424185261375766530',
+            0, False, 
+            'http://pbs.twimg.com/media/BeqWc_-CIAAhmdc.jpg',
+			'', '', '', '', '', '', 0.0, 0.0,
+            ]
+        self.assertEqual(list(TestModel.get_row(0)), expected_row)
+
     def test_unfollow(self):
         get_url = self.protocol._get_url = mock.Mock()
 
