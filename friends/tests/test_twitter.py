@@ -516,7 +516,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
-	@mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.base.Model', TestModel)
     @mock.patch('friends.utils.http.Soup.Message',
                 FakeSoupMessage('friends.tests.data', 'twitter-hashtags.dat'))
     @mock.patch('friends.protocols.twitter.Twitter._login',
@@ -538,14 +538,15 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
 
         self.maxDiff = None
         expected_row = [
-            'twitter', 88, '426318539796930560',
-            'messages',  'Kai Mast', '16973333', 'Kai_Mast', True,
-            '2014-01-23T11:40:35Z',
-            'A service that filters food pictures from Instagram. #MillionDollarIdea',
-            'https://pbs.twimg.com/profile_images/378800000706113664/d1a957578723e496c025be1e2577d06d.jpeg',
+            'twitter', 88, '424185261375766530',
+            'messages',  'Kai Mast', '17339829', 'Kai_Mast', False,
+            '2014-01-17T14:23:41Z',
+            'A service that filters food pictures from Instagram. '
+            '<a href="https://twitter.com/search?q=%23MillionDollarIdea&src=hash">#MillionDollarIdea</a>',
+            'https://pbs.twimg.com/profile_images/424181800701673473/Q6Ggqg7P.png',
             'https://twitter.com/Kai_Mast/status/424185261375766530',
             0, False, 
-            'http://pbs.twimg.com/media/BeqWc_-CIAAhmdc.jpg',
+            '',
 			'', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
