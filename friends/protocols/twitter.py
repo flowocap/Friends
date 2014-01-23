@@ -130,7 +130,7 @@ class Twitter(Base):
         urls_sorted = {}
         offset = 0
 
-        for url in (entities.get('urls', []) + entities.get('media', []) + entities.get('user_mentions', [])):
+        for url in (entities.get('urls', []) + entities.get('media', []) + entities.get('user_mentions', []) + entities.get('hashtags', [])):
             begin, end = url.get('indices', (None, None))
 			
             #Drop invalid entities (just to be safe)
@@ -148,6 +148,8 @@ class Twitter(Base):
 
             picture_url = url.get('media_url', picture_url)
             
+            hashtag = url.get('text')
+            
             content = None
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
@@ -158,8 +160,17 @@ class Twitter(Base):
                     '">',
                     (display_url or other_url),
                     '</a>'])
-
-            # Linkify a mention until they are supported natively in friends
+             
+            # Linkify hashtags until supported by friends
+            if hashtag:
+                content = ''.join([
+                    '<a href="https://twitter.com/search?q=%23',
+                    hashtag,
+                    '&src=hash">#',
+                    hashtag,
+                    '</a>'])
+            
+            # Linkify a mention until they are supported natively by friends
             if mention_name:
                 content = self._linkify_mention(mention_name)
 
@@ -171,6 +182,7 @@ class Twitter(Base):
                 
                 #Update offset because length of the string may have changed    
                 offset += len(content) - (end - begin)
+             
                 
 
         if retweet:
