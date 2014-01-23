@@ -477,6 +477,34 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
+        
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-multiple-links.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_multiple_links(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.user_name = 'Independent'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(1, TestModel.get_n_rows())
+
+        self.maxDiff = None
+        expected_row = [
+            'twitter', 88, '426318539796930560',
+            'messages', 'Robert Bruce', '836242932', 'Independent', True,
+            'An old people\'s home has recreated famous movie scenes for a wonderful calendar',
+            'https://si0.twimg.com/profile_images/2631306428/'
+            '2a509db8a05b4310394b832d34a137a4.png',
+            'https://twitter.com/Independent/status/426318539796930560',
+            0, False, '', '', '', '', '', '', '', 0.0, 0.0,
+            ]
+        self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
     def test_unfollow(self):
         get_url = self.protocol._get_url = mock.Mock()

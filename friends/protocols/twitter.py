@@ -127,7 +127,16 @@ class Twitter(Base):
 
         #Resolve t.co
         #TODO support more than one url and/or media file
+        urls_sorted = []
+
         for url in (entities.get('urls', []) + entities.get('media', [])):
+            begin, end = url.get('indices', (None, None))
+			
+            #Drop invalid entities (just to be safe)
+            if None not in (begin, end):	
+                urls[begin] = url
+        
+        for url in urls_sorted:
             begin, end = url.get('indices', (None, None))
 
             expanded_url = url.get('expanded_url', '')
@@ -137,15 +146,14 @@ class Twitter(Base):
             picture_url = url.get('media_url', picture_url)
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
-            if None not in (begin, end):
-                message = ''.join([
-                    message[:begin],
-                    '<a href="',
-                    (expanded_url or other_url),
-                    '">',
-                    (display_url or other_url),
-                    '</a>',
-                    message[end:]])
+            message = ''.join([
+                message[:begin],
+                '<a href="',
+                (expanded_url or other_url),
+                '">',
+                (display_url or other_url),
+                '</a>',
+                message[end:]])
 
         if retweet:
             message = 'RT @{}: {}'.format(
