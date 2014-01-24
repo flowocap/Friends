@@ -192,7 +192,7 @@ class Twitter(Base):
         return permalink
         
     def _linkify_mention(self, name):
-        return self._linkify('http://twitter.com/' + name, '@' + name)
+        return self._linkify('https://twitter.com/' + name, '@' + name)
         
     def _linkify(self, address, name):
         return ''.join([
