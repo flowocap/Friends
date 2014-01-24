@@ -127,17 +127,16 @@ class Twitter(Base):
 
         #Resolve t.co
         #TODO support more than one url and/or media file
-        urls_sorted = {}
-        offset = 0
+        urls = {}
 
         for url in (entities.get('urls', []) + entities.get('media', []) + entities.get('user_mentions', []) + entities.get('hashtags', [])):
             begin, end = url.get('indices', (None, None))
 			
             #Drop invalid entities (just to be safe)
             if None not in (begin, end):	
-                urls_sorted[begin] = url
+                urls[begin] = url
         
-        for key, url in iter(urls_sorted.items()):
+        for key, url in sorted(urls.items(), reverse = True):
             begin, end = url.get('indices', (None, None))
 
             expanded_url = url.get('expanded_url')
@@ -154,21 +153,11 @@ class Twitter(Base):
 
             # Friends has no notion of display URLs, so this is handled at the protocol level
             if (other_url or expanded_url):
-                content = ''.join([
-                    '<a href="',
-                    (expanded_url or other_url),
-                    '">',
-                    (display_url or other_url),
-                    '</a>'])
+                content = self._linkify(expanded_url or other_url, display_url or other_url)
              
             # Linkify hashtags until supported by friends
             if hashtag:
-                content = ''.join([
-                    '<a href="https://twitter.com/search?q=%23',
-                    hashtag,
-                    '&src=hash">#',
-                    hashtag,
-                    '</a>'])
+                content = self._linkify('https://twitter.com/search?q=%23' + hashtag + '&src=hash', '#' + hashtag)
             
             # Linkify a mention until they are supported natively by friends
             if mention_name:
@@ -176,15 +165,10 @@ class Twitter(Base):
 
             if content:
                 message = ''.join([
-                    message[:(begin+offset)],
+                    message[:begin],
                     content,
-                    message[(end+offset):]])
-                
-                #Update offset because length of the string may have changed    
-                offset += len(content) - (end - begin)
-             
-                
-
+                    message[end:]])
+   
         if retweet:
             message = 'RT {}: {}'.format(
                 self._linkify_mention(retweet.get('user', {}).get('screen_name', '')),
@@ -207,12 +191,15 @@ class Twitter(Base):
             )
         return permalink
         
-    def _linkify_mention(self, mention_name):
+    def _linkify_mention(self, name):
+        return self._linkify('http://twitter.com/' + name, '@' + name)
+        
+    def _linkify(self, address, name):
         return ''.join([
-                    '<a href="http://twitter.com/',
-                    mention_name,
-                    '">@',
-                    mention_name,
+                    '<a href="',
+                    address,
+                    '">',
+                    name,
                     '</a>'])
 
     def _append_since(self, url, stream='messages'):
