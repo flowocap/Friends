@@ -61,12 +61,8 @@ class Facebook(Base):
     def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
         to = entry.get('to')
-        message_type = entry.get('type')
         
-        if "reply" in stream:
-            message_type = "reply" 
-        
-        if (message_id is None) or (message_type is None):
+        if (message_id is None):
             # We can't do much with this entry.
             return
             
@@ -82,8 +78,8 @@ class Facebook(Base):
         link_pic = entry.get('picture', '')
         object_id = entry.get('object_id')
         if object_id and not (link_pic is ''):
-            link_pic = "http://graph.facebook.com/" + object_id + "/picture?type=normal";
-
+            link_pic = "http://graph.facebook.com/" + object_id + "/picture?type=normal"
+            
         args = dict(
             message_id=message_id,
             stream='images' if (not link_pic is "") else stream,
