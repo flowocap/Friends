@@ -1,3 +1,98 @@
+friends (0.2.0+14.04.20131211-0ubuntu1) trusty; urgency=low
+
+  [ Robert Bruce Park ]
+  * Ensure writable $HOME during testing.
+  * Display Twitter images correctly (thanks to Kai Mast)
+  * Fix warnings in test suite.
+  * Stop truncating retweets, thanks to Kai Mast.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 247
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 11 Dec 2013 19:48:54 +0000
+
+friends (0.2.0+14.04.20131108.1-0ubuntu1) trusty; urgency=low
+
+  [ Ken VanDine ]
+  * Undo revert for the default polling frequency and ensure interval is
+    set before using it in the timeout. (LP: #1238083, #1248143)
+
+  [ Colin Watson ]
+  * Declare all binary packages Multi-Arch: foreign, since they expose
+    no architecture-dependent interfaces.
+
+  [ Robert Bruce Park ]
+  * More robust handling of Facebook msgids. (LP: #1248302). (LP:
+    #1248302)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 242
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 08 Nov 2013 17:13:24 +0000
+
+friends (0.2.0+14.04.20131105-0ubuntu1) trusty; urgency=low
+
+  [ Timo Jyrinki ]
+  * Revert bzr235 "Save battery life by decreasing default polling
+    frequency." that causes a problem on mako.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 238
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 05 Nov 2013 13:54:30 +0000
+
+friends (0.2.0+14.04.20131103-0ubuntu1) trusty; urgency=low
+
+  [ Robert Bruce Park ]
+  * Save battery life by decreasing default polling frequency. (LP:
+    #1238083)
+  * Fix & re-enable failing twitter test. (LP: #1223430)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 236
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sun, 03 Nov 2013 00:41:35 +0000
+
+friends (0.2.0+13.10.20130926-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Better mocks in --test mode.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 233
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 26 Sep 2013 21:44:10 +0000
+
+friends (0.2.0+13.10.20130822-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Disable contacts sync (LP: #1214639). (LP: #1214639)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 231
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 22 Aug 2013 19:24:44 +0000
+
+friends (0.2.0+13.10.20130730-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * Fix autopkgtest failures.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 229
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 30 Jul 2013 04:40:51 +0000
+
+friends (0.2.0+13.10.20130729-0ubuntu1) saucy; urgency=low
+
+  [ Robert Bruce Park ]
+  * More explicit call signature for Base._push_to_eds.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 227
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 29 Jul 2013 07:46:03 +0000
+
 friends (0.2.0+13.10.20130723-0ubuntu1) saucy; urgency=low
 
   [ Robert Bruce Park ]

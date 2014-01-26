@@ -104,7 +104,7 @@ oauth_version="1.0", \
 oauth_signature_method="HMAC-SHA1", \
 oauth_consumer_key="consume", \
 oauth_token="omega", \
-oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
+oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
 
         self.protocol._rate_limiter = 'limits'
         class fake:
@@ -144,13 +144,14 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             ['twitter', 88, '240556426106372096',
              'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
-             'with twitter" class at @cal with @othman  '
-             '<a href="http://blogs.ischool.berkeley.edu/i290-abdt-s12/">'
-             'http://blogs.ischool.berkeley.edu/i290-abdt-s12/</a>',
+             'with twitter" class at <a href="https://twitter.com/Cal">@Cal</a>'
+             ' with <a href="https://twitter.com/othman">@othman</a> '
+             '<a href="http://twitter.com/yunorno/status/114080493036773378/photo/1">'
+             'pic.twitter.com/rJC5Pxsu</a>',
              'https://si0.twimg.com/profile_images/1270234259/'
              'raffi-headshot-casual.png',
              'https://twitter.com/raffi/status/240556426106372096',
-             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
+             0, False, 'http://p.twimg.com/AZVLmp-CIAAbkyy.jpg', '', '', '', '', '', '', 0.0, 0.0,
              ],
             ['twitter', 88, '240539141056638977',
              'messages', 'Taylor Singletary', '819797', 'episod', False,
@@ -313,6 +314,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             liked=False, sender='Bob', stream='private',
             url='https://twitter.com/some_guy/status/1452456',
             icon_uri='https://example.com/bob.jpg',
+            link_picture='',
             sender_nick='some_guy', sender_id='', from_me=False,
             timestamp='2012-11-04T17:14:52Z', message='Does my avatar show up?',
             message_id='1452456')
@@ -466,13 +468,85 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
         expected_row = [
             'twitter', 88, '324220250889543682',
             'messages', 'Robert Bruce', '836242932', 'therealrobru', True,
-            '2013-04-16T17:58:26Z', 'RT @tarek_ziade: Just found a "Notification '
+            '2013-04-16T17:58:26Z', 'RT <a href="https://twitter.com/tarek_ziade">@tarek_ziade</a>: Just found a "Notification '
             'of Inspection" card in the bottom of my bag. looks like they were '
-            'curious about those raspbe ...',
+            'curious about those raspberry-pi :O',
             'https://si0.twimg.com/profile_images/2631306428/'
             '2a509db8a05b4310394b832d34a137a4.png',
             'https://twitter.com/therealrobru/status/324220250889543682',
             0, False, '', '', '', '', '', '', '', 0.0, 0.0,
+            ]
+        self.assertEqual(list(TestModel.get_row(0)), expected_row)
+
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-multiple-links.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_multiple_links(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.user_name = 'Independent'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(
+            self.protocol.send('some message'),
+            'https://twitter.com/Independent/status/426318539796930560')
+        self.assertEqual(1, TestModel.get_n_rows())
+
+        self.maxDiff = None
+        expected_row = [
+            'twitter', 88, '426318539796930560',
+            'messages',  'The Independent', '16973333', 'Independent', True,
+            '2014-01-23T11:40:35Z',
+            'An old people\'s home has recreated famous movie scenes for a wonderful calendar '
+            '<a href="http://ind.pn/1g3wX9q">ind.pn/1g3wX9q</a> '
+            '<a href="http://twitter.com/Independent/status/426318539796930560/photo/1">pic.twitter.com/JxQTPG7WLL</a>',
+            'https://pbs.twimg.com/profile_images/378800000706113664/d1a957578723e496c025be1e2577d06d.jpeg',
+            'https://twitter.com/Independent/status/426318539796930560',
+            0, False,
+            'http://pbs.twimg.com/media/BeqWc_-CIAAhmdc.jpg',
+                        '', '', '', '', '', '', 0.0, 0.0,
+            ]
+        self.assertEqual(list(TestModel.get_row(0)), expected_row)
+
+    @mock.patch('friends.utils.base.Model', TestModel)
+    @mock.patch('friends.utils.http.Soup.Message',
+                FakeSoupMessage('friends.tests.data', 'twitter-hashtags.dat'))
+    @mock.patch('friends.protocols.twitter.Twitter._login',
+                return_value=True)
+    @mock.patch('friends.utils.base._seen_ids', {})
+    def test_multiple_links(self, *mocks):
+        self.account.access_token = 'access'
+        self.account.secret_token = 'secret'
+        self.account.user_name = 'Independent'
+        self.account.auth.parameters = dict(
+            ConsumerKey='key',
+            ConsumerSecret='secret')
+
+        self.assertEqual(0, TestModel.get_n_rows())
+        self.assertEqual(
+            self.protocol.send('some message'),
+            'https://twitter.com/Kai_Mast/status/424185261375766530')
+        self.assertEqual(1, TestModel.get_n_rows())
+
+        self.maxDiff = None
+        expected_row = [
+            'twitter', 88, '424185261375766530',
+            'messages',  'Kai Mast', '17339829', 'Kai_Mast', False,
+            '2014-01-17T14:23:41Z',
+            'A service that filters food pictures from Instagram. '
+            '<a href="https://twitter.com/search?q=%23MillionDollarIdea&src=hash">#MillionDollarIdea</a>',
+            'https://pbs.twimg.com/profile_images/424181800701673473/Q6Ggqg7P.png',
+            'https://twitter.com/Kai_Mast/status/424185261375766530',
+            0, False,
+            '',
+                        '', '', '', '', '', '', 0.0, 0.0,
             ]
         self.assertEqual(list(TestModel.get_row(0)), expected_row)
 
@@ -714,17 +788,7 @@ oauth_signature="2MlC4DOqcAdCUmU647izPmxiL%2F0%3D"'''
             [mock.call('1'), mock.call('2')])
         self.assertEqual(
             push.call_args_list,
-            [mock.call({'twitter-id': '1',
-                        'X-FOLKS-WEB-SERVICES-IDS': {
-                            'twitter-id': '1',
-                            'remote-full-name': 'Bob'},
-                        'X-URIS': 'https://twitter.com/bobby',
-                        'twitter-name': 'Bob',
-                        'twitter-nick': 'bobby'}),
-             mock.call({'twitter-id': '2',
-                        'X-FOLKS-WEB-SERVICES-IDS': {
-                            'twitter-id': '2',
-                            'remote-full-name': 'Bob'},
-                        'X-URIS': 'https://twitter.com/bobby',
-                        'twitter-name': 'Bob',
-                        'twitter-nick': 'bobby'})])
+            [mock.call(link='https://twitter.com/bobby', uid='1',
+                       name='Bob', nick='bobby'),
+             mock.call(link='https://twitter.com/bobby', uid='2',
+                       name='Bob', nick='bobby')])

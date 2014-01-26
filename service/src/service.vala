@@ -126,6 +126,9 @@ public class Master : Object
             model.set_schema_full (SCHEMA);
         }
 
+        var settings = new Settings ("com.canonical.friends");
+        settings.bind("interval", this, "interval", 0);
+
         if (model is Dee.Model)
         {
             debug ("Model with %u rows", model.get_n_rows());
@@ -161,16 +164,13 @@ public class Master : Object
                     debug ("NOT LEADER");
             });
 
-            Timeout.add_seconds (300, () => {
+            Timeout.add_seconds (interval * 60, () => {
                 shared_model.flush_revision_queue();
                 debug ("Storing model with %u rows", model.get_n_rows());
                 resources.store ((Dee.SequenceModel)model, "com.canonical.Friends.Streams");
                 return true;
             });
         }
-
-        var settings = new Settings ("com.canonical.friends");
-        settings.bind("interval", this, "interval", 0);
 
         Bus.get_proxy.begin<Dispatcher>(BusType.SESSION,
             "com.canonical.Friends.Dispatcher",
@@ -182,7 +182,7 @@ public class Master : Object
     {
         try {
             dispatcher = Bus.get_proxy.end(res);
-            Timeout.add_seconds (120, fetch_contacts);
+            // Timeout.add_seconds (120, fetch_contacts); // LP#1214639
             var ret = on_refresh ();
         } catch (IOError e) {
             warning (e.message);
@@ -203,6 +203,9 @@ public class Master : Object
         return false;
     }
 
+    /* Temporarily disabled as requested by Bill Filler, LP#1214639
+     * Most likely we'll need a gsetting to turn this off or on,
+     * but just disable it for now.
     bool fetch_contacts ()
     {
         debug ("Fetching contacts...");
@@ -216,6 +219,7 @@ public class Master : Object
         }
         return false;
     }
+    */
 }
 
 void on_bus_aquired (DBusConnection conn) {

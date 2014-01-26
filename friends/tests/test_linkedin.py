@@ -122,31 +122,7 @@ class TestLinkedIn(unittest.TestCase):
         self.assertEqual(self.protocol.contacts(), 4)
         self.assertEqual(
             push.mock_calls,
-            [mock.call(
-                {'X-URIS': 'https://www.linkedin.com',
-                 'X-FOLKS-WEB-SERVICES-IDS': {
-                     'linkedin-id': 'IFDI',
-                     'remote-full-name': 'H A'},
-                 'linkedin-name': 'H A',
-                 'linkedin-id': 'IFDI'}),
-             mock.call(
-                 {'X-URIS': 'https://www.linkedin.com',
-                  'X-FOLKS-WEB-SERVICES-IDS': {
-                      'linkedin-id': 'AefF',
-                      'remote-full-name': 'C A'},
-                  'linkedin-name': 'C A',
-                  'linkedin-id': 'AefF'}),
-             mock.call(
-                 {'X-URIS': 'https://www.linkedin.com',
-                  'X-FOLKS-WEB-SERVICES-IDS': {
-                      'linkedin-id': 'DFdV',
-                      'remote-full-name': 'R A'},
-                  'linkedin-name': 'R A',
-                  'linkedin-id': 'DFdV'}),
-             mock.call(
-                 {'X-URIS': 'https://www.linkedin.com',
-                  'X-FOLKS-WEB-SERVICES-IDS': {
-                      'linkedin-id': 'xkBU',
-                      'remote-full-name': 'A Z'},
-                  'linkedin-name': 'A Z',
-                  'linkedin-id': 'xkBU'})])
+            [mock.call(link='https://www.linkedin.com', name='H A', uid='IFDI'),
+             mock.call(link='https://www.linkedin.com', name='C A', uid='AefF'),
+             mock.call(link='https://www.linkedin.com', name='R A', uid='DFdV'),
+             mock.call(link='https://www.linkedin.com', name='A Z', uid='xkBU')])

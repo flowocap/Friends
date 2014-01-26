@@ -118,17 +118,62 @@ class Twitter(Base):
             user_id=screen_name,
             tweet_id=tweet_id)
 
-        message = tweet.get('text', '')
+        # If this is an RT, we are more interested in the original tweet
+        retweet = tweet.get('retweeted_status', {})
 
-        # Resolve t.co links.
-        entities = tweet.get('entities', {})
-        for url in (entities.get('urls', []) + entities.get('media', [])):
+        entities = retweet.get('entities', {}) or tweet.get('entities', {})
+        message = retweet.get('text', '') or tweet.get('text', '')
+        picture_url = ''
+
+        urls = {}
+
+        for url in (entities.get('urls', []) +
+                    entities.get('media', []) +
+                    entities.get('user_mentions', []) +
+                    entities.get('hashtags', [])):
             begin, end = url.get('indices', (None, None))
-            destination = (url.get('expanded_url') or
-                           url.get('display_url') or
-                           url.get('url'))
-            if None not in (begin, end, destination):
-                message = message[:begin] + destination + message[end:]
+
+            #Drop invalid entities (just to be safe)
+            if None not in (begin, end):
+                urls[begin] = url
+
+        for key, url in sorted(urls.items(), reverse=True):
+            begin, end = url.get('indices', (None, None))
+
+            expanded_url = url.get('expanded_url')
+            display_url = url.get('display_url')
+            other_url = url.get('url')
+
+            mention_name = url.get('screen_name')
+
+            picture_url = url.get('media_url', picture_url)
+
+            hashtag = url.get('text')
+
+            content = None
+
+            # Friends has no notion of display URLs, so this is handled at the protocol level
+            if (other_url or expanded_url):
+                content = self._linkify(expanded_url or other_url,
+                                        display_url or other_url)
+
+            # Linkify hashtags until supported by friends-app
+            if hashtag:
+                content = self._linkify('https://twitter.com/search?q=%23' +
+                                        hashtag + '&src=hash', '#' + hashtag)
+
+            # Linkify a mention until they are supported natively by friends
+            if mention_name:
+                content = self._linkify_mention(mention_name)
+
+            if content:
+                message = ''.join([message[:begin], content, message[end:]])
+
+        if retweet:
+            message = 'RT {}: {}'.format(
+                self._linkify_mention(retweet.get('user', {}).get('screen_name', '')),
+                message
+            )
 
         self._publish(
             message_id=tweet_id,
@@ -142,8 +187,15 @@ class Twitter(Base):
             icon_uri=avatar_url.replace('_normal.', '.'),
             liked=tweet.get('favorited', False),
             url=permalink,
+            link_picture=picture_url,
             )
         return permalink
+
+    def _linkify_mention(self, name):
+        return self._linkify('https://twitter.com/' + name, '@' + name)
+
+    def _linkify(self, address, name):
+        return '<a href="{}">{}</a>'.format(address, name)
 
     def _append_since(self, url, stream='messages'):
         since = self._tweet_ids.get(stream)
@@ -364,17 +416,12 @@ class Twitter(Base):
                 # https://dev.twitter.com/docs/api/1.1/get/users/show
                 full_contact = self._get_url(url=self._api_base.format(
                     endpoint='users/show') + '?user_id=' + contact_id)
-                user_fullname = full_contact.get('name')
-                user_nickname = full_contact.get('screen_name')
-                self._push_to_eds({
-                    '{}-id'.format(self._name): contact_id,
-                    '{}-name'.format(self._name): user_fullname,
-                    '{}-nick'.format(self._name): user_nickname,
-                    'X-URIS': self._user_home.format(user_id=user_nickname),
-                    'X-FOLKS-WEB-SERVICES-IDS': {
-                        'remote-full-name': user_fullname,
-                        '{}-id'.format(self._name): contact_id,
-                    }})
+                user_nickname = full_contact.get('screen_name', '')
+                self._push_to_eds(
+                    uid=contact_id,
+                    name=full_contact.get('name'),
+                    nick=user_nickname,
+                    link=self._user_home.format(user_id=user_nickname))
         return len(contacts)
 
 

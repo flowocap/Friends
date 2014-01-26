@@ -25,7 +25,9 @@ override_dh_auto_install:
 	dh_install --fail-missing
 
 override_dh_auto_test:
-	dbus-test-runner -t make -p check -m 300
+	mkdir $(CURDIR)/debian/tmp-home
+	HOME=$(CURDIR)/debian/tmp-home dbus-test-runner -t make -p check -m 300
+	rm -r $(CURDIR)/debian/tmp-home
 
 %:
 	dh $@ --with python3,autoreconf

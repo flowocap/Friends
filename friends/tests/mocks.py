@@ -65,6 +65,8 @@ TestModel.set_schema_full(SCHEMA.TYPES)
 @mock.patch('friends.utils.base.Model', TestModel)
 @mock.patch('friends.utils.base.Base._get_access_token',
             mock.Mock(return_value='Access Tolkien'))
+@mock.patch('friends.utils.base.Base._get_oauth_headers',
+            mock.Mock(return_value={}))
 def populate_fake_data():
     """Dump a mixture of random data from our testsuite into TestModel.
 
@@ -333,7 +335,7 @@ class EDSSource:
         pass
 
     def get_uid(self):
-        return 'test-source-uid'
+        return self.name
 
     def get_extension(self, extension_name):
         return EDSExtension()
@@ -360,5 +362,5 @@ class EDSRegistry:
 
     def ref_source(self, src_uid):
         s1 = EDSSource(None, None)
-        s1.set_display_name('test-facebook-contacts')
+        s1.set_display_name('friends-testsuite-contacts')
         return s1

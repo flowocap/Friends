@@ -41,6 +41,7 @@ XS-Testsuite: autopkgtest
 
 Package: friends
 Architecture: any
+Multi-Arch: foreign
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          friends-dispatcher,
@@ -49,6 +50,7 @@ Description: Social integration with the desktop
 
 Package: friends-dispatcher
 Architecture: all
+Multi-Arch: foreign
 Breaks: friends (<< 0.1.1bzr13.02.12)
 Conflicts: friends (<< 0.1.1bzr13.02.12)
 Depends: gir1.2-dee-1.0,
@@ -78,6 +80,7 @@ Description: Social integration with the desktop
 
 Package: friends-facebook
 Architecture: all
+Multi-Arch: foreign
 Depends: friends,
          ${misc:Depends},
          ${python3:Depends},
@@ -87,6 +90,7 @@ Description: Social integration with the desktop - Facebook
 
 Package: friends-twitter
 Architecture: all
+Multi-Arch: foreign
 Depends: friends,
          ${misc:Depends},
          ${python3:Depends},
@@ -96,6 +100,7 @@ Description: Social integration with the desktop - Twitter
 
 Package: friends-identica
 Architecture: all
+Multi-Arch: foreign
 Depends: friends,
          ${misc:Depends},
          ${python3:Depends},
@@ -105,6 +110,7 @@ Description: Social integration with the desktop - Identi.ca
 
 Package: friends-foursquare
 Architecture: all
+Multi-Arch: foreign
 Depends: friends,
          ${misc:Depends},
          ${python3:Depends},
@@ -114,6 +120,7 @@ Description: Social integration with the desktop - Foursquare
 
 Package: friends-flickr
 Architecture: all
+Multi-Arch: foreign
 Depends: friends,
          ${misc:Depends},
          ${python3:Depends},
@@ -123,6 +130,7 @@ Description: Social integration with the desktop - Flickr
 
 Package: friends-instagram
 Architecture: all
+Multi-Arch: foreign
 Depends: account-plugin-instagram,
          friends,
          ${misc:Depends},
@@ -132,6 +140,7 @@ Description: Social integration with the desktop - Instagram
 
 Package: friends-linkedin
 Architecture: all
+Multi-Arch: foreign
 Depends: account-plugin-linkedin,
          friends,
          ${misc:Depends},
