@@ -83,12 +83,12 @@ class Facebook(Base):
         # Use objectID to get a highres version of the picture
         # Does not seem to work for links
         object_id = entry.get('object_id')
-        if object_id and ('picture' in message_type):
+        if object_id and ('photo' in message_type):
             link_pic = "http://graph.facebook.com/" + object_id + "/picture?type=normal"
             
         args = dict(
             message_id=message_id,
-            stream='images' if (not link_pic is "") else stream,
+            stream='images' if ('photo' in message_type) else stream,
             message=entry.get('message', '') or entry.get('story', ''),
             icon_uri=entry.get('icon', ''),
             link_picture=link_pic,
