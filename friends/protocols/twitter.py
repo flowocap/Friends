@@ -175,7 +175,7 @@ class Twitter(Base):
                 message
             )
 
-        if not (picture_url is ''):
+        if picture_url:
             stream = 'images'
 
         self._publish(

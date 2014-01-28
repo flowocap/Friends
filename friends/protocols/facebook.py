@@ -66,17 +66,17 @@ class Facebook(Base):
         if "reply" in stream:
             message_type = "reply" 
         
-        if (message_id is None) or (message_type is None):
+        if None in (message_id, message_type):
             # We can't do much with this entry.
             return
             
-        if to and not (to is ""):
+        if to:
             # Somebody posted on somebodies wall
             # This cannot be displayed properly in friends so ignore
             return 
 
-        place = entry.get('place') or {}
-        location = place.get('location') or {}
+        place = entry.get('place', {})
+        location = place.get('location', {})
 
         link_pic = entry.get('picture', '')
         
