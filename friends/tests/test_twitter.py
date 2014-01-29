@@ -142,7 +142,7 @@ oauth_signature="klnMTp3hH%2Fl3b5%2BmPtBlv%2BCulic%3D"'''
              0, False, '', '', '', '', '', '', '', 0.0, 0.0,
              ],
             ['twitter', 88, '240556426106372096',
-             'messages', 'Raffi Krikorian', '8285392', 'raffi', False,
+            'images', 'Raffi Krikorian', '8285392', 'raffi', False,
              '2012-08-28T21:08:15Z', 'lecturing at the "analyzing big data '
              'with twitter" class at <a href="https://twitter.com/Cal">@Cal</a>'
              ' with <a href="https://twitter.com/othman">@othman</a> '

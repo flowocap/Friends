@@ -60,19 +60,37 @@ class Facebook(Base):
 
     def _publish_entry(self, entry, stream='messages'):
         message_id = entry.get('id')
-        if message_id is None:
+        message_type = entry.get('type')
+
+        if "reply" in stream:
+            message_type = "reply"
+
+        if None in (message_id, message_type):
             # We can't do much with this entry.
+            return
+
+        if 'to' in entry:
+            # Somebody posted on somebodies wall
+            # This cannot be displayed properly in friends so ignore
             return
 
         place = entry.get('place', {})
         location = place.get('location', {})
 
+        link_pic = entry.get('picture', '')
+
+        # Use objectID to get a highres version of the picture
+        # Does not seem to work for links
+        object_id = entry.get('object_id')
+        if object_id and ('photo' in message_type):
+            link_pic = "http://graph.facebook.com/" + object_id + "/picture?type=normal"
+
         args = dict(
             message_id=message_id,
-            stream=stream,
+            stream='images' if ('photo' in message_type) else stream,
             message=entry.get('message', '') or entry.get('story', ''),
             icon_uri=entry.get('icon', ''),
-            link_picture=entry.get('picture', ''),
+            link_picture=link_pic,
             link_name=entry.get('name', ''),
             link_url=entry.get('link', ''),
             link_desc=entry.get('description', ''),

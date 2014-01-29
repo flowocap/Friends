@@ -175,6 +175,9 @@ class Twitter(Base):
                 message
             )
 
+        if picture_url:
+            stream = 'images'
+
         self._publish(
             message_id=tweet_id,
             message=message,

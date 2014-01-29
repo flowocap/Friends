@@ -173,7 +173,7 @@ class TestFacebook(unittest.TestCase):
             'facebook',
             88,
             '161247843901324_629147610444676',
-            'mentions',
+            'images',
             'Best Western Denver Southwest',
             '161247843901324',
             'Best Western Denver Southwest',
@@ -189,8 +189,7 @@ class TestFacebook(unittest.TestCase):
             'https://www.facebook.com/161247843901324/posts/629147610444676',
             84,
             False,
-            'https://fbcdn-photos-a.akamaihd.net/hphotos-ak-snc7/' +
-            '601266_629147587111345_968504279_s.jpg',
+            'http://graph.facebook.com/629147587111345/picture?type=normal',
             '',
             'https://www.facebook.com/photo.php?fbid=629147587111345&set=a.173256162700492.47377.161247843901324&type=1&relevant_count=1',
             '',
