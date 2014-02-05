@@ -1,3 +1,14 @@
+friends (0.2.0+14.04.20140205-0ubuntu1) trusty; urgency=low
+
+  [ CI bot ]
+  * No-change MP to trigger CI-Train release.
+
+  [ Robert Bruce Park ]
+  * Support multiple links per tweet, thanks to Kai Mast.
+  * Facebook link picture size fixes thanks to Kai Mast.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 05 Feb 2014 16:27:49 +0000
+
 friends (0.2.0+14.04.20131211-0ubuntu1) trusty; urgency=low
 
   [ Robert Bruce Park ]
