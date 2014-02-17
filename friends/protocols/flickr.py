@@ -25,6 +25,8 @@ import re
 import time
 import logging
 
+from urllib.parse import urlencode
+
 from friends.utils.base import Base, feature
 from friends.utils.http import Downloader, Uploader
 from friends.utils.time import iso8601utc, parsetime
@@ -65,8 +67,7 @@ class Flickr(Base):
         method = 'GET'
         headers = self._get_oauth_headers(
             method=method,
-            url=REST_SERVER,
-            data=params or {},
+            url='{}?{}'.format(REST_SERVER, urlencode(params)),
             )
 
         response = Downloader(
