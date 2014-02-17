@@ -1,3 +1,15 @@
+friends (0.2.0+14.04.20140217.1-0ubuntu1) trusty; urgency=low
+
+  [ Scott Sweeny ]
+  * Flickr: Fix oauth signing for a GET request. According to [1] the
+    base string for the OAuth signature must include all of the
+    parameters, but oauthlib won't sign a GET request that includes a
+    body. Instead pass the parameters as part of the URL. [1]
+    https://secure.flickr.com/services/api/auth.oauth.html (LP:
+    #1258657)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 17 Feb 2014 17:38:56 +0000
+
 friends (0.2.0+14.04.20140205-0ubuntu1) trusty; urgency=low
 
   [ CI bot ]
