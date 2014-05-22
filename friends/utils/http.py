@@ -181,7 +181,7 @@ class Downloader(HTTP):
         if data is not None:
             message.set_request(
                 'application/x-www-form-urlencoded; charset=utf-8',
-                Soup.MemoryUse.COPY, data, len(data))
+                Soup.MemoryUse.COPY, data.encode())
 
         # Possibly do some rate limiting.
         self._rate_limiter.wait(message)
