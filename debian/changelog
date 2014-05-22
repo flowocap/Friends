@@ -1,3 +1,14 @@
+friends (0.2.0+14.04.20140217.1-0ubuntu2) utopic; urgency=medium
+
+  * friends/utils/http.py: Fix some incompatibilities introduced because
+    libsoup 2.46.0 made its gi bindings smarter in an incompatible way.
+    + The length parameter is now calculated from the list, don't pass it
+      explicitly.
+    + The list needs to be bytes, not a string.
+  * Increase deps to ensure we have the new version.
+
+ -- Iain Lane <iain.lane@canonical.com>  Thu, 22 May 2014 11:18:04 +0100
+
 friends (0.2.0+14.04.20140217.1-0ubuntu1) trusty; urgency=low
 
   [ Scott Sweeny ]
