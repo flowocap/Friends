@@ -32,6 +32,8 @@ Build-Depends: dbus-test-runner,
                valac,
                libdee-dev,
                dh-autoreconf,
+               libnotify4,
+               libnotify-dev,
 Standards-Version: 3.9.3
 Homepage: https://launchpad.net/friends
 # If you aren't a member of ~super-friends but need to upload packaging changes,
