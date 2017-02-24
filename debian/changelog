@@ -1,3 +1,9 @@
+friends (0.2.0+17.04.20140217.1-0ubuntu3) UNRELEASED; urgency=high
+
+  * Bumping Ubuntu version for zesty 
+
+ -- Khurshid Alam (Technologist) <khurshid.alam@linuxmail.org>  Fri, 24 Feb 2017 11:40:30 +0530
+
 friends (0.2.0+14.04.20140217.1-0ubuntu2) utopic; urgency=medium
 
   * friends/utils/http.py: Fix some incompatibilities introduced because
