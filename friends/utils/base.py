@@ -27,7 +27,10 @@ import re
 import time
 import logging
 import threading
+import gi
 
+gi.require_version('EDataServer', '1.2')
+gi.require_version('EBook', '1.2')
 from datetime import datetime, timedelta
 from oauthlib.oauth1 import Client
 

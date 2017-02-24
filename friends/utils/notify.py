@@ -24,7 +24,9 @@ __all__ = [
     'notify',
     ]
 
+import gi
 
+gi.require_version('GdkPixbuf', '2.0')
 from gi.repository import GObject, GdkPixbuf
 
 from friends.utils.avatar import Avatar
@@ -62,6 +64,7 @@ def notify(title, message, icon_uri='', pixbuf=None):
 
 # Optional dependency on Notify library.
 try:
+    gi.require_version('Notify', '0.7')
     from gi.repository import Notify
 except ImportError:
     notify = lambda *ignore, **kwignore: None

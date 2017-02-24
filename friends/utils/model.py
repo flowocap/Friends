@@ -31,7 +31,9 @@ __all__ = [
     'prune_model',
     ]
 
+import gi
 
+gi.require_version('Dee', '1.0')
 from gi.repository import Dee
 
 import logging

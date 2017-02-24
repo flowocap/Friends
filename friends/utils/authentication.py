@@ -22,7 +22,9 @@ __all__ = [
 
 import logging
 import time
+import gi
 
+gi.require_version('Signon', '1.0')
 from gi.repository import Accounts, Signon
 
 from friends.errors import AuthorizationError

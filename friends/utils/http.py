@@ -24,8 +24,10 @@ __all__ = [
 
 import json
 import logging
+import gi
 
 from contextlib import contextmanager
+gi.require_version('SoupGNOME', '2.4')
 from gi.repository import Gio, Soup, SoupGNOME
 from urllib.parse import urlencode
 
